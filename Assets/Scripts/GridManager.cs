@@ -31,6 +31,11 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        ShowMovementRange(new Vector3Int(3, 3, 0), 1);   
+    }
+
     #region Coordinate Conversion
     public Vector3 GridToWorld(Vector3Int gridPosition)
     {
@@ -106,14 +111,12 @@ public class GridManager : MonoBehaviour
         {
             for (int y = -movementRange; y <= movementRange; y++)
             {
-                if (Mathf.Abs(x) + Mathf.Abs(y) <= movementRange)
+                Vector3Int checkPosition = startPosition + new Vector3Int(x, y, 0); 
+                if (IsValidPosition(checkPosition) && checkPosition != startPosition)
                 {
-                    Vector3Int checkPosition = startPosition + new Vector3Int(x, y, 0); 
-                    if (IsValidPosition(checkPosition) && checkPosition != startPosition)
-                    {
-                        validPositions.Add(checkPosition);
-                    }
+                    validPositions.Add(checkPosition);
                 }
+                
             }
         }
 
