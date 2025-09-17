@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Unit : MonoBehaviour, IGridObject
+public class Unit : MonoBehaviour, IMoveable
 {
     [Header("Unit stats")]
     [SerializeField] private int movementRange = 3;
@@ -26,7 +26,7 @@ public class Unit : MonoBehaviour, IGridObject
 
     public int MovementRange => movementRange;
     public float MoveSpeed => moveSpeed;
-
+    public bool IsMoving => isMoving;
     private void Start()
     {
         gridPosition = GridManager.Instance.WorldToGrid(transform.position);
@@ -47,14 +47,14 @@ public class Unit : MonoBehaviour, IGridObject
 
     public bool CanMoveTo(Vector3Int position)
     {
-        int distance = Mathf.Abs(position.x - gridPosition.x) + Mathf.Abs(position.y - gridPosition.y);
+        float distance = Vector3Int.Distance(position, gridPosition);
         
         return distance <= movementRange && GridManager.Instance.IsValidPosition(position); 
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
     {
-        if (isMoving && !CanMoveTo(targetPosition))
+        if (isMoving || !CanMoveTo(targetPosition))
         {
             onComplete?.Invoke();
             return;

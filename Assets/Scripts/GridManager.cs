@@ -6,7 +6,7 @@ public class GridManager : MonoBehaviour
 {
     public static GridManager Instance { get; private set; }
 
-    [Header("Grid Setupt")]
+    [Header("Grid Setup")]
     [SerializeField] private Grid grid;
     [SerializeField] private Tilemap walkableTilemap;
     [SerializeField] private Tilemap blockedTilemap;
@@ -102,36 +102,46 @@ public class GridManager : MonoBehaviour
 
     #region Pathfinding & Movement
 
-    public List<Vector3Int> GetValidMovementPositions(Vector3Int startPosition, int movementRange)
+    public List<Vector3Int> GetReachableTiles(Vector3Int startPosition, int movementRange)
     {
-        List<Vector3Int> validPositions = new List<Vector3Int>();
+        List<Vector3Int> reachableTiles = new List<Vector3Int>();
+        Dictionary<Vector3Int, int> costSoFar = new Dictionary<Vector3Int, int>();
+        Queue<Vector3Int> frontier = new Queue<Vector3Int>();
 
-        for (int x = -movementRange; x <= movementRange; x++)
+        frontier.Enqueue(startPosition);
+        costSoFar[startPosition] = 0;
+        //reachableTiles.Add(startPosition); // The starting tile is reachable with 0 cost
+
+        while (frontier.Count > 0)
         {
-            for (int y = -movementRange; y <= movementRange; y++)
+            var current = frontier.Dequeue();
+
+            foreach (var neighbor in GetNeighbours(current)) 
             {
-                Vector3Int checkPosition = startPosition + new Vector3Int(x, y, 0); 
-                if (IsValidPosition(checkPosition) && checkPosition != startPosition)
+                int newCost = costSoFar[current] + 1; // Assuming cost of 1 per tile
+                if (newCost <= movementRange && IsValidPosition(neighbor))
                 {
-                    validPositions.Add(checkPosition);
+                    if (!costSoFar.ContainsKey(neighbor))
+                    {
+                        costSoFar[neighbor] = newCost;
+                        frontier.Enqueue(neighbor);
+                        reachableTiles.Add(neighbor);
+                    }
                 }
-                
             }
         }
-
-        return validPositions;
+        return reachableTiles;
     }
-
     public List<Vector3Int> GetPath(Vector3Int start, Vector3Int target, int maxRange)
     {
-        int distance = Mathf.Abs(target.x - start.x) + Mathf.Abs(target.y - start.y);
+        int distance = Mathf.RoundToInt(Vector3Int.Distance(start, target));
 
         if (distance > maxRange || !IsValidPosition(target))
         {
             return new List<Vector3Int>();
         }
 
-        List<Vector3Int> openSet = new List<Vector3Int>();
+        List<Vector3Int> openSet = new List<Vector3Int> { start };
         List<Vector3Int> closedSet = new List<Vector3Int>();
 
         Dictionary<Vector3Int, Vector3Int> cameFrom = new Dictionary<Vector3Int, Vector3Int>();
@@ -176,7 +186,7 @@ public class GridManager : MonoBehaviour
                 {
                     cameFrom[neighbour] = current;
                     gCost[neighbour] = fromStartToNeighbour;
-                    fCost[neighbour] = gCost[neighbour] + Mathf.Abs(target.x - neighbour.x) + Mathf.Abs(target.y - neighbour.y);
+                    fCost[neighbour] = gCost[neighbour] + Mathf.RoundToInt(Vector3Int.Distance(neighbour, target));
                     
                     if (!openSet.Contains(neighbour))
                     {
@@ -223,7 +233,7 @@ public class GridManager : MonoBehaviour
     {
         ClearHighlights();
 
-        var validPositions = GetValidMovementPositions(centerPosition, movementRange);
+        var validPositions = GetReachableTiles(centerPosition, movementRange);
 
         foreach (var validPosition in validPositions)
         {

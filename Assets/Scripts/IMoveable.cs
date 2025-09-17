@@ -6,5 +6,5 @@ public interface IMoveable : IGridObject
     int MovementRange { get; }
     bool IsMoving { get; }
     bool CanMoveTo(Vector3Int position);
-    bool MoveTo(Vector3Int position, Action onComplete = null);
+    void MoveTo(Vector3Int position, Action onComplete = null);
 }
