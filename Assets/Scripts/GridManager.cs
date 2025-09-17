@@ -33,7 +33,6 @@ public class GridManager : MonoBehaviour
 
     private void Start()
     {
-        ShowMovementRange(new Vector3Int(3, 3, 0), 1);   
     }
 
     #region Coordinate Conversion
@@ -83,17 +82,17 @@ public class GridManager : MonoBehaviour
         occupiedTiles[unit.GridPosition] = unit;
     }
 
-    public void UnregisterUnit(IGridObject unit)
+    public void UnregisterUnit(IGridObject unit, Vector3Int position)
     {
-        if (occupiedTiles.ContainsKey(unit.GridPosition) && occupiedTiles[unit.GridPosition] == unit)
+        if (occupiedTiles.ContainsKey(position) && occupiedTiles[position] == unit)
         {
-            occupiedTiles.Remove(unit.GridPosition);
+            occupiedTiles.Remove(position);
         }
     }
 
     public void MoveUnit(IGridObject unit, Vector3Int fromPosition, Vector3Int toPosition)
     {
-        UnregisterUnit(unit);
+        UnregisterUnit(unit, fromPosition);
         unit.GridPosition = toPosition;
         RegisterUnit(unit);
         unit.OnGridPositionChanged(toPosition);
@@ -234,12 +233,12 @@ public class GridManager : MonoBehaviour
 
     public void ClearHighlights()
     {
-        foreach (var highlight in highlightObjects)
+        foreach (GameObject highlight in highlightObjects)
         {
             if (highlight != null) Destroy(highlight);
 
-            highlightObjects.Clear();   
         }
+        highlightObjects.Clear();
     }
 
     public void CreateHighlight(Vector3Int gridPosition, Color color)
