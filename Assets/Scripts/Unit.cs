@@ -30,7 +30,7 @@ public class Unit : MonoBehaviour, IMoveable
     private void Start()
     {
         gridPosition = GridManager.Instance.WorldToGrid(transform.position);
-        GridManager.Instance.RegisterUnit(this);
+        GridObjectRegistry.Instance.RegisterUnit(this);
 
         transform.position = GridManager.Instance.GridToWorld(gridPosition);
 
@@ -39,17 +39,28 @@ public class Unit : MonoBehaviour, IMoveable
 
     private void OnDestroy()
     {
-        if (GridManager.Instance != null)
+        if (GridObjectRegistry.Instance != null)
         {
-            GridManager.Instance.UnregisterUnit(this, gridPosition);
+            GridObjectRegistry.Instance.UnregisterUnit(this, gridPosition);
         }
     }
 
     public bool CanMoveTo(Vector3Int position)
     {
-        float distance = Vector3Int.Distance(position, gridPosition);
-        
-        return distance <= movementRange && GridManager.Instance.IsValidPosition(position); 
+        if (GridManager.Instance == null || PathFinder.Instance == null)
+        {
+            Debug.LogWarning("Required managers not available for movement validation.");
+            return false;
+        }
+
+        if (!GridManager.Instance.IsValidPosition(position))
+        {
+            return false;
+        }
+
+        List<Vector3Int> reachableTiles = PathFinder.Instance.GetReachableTiles(gridPosition, movementRange, GridManager.Instance.IsValidPosition);
+
+        return reachableTiles.Contains(position);
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
@@ -60,7 +71,7 @@ public class Unit : MonoBehaviour, IMoveable
             return;
         }
 
-        var path = GridManager.Instance.GetPath(gridPosition, targetPosition, movementRange);
+        var path = PathFinder.Instance.GetPath(gridPosition, targetPosition, GridManager.Instance.IsValidPosition);
         if (path.Count == 0)
         {
             onComplete?.Invoke();
@@ -76,9 +87,10 @@ public class Unit : MonoBehaviour, IMoveable
 
         Vector3Int oldPosition = gridPosition;
 
-        foreach(var gridPosition in path)
+        Debug.Log("Moving unit");
+        for (int i = 1; i < path.Count; i++)
         {
-            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(gridPosition);
+            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(path[i]);
             while (Vector3.Distance(transform.position, targetWorldPosition) > 0.01f)
             {
                 transform.position = Vector3.MoveTowards(transform.position, targetWorldPosition, moveSpeed * Time.deltaTime);
@@ -88,7 +100,7 @@ public class Unit : MonoBehaviour, IMoveable
             transform.position = targetWorldPosition;
         }
 
-        GridManager.Instance.MoveUnit(this, oldPosition, path[path.Count - 1]);
+        GridObjectRegistry.Instance.MoveUnit(this, oldPosition, path[path.Count - 1]);
         isMoving = false;
         onComplete?.Invoke();
 
@@ -101,15 +113,23 @@ public class Unit : MonoBehaviour, IMoveable
 
     private void OnMouseDown()
     {
-
+        Vector3Int randomPosition = new Vector3Int(UnityEngine.Random.Range(0, 7), UnityEngine.Random.Range(0, 7), 0);
+        List<Vector3Int> path = PathFinder.Instance.GetPath(gridPosition, randomPosition, GridManager.Instance.IsValidPosition);
+        Debug.Log($"Destiantion: {randomPosition}");
+        foreach (var node in path)
+        {
+            Debug.Log($"Node: {node}");
+            GridVisualizer.Instance.CreateHighlight(node, Color.green);
+        }
+        StartCoroutine(MoveAlongPath(path));
         if (!selected && !isMoving)
         {
-            GridManager.Instance.ShowMovementRange(gridPosition, movementRange);
+            //GridVisualizer.Instance.ShowMovementRange(gridPosition, movementRange, GridManager.Instance.IsValidPosition);
             selected = true;
         }
         else if (selected)
         {
-            GridManager.Instance.ClearHighlights();
+            GridVisualizer.Instance.ClearHighlights();
             selected = false;
         }
     }

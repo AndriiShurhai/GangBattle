@@ -11,13 +11,6 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Tilemap walkableTilemap;
     [SerializeField] private Tilemap blockedTilemap;
 
-    [Header("Visual Feedback")]
-    [SerializeField] private GameObject movementHighlightPrefab;
-    [SerializeField] private Color validMoveColor = Color.green;
-    [SerializeField] private Color invalidMoveColor = Color.red;
-
-    private Dictionary<Vector3Int, IGridObject> occupiedTiles = new Dictionary<Vector3Int, IGridObject>();
-    private List<GameObject> highlightObjects = new List<GameObject>();
 
     private void Awake()
     {
@@ -56,213 +49,16 @@ public class GridManager : MonoBehaviour
         if (blockedTilemap.GetTile(gridPosition) != null) return false;
         return true;
     }
-
-    public bool IsOccupied(Vector3Int gridPosition)
-    {
-        return occupiedTiles.ContainsKey(gridPosition);
-    }
-
     public bool IsValidPosition(Vector3Int gridPosition)
     {
-        return IsWalkable(gridPosition) && !IsOccupied(gridPosition);
+        return IsWalkable(gridPosition) && !GridObjectRegistry.Instance.IsOccupied(gridPosition);
     }
 
     #endregion
 
     #region Unit Registration
-
-    public void RegisterUnit(IGridObject unit)
-    {
-        if (IsOccupied(unit.GridPosition))
-        {
-            Debug.LogWarning($"Trying to register unit at occupied position: {unit.GridPosition}");
-            return;
-        }
-
-        occupiedTiles[unit.GridPosition] = unit;
-    }
-
-    public void UnregisterUnit(IGridObject unit, Vector3Int position)
-    {
-        if (occupiedTiles.ContainsKey(position) && occupiedTiles[position] == unit)
-        {
-            occupiedTiles.Remove(position);
-        }
-    }
-
-    public void MoveUnit(IGridObject unit, Vector3Int fromPosition, Vector3Int toPosition)
-    {
-        UnregisterUnit(unit, fromPosition);
-        unit.GridPosition = toPosition;
-        RegisterUnit(unit);
-        unit.OnGridPositionChanged(toPosition);
-    }
-
-    #endregion
-
-    #region Pathfinding & Movement
-
-    public List<Vector3Int> GetReachableTiles(Vector3Int startPosition, int movementRange)
-    {
-        List<Vector3Int> reachableTiles = new List<Vector3Int>();
-        Dictionary<Vector3Int, int> costSoFar = new Dictionary<Vector3Int, int>();
-        Queue<Vector3Int> frontier = new Queue<Vector3Int>();
-
-        frontier.Enqueue(startPosition);
-        costSoFar[startPosition] = 0;
-        //reachableTiles.Add(startPosition); // The starting tile is reachable with 0 cost
-
-        while (frontier.Count > 0)
-        {
-            var current = frontier.Dequeue();
-
-            foreach (var neighbor in GetNeighbours(current)) 
-            {
-                int newCost = costSoFar[current] + 1; // Assuming cost of 1 per tile
-                if (newCost <= movementRange && IsValidPosition(neighbor))
-                {
-                    if (!costSoFar.ContainsKey(neighbor))
-                    {
-                        costSoFar[neighbor] = newCost;
-                        frontier.Enqueue(neighbor);
-                        reachableTiles.Add(neighbor);
-                    }
-                }
-            }
-        }
-        return reachableTiles;
-    }
-    public List<Vector3Int> GetPath(Vector3Int start, Vector3Int target, int maxRange)
-    {
-        int distance = Mathf.RoundToInt(Vector3Int.Distance(start, target));
-
-        if (distance > maxRange || !IsValidPosition(target))
-        {
-            return new List<Vector3Int>();
-        }
-
-        List<Vector3Int> openSet = new List<Vector3Int> { start };
-        List<Vector3Int> closedSet = new List<Vector3Int>();
-
-        Dictionary<Vector3Int, Vector3Int> cameFrom = new Dictionary<Vector3Int, Vector3Int>();
-
-        Dictionary<Vector3Int, int> gCost = new Dictionary<Vector3Int, int>() { [start] = 0 };
-        Dictionary<Vector3Int, int> fCost = new Dictionary<Vector3Int, int> { [start] = distance };
-
-        while (openSet.Count > 0)
-        {
-            Vector3Int current = openSet[0];
-            for (int i = 1; i < openSet.Count; i++)
-            {
-                if (fCost.GetValueOrDefault(openSet[i], int.MaxValue) < fCost.GetValueOrDefault(current, int.MaxValue))
-                {
-                    current = openSet[i];
-                }
-            }
-
-            if (current == target)
-            {
-                return ReconstructPath(cameFrom, current);
-            }
-
-            openSet.Remove(current);
-            closedSet.Add(current);
-
-            foreach (Vector3Int neighbour in GetNeighbours(current))
-            {
-                if (closedSet.Contains(neighbour) || !IsValidPosition(neighbour))
-                {
-                    continue;
-                }
-
-                int fromStartToNeighbour = gCost[current] + 1;
-
-                if (fromStartToNeighbour > maxRange)
-                {
-                    continue;
-                }
-
-                if (!openSet.Contains(neighbour) || fromStartToNeighbour < gCost.GetValueOrDefault(neighbour, int.MaxValue))
-                {
-                    cameFrom[neighbour] = current;
-                    gCost[neighbour] = fromStartToNeighbour;
-                    fCost[neighbour] = gCost[neighbour] + Mathf.RoundToInt(Vector3Int.Distance(neighbour, target));
-                    
-                    if (!openSet.Contains(neighbour))
-                    {
-                        openSet.Add(neighbour);
-                    }
-                }
-            }
-        }
-
-        return new List<Vector3Int>();
-
-    }
-
-    private IEnumerable<Vector3Int> GetNeighbours(Vector3Int node)
-    {
-        yield return node + Vector3Int.right;
-        yield return node + Vector3Int.left;
-        yield return node + Vector3Int.up;
-        yield return node + Vector3Int.down;
-
-        yield return node + new Vector3Int(1, 1, 0);
-        yield return node + new Vector3Int(-1, -1, 0);
-        yield return node + new Vector3Int(-1, 1, 0);
-        yield return node + new Vector3Int(1, -1, 0);
-    }
-
-    private List<Vector3Int> ReconstructPath(Dictionary<Vector3Int, Vector3Int> cameFrom, Vector3Int current)
-    {
-        List<Vector3Int> totalPath = new List<Vector3Int>() { current };
-        while (cameFrom.ContainsKey(current))
-        {
-            current = cameFrom[current];
-            totalPath.Insert(0, current);
-        }
-
-        return totalPath;
-    }
-
     #endregion
 
     #region Visual Feedback
-
-    public void ShowMovementRange(Vector3Int centerPosition, int movementRange)
-    {
-        ClearHighlights();
-
-        var validPositions = GetReachableTiles(centerPosition, movementRange);
-
-        foreach (var validPosition in validPositions)
-        {
-            CreateHighlight(validPosition, validMoveColor);
-        }
-    }
-
-    public void ClearHighlights()
-    {
-        foreach (GameObject highlight in highlightObjects)
-        {
-            if (highlight != null) Destroy(highlight);
-
-        }
-        highlightObjects.Clear();
-    }
-
-    public void CreateHighlight(Vector3Int gridPosition, Color color)
-    {
-        if (movementHighlightPrefab == null) return;
-
-        Vector3 worldPosition = GridToWorld(gridPosition);
-        GameObject highlight = Instantiate(movementHighlightPrefab, worldPosition, Quaternion.identity);
-        
-        var renderer = highlight.GetComponent<SpriteRenderer>();
-        if (renderer != null) renderer.color = color;
-
-        highlightObjects.Add(highlight);
-    }
-
     #endregion
 }
