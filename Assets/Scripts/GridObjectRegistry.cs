@@ -46,6 +46,13 @@ public class GridObjectRegistry : MonoBehaviour
         unit.OnGridPositionChanged(toPosition);
     }
 
+    public IGridObject GetObjectAt(Vector3Int gridPosition)
+    {
+        if (!occupiedTiles.ContainsKey(gridPosition)) { return null; }
+
+        return occupiedTiles[gridPosition];
+    }
+
     public bool IsOccupied(Vector3Int gridPosition)
     {
         return occupiedTiles.ContainsKey(gridPosition);

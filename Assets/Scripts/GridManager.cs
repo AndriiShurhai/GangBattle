@@ -31,7 +31,7 @@ public class GridManager : MonoBehaviour
     #region Coordinate Conversion
     public Vector3 GridToWorld(Vector3Int gridPosition)
     {
-        return grid.CellToWorld(gridPosition);
+        return grid.GetCellCenterWorld(gridPosition);
     }
 
     public Vector3Int WorldToGrid(Vector3 worldPosition)

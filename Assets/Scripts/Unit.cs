@@ -15,6 +15,7 @@ public class Unit : MonoBehaviour, IMoveable
     private Vector3Int gridPosition;
     private bool isMoving = false;
     private Coroutine moveCoroutine;
+    private List<Vector3Int> reachableTiles;
 
     private bool selected = false;
 
@@ -58,9 +59,7 @@ public class Unit : MonoBehaviour, IMoveable
             return false;
         }
 
-        List<Vector3Int> reachableTiles = PathFinder.Instance.GetReachableTiles(gridPosition, movementRange, GridManager.Instance.IsValidPosition);
-
-        return reachableTiles.Contains(position);
+        return PathFinder.Instance.GetReachableTiles(gridPosition, movementRange, GridManager.Instance.IsValidPosition).Contains(position);
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
@@ -87,7 +86,8 @@ public class Unit : MonoBehaviour, IMoveable
 
         Vector3Int oldPosition = gridPosition;
 
-        Debug.Log("Moving unit");
+        GridObjectRegistry.Instance.MoveUnit(this, oldPosition, path[path.Count - 1]);
+
         for (int i = 1; i < path.Count; i++)
         {
             Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(path[i]);
@@ -100,7 +100,6 @@ public class Unit : MonoBehaviour, IMoveable
             transform.position = targetWorldPosition;
         }
 
-        GridObjectRegistry.Instance.MoveUnit(this, oldPosition, path[path.Count - 1]);
         isMoving = false;
         onComplete?.Invoke();
 
@@ -111,27 +110,8 @@ public class Unit : MonoBehaviour, IMoveable
         Debug.Log($"Unit moved to a new position: {newGridPosition}");
     }
 
-    private void OnMouseDown()
+    internal void Select()
     {
-        Vector3Int randomPosition = new Vector3Int(UnityEngine.Random.Range(0, 7), UnityEngine.Random.Range(0, 7), 0);
-        List<Vector3Int> path = PathFinder.Instance.GetPath(gridPosition, randomPosition, GridManager.Instance.IsValidPosition);
-        Debug.Log($"Destiantion: {randomPosition}");
-        foreach (var node in path)
-        {
-            Debug.Log($"Node: {node}");
-            GridVisualizer.Instance.CreateHighlight(node, Color.green);
-        }
-        StartCoroutine(MoveAlongPath(path));
-        if (!selected && !isMoving)
-        {
-            //GridVisualizer.Instance.ShowMovementRange(gridPosition, movementRange, GridManager.Instance.IsValidPosition);
-            selected = true;
-        }
-        else if (selected)
-        {
-            GridVisualizer.Instance.ClearHighlights();
-            selected = false;
-        }
+        reachableTiles = PathFinder.Instance.GetReachableTiles(gridPosition, movementRange, GridManager.Instance.IsValidPosition);
     }
-
 }
