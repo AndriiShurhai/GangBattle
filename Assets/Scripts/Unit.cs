@@ -8,6 +8,7 @@ public class Unit : MonoBehaviour, IMoveable
     [Header("Unit stats")]
     [SerializeField] private int movementRange = 3;
     [SerializeField] private float moveSpeed = 2f;
+    [SerializeField] private CharacterActionsSO actionsSO;
 
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
@@ -18,6 +19,11 @@ public class Unit : MonoBehaviour, IMoveable
     private List<Vector3Int> reachableTiles;
 
     private bool selected = false;
+
+    public CharacterActionsSO ActionsSO
+    {
+        get => actionsSO;
+    }
 
     public Vector3Int GridPosition
     {

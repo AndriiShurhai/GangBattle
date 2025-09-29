@@ -30,7 +30,17 @@ public class CharacterSelectionController : MonoBehaviour
                 selectedUnit.MoveTo(gridPosition);
                 GridVisualizer.Instance.ClearHighlights();
                 selectedUnit = null;
-            }   
+            }
+            else if (selectedUnit != null && !selectedUnit.CanMoveTo(gridPosition))
+            {
+                Debug.Log("Clearing highlights");
+                GridVisualizer.Instance.ClearHighlights();
+                IGridObject clickedObject = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
+                if (clickedObject is Unit unit)
+                {
+                    SelectUnit(unit);
+                }
+            }
             else
             {
                 IGridObject clickedObject = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
@@ -40,6 +50,10 @@ public class CharacterSelectionController : MonoBehaviour
                 }
             }
         }
+        else
+        {
+            GridVisualizer.Instance.ClearHighlights();
+        }
     }
 
     private void SelectUnit(Unit unit)
@@ -47,6 +61,8 @@ public class CharacterSelectionController : MonoBehaviour
         selectedUnit = unit;
         selectedUnit.Select();
         GridVisualizer.Instance.ShowMovementRange(unit.GridPosition, unit.MovementRange, GridManager.Instance.IsValidPosition);
+
+        CharacterActionPanelUI.Instance.SetCharacterActionsPanel(selectedUnit.ActionsSO);
     }
 
 }
