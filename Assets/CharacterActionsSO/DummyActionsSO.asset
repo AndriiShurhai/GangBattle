@@ -12,9 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 896b28fbdd7d0df4ab5ffdfb4be6ad1a, type: 3}
   m_Name: DummyActionsSO
   m_EditorClassIdentifier: 
-  moveIcon: {fileID: 8046480549174274626, guid: f94976c3993d54344ab438cde43e6da5,
-    type: 3}
-  attackIcon: {fileID: 8046480549174274626, guid: f94976c3993d54344ab438cde43e6da5,
-    type: 3}
-  abbilityIcon: {fileID: 8046480549174274626, guid: f94976c3993d54344ab438cde43e6da5,
-    type: 3}
+  characterAbilities:
+  - {fileID: 21300134, guid: c3a40e1c46727b94e959990527f8e7fa, type: 3}
+  - {fileID: 21300174, guid: c3a40e1c46727b94e959990527f8e7fa, type: 3}
+  - {fileID: 21300156, guid: c3a40e1c46727b94e959990527f8e7fa, type: 3}

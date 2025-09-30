@@ -55,10 +55,4 @@ public class GridManager : MonoBehaviour
     }
 
     #endregion
-
-    #region Unit Registration
-    #endregion
-
-    #region Visual Feedback
-    #endregion
 }
