@@ -6,9 +6,14 @@ using UnityEngine;
 public class Unit : MonoBehaviour, IMoveable
 {
     [Header("Unit stats")]
+    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private int currentHealth;
     [SerializeField] private int movementRange = 3;
     [SerializeField] private float moveSpeed = 2f;
     [SerializeField] private CharacterActionsSO actionsSO;
+
+    [Header("Abilites")]
+    [SerializeField] private List<AbilityBaseSO> abilities = new List<AbilityBaseSO>();
 
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
@@ -16,14 +21,13 @@ public class Unit : MonoBehaviour, IMoveable
     private Vector3Int gridPosition;
     private bool isMoving = false;
     private Coroutine moveCoroutine;
-    private List<Vector3Int> reachableTiles;
 
-    private bool selected = false;
+    public event Action<int, int> OnHealthChanged; // current health, max health
+    public event Action OnDeath;
 
-    public CharacterActionsSO ActionsSO
-    {
-        get => actionsSO;
-    }
+    public List<AbilityBaseSO> Abilities {  get { return abilities; } }
+    public int CurrentHealth { get { return currentHealth; } }
+    public int MaxHealth { get { return maxHealth; } }
 
     public Vector3Int GridPosition
     {
@@ -36,9 +40,9 @@ public class Unit : MonoBehaviour, IMoveable
     public bool IsMoving => isMoving;
     private void Start()
     {
+        currentHealth = maxHealth;
         gridPosition = GridManager.Instance.WorldToGrid(transform.position);
         GridObjectRegistry.Instance.RegisterUnit(this);
-
         transform.position = GridManager.Instance.GridToWorld(gridPosition);
 
         Debug.Log(gridPosition);
@@ -116,8 +120,71 @@ public class Unit : MonoBehaviour, IMoveable
         Debug.Log($"Unit moved to a new position: {newGridPosition}");
     }
 
+    public void TakeDamage(int damage, Unit attacker)
+    {
+        currentHealth -= damage;
+        currentHealth = Mathf.Max(0, currentHealth);
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    public void Heal(int amount)
+    {
+        currentHealth += amount;
+        currentHealth = Mathf.Min(currentHealth, maxHealth);
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
+    private void Die()
+    {
+        Debug.Log("Unit has died");
+        OnDeath?.Invoke();
+
+        GridObjectRegistry.Instance.UnregisterUnit(this, gridPosition);
+
+        Destroy(gameObject);
+    }
+
+    public bool CanUseAbility(AbilityBaseSO abilitySO)
+    {
+        if (!abilities.Contains(abilitySO))
+        {
+            return false;
+        }
+
+        return abilitySO.CanUse(this);
+    }
+
+    public void UseAbility(AbilityBaseSO abilitySO, Vector3Int targetPosition)
+    {
+        if (!CanUseAbility(abilitySO))
+        {
+            Debug.LogWarning("Unit can't use ability");
+            return;
+        }
+
+        if (!abilitySO.IsValidTarget(gridPosition, targetPosition, this))
+        {
+            Debug.Log("Target is invlaid");
+            return;
+        }
+
+        abilitySO.Execute(this, targetPosition);
+    }
+
     internal void Select()
     {
-        reachableTiles = PathFinder.Instance.GetReachableTiles(gridPosition, movementRange, GridManager.Instance.IsValidPosition);
+
     }
+
+    //internal void Select()
+    //{
+    //    reachableTiles = PathFinder.Instance.GetReachableTiles(gridPosition, movementRange, GridManager.Instance.IsValidPosition);
+    //}
 }

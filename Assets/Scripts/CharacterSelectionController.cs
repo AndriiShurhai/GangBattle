@@ -62,7 +62,7 @@ public class CharacterSelectionController : MonoBehaviour
         selectedUnit.Select();
         GridVisualizer.Instance.ShowMovementRange(unit.GridPosition, unit.MovementRange, GridManager.Instance.IsValidPosition);
 
-        CharacterActionPanelUI.Instance.SetCharacterActionsPanel(selectedUnit.ActionsSO);
+        //CharacterActionPanelUI.Instance.SetCharacterActionsPanel(selectedUnit.ActionsSO);
     }
 
 }
