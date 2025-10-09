@@ -15,16 +15,9 @@ public class GameInput : MonoBehaviour
 
     public enum Binding
     {
-        MoveUp,
-        MoveDown,
-        MoveLeft,
-        MoveRight,
         Interact,
-        InteractAlt,
         Pause,
-
         GamepadInteract,
-        GamepadInteractAlt,
         GamepadPause
     }
     public static GameInput Instance { get; private set; }
@@ -51,10 +44,60 @@ public class GameInput : MonoBehaviour
         inputAction.Player.Click.performed += Click_performed;
     }
 
+    private void OnDestroy()
+    {
+        inputAction.Player.Interact.performed -= Interact_performed;
+        inputAction.Player.Pause.performed -= Pause_performed;
+        inputAction.Player.Click.performed -= Click_performed;
+        inputAction.Dispose();
+    }
+
+    private (InputAction action, int bindingIndex) GetInputActionForBinding(Binding binding)
+    {
+        switch (binding)
+        {
+            default:
+            case Binding.Interact: return (inputAction.Player.Interact, 0);
+            case Binding.Pause: return (inputAction.Player.Pause, 0);
+            case Binding.GamepadInteract: return (inputAction.Player.Interact, 1);
+            case Binding.GamepadPause: return (inputAction.Player.Pause, 1);
+        }
+    }
+
+    public string GetBindingText(Binding binding)
+    {
+        var (action, bindingIndex) = GetInputActionForBinding(binding);
+        return action.bindings[bindingIndex].ToDisplayString();
+    }
+
+    public void RebindBinding(Binding binding, Action OnComplete = null)
+    {
+        inputAction.Player.Disable();
+
+        var (action, bindingIndex) = GetInputActionForBinding(binding);
+
+        action.PerformInteractiveRebinding(bindingIndex)
+            .OnComplete(callback =>
+            {
+                callback.Dispose();
+                inputAction.Player.Enable();
+                OnComplete?.Invoke();
+
+                PlayerPrefs.SetString(PLAYER_PREFS_BINDINGS, inputAction.SaveBindingOverridesAsJson());
+                PlayerPrefs.Save();
+                OnBindingRebinding?.Invoke();
+            })
+            .OnCancel(callback =>
+            {
+                callback.Dispose();
+                inputAction.Player.Enable();
+            })
+            .Start();
+    }
+
     private void Click_performed(InputAction.CallbackContext obj)
     {
-        Vector2 pointerPosition = GetPointerPosition();
-        OnClickAction?.Invoke(pointerPosition);
+        OnClickAction?.Invoke(GetPointerPosition());
     }
 
     private Vector2 GetPointerPosition()
@@ -62,99 +105,13 @@ public class GameInput : MonoBehaviour
         return inputAction.Player.PointerPosition.ReadValue<Vector2>();
     }
 
-    private void Pause_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+    private void Pause_performed(InputAction.CallbackContext obj)
     {
         OnPauseAction?.Invoke();
     }
 
-
-    private void Interact_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+    private void Interact_performed(InputAction.CallbackContext obj)
     {
         OnInteractAction?.Invoke();
     }
-
-    private void OnDestroy()
-    {
-        OnInteractAction = null;
-        OnPauseAction = null;
-
-        if (inputAction != null)
-        {
-            inputAction.Player.Interact.performed -= Interact_performed;
-            inputAction.Player.Pause.performed -= Pause_performed;
-
-            inputAction.Player.Disable();
-
-            inputAction.Dispose();
-        }
-    }
-
-    public string GetBindingText(Binding binding)
-    {
-        switch (binding)
-        {
-            default:
-
-            case Binding.Interact:
-                return inputAction.Player.Interact.bindings[0].ToDisplayString();
-
-            case Binding.Pause:
-                return inputAction.Player.Pause.bindings[0].ToDisplayString();
-
-            case Binding.GamepadInteract:
-                return inputAction.Player.Interact.bindings[1].ToDisplayString();
-
-            case Binding.GamepadPause:
-                return inputAction.Player.Pause.bindings[1].ToDisplayString();
-
-
-
-        }
-    }
-
-    public void RebindBinding(Binding binding, Action OnComplete = null)
-    {
-        inputAction.Player.Disable();
-
-        InputActionRebindingExtensions.RebindingOperation rebindingOperation = null;
-
-        switch (binding)
-        {
-            default:
-   
-            case Binding.Interact:
-                rebindingOperation = inputAction.Player.Interact.PerformInteractiveRebinding(0);
-                break;
-            case Binding.Pause:
-                rebindingOperation = inputAction.Player.Pause.PerformInteractiveRebinding(0);
-                break;
-
-            case Binding.GamepadInteract:
-                rebindingOperation = inputAction.Player.Interact.PerformInteractiveRebinding(1);
-                break;
-
-            case Binding.GamepadPause:
-                rebindingOperation = inputAction.Player.Pause.PerformInteractiveRebinding(1);
-                break;
-        }
-
-        rebindingOperation?
-            .OnComplete((callback) =>
-            {
-                inputAction.Player.Enable();
-                OnComplete?.Invoke();
-                callback.Dispose();
-
-                PlayerPrefs.SetString(PLAYER_PREFS_BINDINGS, inputAction.SaveBindingOverridesAsJson());
-                PlayerPrefs.Save();
-                OnBindingRebinding?.Invoke();
-            })
-            .OnCancel((callback) =>
-            {
-                inputAction.Player.Enable();
-                callback.Dispose();
-            })
-            .Start();
-    }
-
 }

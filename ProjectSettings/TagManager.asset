@@ -50,6 +50,9 @@ TagManager:
   - name: BlockedTilemap
     uniqueID: 305763123
     locked: 0
+  - name: Trap
+    uniqueID: 1063076723
+    locked: 0
   - name: Player
     uniqueID: 4189426099
     locked: 0

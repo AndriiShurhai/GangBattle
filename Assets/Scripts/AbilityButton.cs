@@ -78,7 +78,7 @@ public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, 
         canvasGroup.blocksRaycasts = true;
 
         rectTransform.position = originalPosition;
-        //GridVisualizer.Instance.ShowHighlights();
+        GridVisualizer.Instance.ShowHighlights();
 
 
         Vector3 worldPoint = Camera.main.ScreenToWorldPoint(eventData.position);

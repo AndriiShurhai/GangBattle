@@ -11,6 +11,7 @@ public class GridVisualizer : MonoBehaviour
     [SerializeField] private Color invalidMoveColor = Color.red;
     [SerializeField] private Transform highlightsContainer;
 
+    private HighlightManager _highlightManager;
     private List<GameObject> highlightObjects = new List<GameObject>();
 
     private void Awake()
@@ -18,6 +19,7 @@ public class GridVisualizer : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            _highlightManager = new HighlightManager(movementHighlightPrefab, highlightsContainer);
         }
         else
         {
@@ -33,46 +35,35 @@ public class GridVisualizer : MonoBehaviour
 
         foreach (var validPosition in validPositions)
         {
-            CreateHighlight(validPosition, validMoveColor);
+            _highlightManager.CreateHighlight(validPosition, validMoveColor);
         }
     }
 
     public void ClearHighlights()
     {
-        foreach (GameObject highlight in highlightObjects)
-        {
-            if (highlight != null) Destroy(highlight);
-
-        }
-        highlightObjects.Clear();
+        _highlightManager.ClearAllHighlights();
     }
 
     public void HideHighlights()
     {
-        foreach (GameObject highlight in highlightObjects)
-        {
-            if (highlight != null) highlight.SetActive(false);   
-        }
+        _highlightManager.SetHighlightsActive(false);
     }
 
     public void ShowHighlights()
     {
-        foreach (GameObject highlight in highlightObjects)
-        {
-            if (highlight != null) highlight.SetActive(true);
-        }
+        _highlightManager.SetHighlightsActive(true);
     }
 
-    public void CreateHighlight(Vector3Int gridPosition, Color color)
-    {
-        if (movementHighlightPrefab == null) return;
+    //public void CreateHighlight(Vector3Int gridPosition, Color color)
+    //{
+    //    if (movementHighlightPrefab == null) return;
 
-        Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
-        GameObject highlight = Instantiate(movementHighlightPrefab, worldPosition, Quaternion.identity, highlightsContainer);
+    //    Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
+    //    GameObject highlight = Instantiate(movementHighlightPrefab, worldPosition, Quaternion.identity, highlightsContainer);
 
-        var renderer = highlight.GetComponent<SpriteRenderer>();
-        if (renderer != null) renderer.color = color;
+    //    var renderer = highlight.GetComponent<SpriteRenderer>();
+    //    if (renderer != null) renderer.color = color;
 
-        highlightObjects.Add(highlight);
-    }
+    //    highlightObjects.Add(highlight);
+    //}
 }
