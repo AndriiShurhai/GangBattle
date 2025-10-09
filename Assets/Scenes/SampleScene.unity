@@ -448,6 +448,7 @@ GameObject:
   - component: {fileID: 490111300}
   - component: {fileID: 490111302}
   - component: {fileID: 490111303}
+  - component: {fileID: 490111304}
   m_Layer: 0
   m_Name: Unit
   m_TagString: Untagged
@@ -468,9 +469,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthComponent: {fileID: 0}
-  movementRange: 3
-  moveSpeed: 2
-  actionsSO: {fileID: 11400000, guid: 7ba9451f331769643a243b8ede7930e1, type: 2}
+  movementComponent: {fileID: 0}
   abilities:
   - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
   spriteRenderer: {fileID: 640276312}
@@ -549,6 +548,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+--- !u!114 &490111304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 490111299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4b3d1f8761ca642a12f30529cf9471, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementRange: 3
+  moveSpeed: 2
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1148,6 +1161,7 @@ GameObject:
   - component: {fileID: 1068094563}
   - component: {fileID: 1068094562}
   - component: {fileID: 1068094565}
+  - component: {fileID: 1068094566}
   m_Layer: 0
   m_Name: Unit (1)
   m_TagString: Untagged
@@ -1214,9 +1228,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthComponent: {fileID: 0}
-  movementRange: 3
-  moveSpeed: 2
-  actionsSO: {fileID: 11400000, guid: a629ae4eea9668d4c8e85d34a49ce30e, type: 2}
+  movementComponent: {fileID: 0}
   abilities:
   - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
   spriteRenderer: {fileID: 900097889}
@@ -1249,6 +1261,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+--- !u!114 &1068094566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1068094561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4b3d1f8761ca642a12f30529cf9471, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementRange: 3
+  moveSpeed: 2
 --- !u!1 &1157919225
 GameObject:
   m_ObjectHideFlags: 0
@@ -1308,6 +1334,7 @@ GameObject:
   - component: {fileID: 1245722521}
   - component: {fileID: 1245722520}
   - component: {fileID: 1245722523}
+  - component: {fileID: 1245722524}
   m_Layer: 0
   m_Name: Unit (2)
   m_TagString: Untagged
@@ -1374,9 +1401,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthComponent: {fileID: 0}
-  movementRange: 3
-  moveSpeed: 2
-  actionsSO: {fileID: 11400000, guid: a629ae4eea9668d4c8e85d34a49ce30e, type: 2}
+  movementComponent: {fileID: 0}
   abilities:
   - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
   spriteRenderer: {fileID: 2079496963}
@@ -1409,6 +1434,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+--- !u!114 &1245722524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1245722519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4b3d1f8761ca642a12f30529cf9471, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementRange: 3
+  moveSpeed: 2
 --- !u!1 &1284050093
 GameObject:
   m_ObjectHideFlags: 0
@@ -1627,6 +1666,7 @@ GameObject:
   - component: {fileID: 1315004372}
   - component: {fileID: 1315004371}
   - component: {fileID: 1315004374}
+  - component: {fileID: 1315004375}
   m_Layer: 0
   m_Name: Unit (3)
   m_TagString: Untagged
@@ -1693,9 +1733,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthComponent: {fileID: 0}
-  movementRange: 3
-  moveSpeed: 2
-  actionsSO: {fileID: 11400000, guid: a629ae4eea9668d4c8e85d34a49ce30e, type: 2}
+  movementComponent: {fileID: 0}
   abilities:
   - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
   spriteRenderer: {fileID: 1993316678}
@@ -1728,6 +1766,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+--- !u!114 &1315004375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1315004370}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4b3d1f8761ca642a12f30529cf9471, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementRange: 3
+  moveSpeed: 2
 --- !u!1 &1483360110
 GameObject:
   m_ObjectHideFlags: 0
@@ -1851,6 +1903,7 @@ GameObject:
   - component: {fileID: 1647039258}
   - component: {fileID: 1647039257}
   - component: {fileID: 1647039260}
+  - component: {fileID: 1647039261}
   m_Layer: 0
   m_Name: Unit (4)
   m_TagString: Untagged
@@ -1917,9 +1970,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthComponent: {fileID: 0}
-  movementRange: 3
-  moveSpeed: 2
-  actionsSO: {fileID: 11400000, guid: a629ae4eea9668d4c8e85d34a49ce30e, type: 2}
+  movementComponent: {fileID: 0}
   abilities:
   - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
   spriteRenderer: {fileID: 854621820}
@@ -1952,6 +2003,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+--- !u!114 &1647039261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1647039256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e4b3d1f8761ca642a12f30529cf9471, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementRange: 3
+  moveSpeed: 2
 --- !u!1 &1655297847
 GameObject:
   m_ObjectHideFlags: 0

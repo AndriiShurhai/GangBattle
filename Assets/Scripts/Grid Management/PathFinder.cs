@@ -67,33 +67,29 @@ public class PathFinder : MonoBehaviour
         PathNode startNode = new PathNode(startPosition);
         PathNode endNode = new PathNode(endPosition);
 
-        List<PathNode> openSet = new List<PathNode> { startNode };
+        PriorityQueue<PathNode> openSet = new PriorityQueue<PathNode>();
         HashSet<Vector3Int> closedSet = new HashSet<Vector3Int>();
+        Dictionary<Vector3Int, PathNode> openSetNodes = new Dictionary<Vector3Int, PathNode>();
 
         startNode.gCost = 0;
         startNode.hCost = CalculateDistanceCost(startNode.position, endNode.position);
 
+        openSet.Enqueue(startNode, startNode.FCost);
+        openSetNodes[startNode.position] = startNode;
+
         while (openSet.Count > 0)
         {
-            // Find the node with the lowest F-cost in the open set.
-            PathNode currentNode = openSet[0];
-            for (int i = 1; i < openSet.Count; i++)
-            {
-                if (openSet[i].FCost < currentNode.FCost ||
-                   (openSet[i].FCost == currentNode.FCost && openSet[i].hCost < currentNode.hCost))
-                {
-                    currentNode = openSet[i];
-                }
-            }
-
-            openSet.Remove(currentNode);
-            closedSet.Add(currentNode.position);
+            PathNode currentNode = openSet.Dequeue();
+            openSetNodes.Remove(currentNode.position);
 
             // Path found
             if (currentNode.position == endNode.position)
             {
                 return ReconstructPath(currentNode);
             }
+
+            closedSet.Add(currentNode.position);
+
 
             foreach (Vector3Int neighbourPosition in GetNeighbours(currentNode.position))
             {
@@ -102,21 +98,27 @@ public class PathFinder : MonoBehaviour
                     continue;
                 }
 
-                // FIXED: Use cost of 1 for all movements (orthogonal and diagonal)
                 int tentativeGCost = currentNode.gCost + 1;
 
-                PathNode neighbourNode = openSet.Find(n => n.position == neighbourPosition);
-                if (neighbourNode == null || tentativeGCost < neighbourNode.gCost)
+                if (openSetNodes.TryGetValue(neighbourPosition, out PathNode neighbourNode))
                 {
-                    if (neighbourNode == null)
+                    if (tentativeGCost < neighbourNode.gCost)
                     {
-                        neighbourNode = new PathNode(neighbourPosition);
-                        openSet.Add(neighbourNode);
-                    }
+                        neighbourNode.parent = currentNode;
+                        neighbourNode.gCost = tentativeGCost;
+                        neighbourNode.hCost = CalculateDistanceCost(neighbourNode.position, endNode.position);
 
+                        openSet.Enqueue(neighbourNode, neighbourNode.FCost);
+                    }
+                }
+                else
+                {
+                    neighbourNode = new PathNode(neighbourPosition);
                     neighbourNode.parent = currentNode;
                     neighbourNode.gCost = tentativeGCost;
                     neighbourNode.hCost = CalculateDistanceCost(neighbourNode.position, endNode.position);
+                    openSet.Enqueue(neighbourNode, neighbourNode.FCost);
+                    openSetNodes[neighbourPosition] = neighbourNode;
                 }
             }
         }
