@@ -7,13 +7,20 @@ public class CharacterSelectionController : MonoBehaviour
     private Camera mainCamera;
     private Unit selectedUnit;
 
+    private IPlayerState currentState;
+
+    public NoSelectionState noSelectionState;
+
     private void Awake()
     {
         mainCamera = Camera.main;
+        noSelectionState = new NoSelectionState(this);
     }
     private void Start()
     {
         GameInput.Instance.OnClickAction += GameInput_OnClickAction;
+
+        ChangeState(noSelectionState);
     }
 
     private void OnDestroy()
@@ -24,61 +31,25 @@ public class CharacterSelectionController : MonoBehaviour
     private void GameInput_OnClickAction(Vector2 mousePosition)
     {
         Vector3 worldPoint = mainCamera.ScreenToWorldPoint(mousePosition);
-        Collider2D hit = Physics2D.OverlapPoint(worldPoint);
+        Vector3Int gridPosition = GridManager.Instance.WorldToGrid(worldPoint);
 
-        if (hit)
-        {
-            Vector3Int gridPosition = GridManager.Instance.WorldToGrid(worldPoint);
-
-            if (selectedUnit != null && selectedUnit.CanMoveTo(gridPosition))
-            {
-                selectedUnit.MoveTo(gridPosition);
-                ClearSelection();
-            }
-            else if (selectedUnit != null && !selectedUnit.CanMoveTo(gridPosition))
-            {
-                IGridObject clickedObject = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
-                if (clickedObject is Unit unit)
-                {
-                    SelectUnit(unit);
-                }
-                else
-                {
-                    ClearSelection();
-                }
-            }
-            else
-            {
-                IGridObject clickedObject = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
-                if (clickedObject is Unit unit)
-                {
-                    SelectUnit(unit);
-                }
-            }
-        }
-        else
-        {
-            ClearSelection();
-        }
+        currentState?.OnClick(gridPosition);
     }
-
-    private void SelectUnit(Unit unit)
+    public void ChangeState(IPlayerState state)
     {
-        if (selectedUnit != null)
-        {
-            ClearSelection();
-        }
+        currentState?.Exit();
+        currentState = state;
+        currentState?.Enter();
+    }
 
+    public void SelectUnit(Unit unit)
+    {
         selectedUnit = unit;
-        selectedUnit.Select();
-
-        GridVisualizer.Instance.ShowMovementRange(unit.GridPosition, unit.MovementRange, GridManager.Instance.IsValidPosition);
-
-        CharacterActionPanelUI.Instance.ShowAbilitiesForUnit(unit); 
+        ChangeState(new UnitSelectedState(this, unit));
     }
 
 
-    private void ClearSelection()
+    public void ClearSelection()
     {
         GridVisualizer.Instance.ClearHighlights();
         CharacterActionPanelUI.Instance.HideAbilityPanel();
