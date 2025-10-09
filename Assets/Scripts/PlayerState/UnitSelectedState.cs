@@ -4,7 +4,6 @@ public class UnitSelectedState : IPlayerState
 {
     private readonly CharacterSelectionController _controller;
     private readonly Unit _selectedUnit;
-    private bool isUnitMoving = false;
 
     public UnitSelectedState(CharacterSelectionController controller, Unit selectedUnit)
     {
@@ -41,5 +40,6 @@ public class UnitSelectedState : IPlayerState
         {
             _controller.ChangeState(_controller.noSelectionState);
         }
+
     }
 }

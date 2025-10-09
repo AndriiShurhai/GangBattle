@@ -7,11 +7,7 @@ public class Unit : MonoBehaviour, IMoveable
 {
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
-
-    [Header("Unit stats")]
-    [SerializeField] private int movementRange = 3;
-    [SerializeField] private float moveSpeed = 2f;
-    [SerializeField] private CharacterActionsSO actionsSO;
+    [SerializeField] private MovementComponent movementComponent;
 
     [Header("Abilites")]
     [SerializeField] private List<AbilityBaseSO> abilities = new List<AbilityBaseSO>();
@@ -20,8 +16,6 @@ public class Unit : MonoBehaviour, IMoveable
     [SerializeField] private SpriteRenderer spriteRenderer;
 
     private Vector3Int gridPosition;
-    private bool isMoving = false;
-    private Coroutine moveCoroutine;
     public List<AbilityBaseSO> Abilities {  get { return abilities; } }
     public int CurrentHealth { get { return healthComponent.CurrentHealth; } }
     public int MaxHealth { get { return healthComponent.MaxHealth; } }
@@ -38,9 +32,8 @@ public class Unit : MonoBehaviour, IMoveable
         get => true;
     }
 
-    public int MovementRange => movementRange;
-    public float MoveSpeed => moveSpeed;
-    public bool IsMoving => isMoving;
+    public int MovementRange => movementComponent.MovementRange;
+    public bool IsMoving => movementComponent.IsMoving;
 
     private void Awake()
     {
@@ -48,6 +41,12 @@ public class Unit : MonoBehaviour, IMoveable
         {
             healthComponent = GetComponent<HealthComponent>();
         }
+
+        if (movementComponent == null)
+        {
+            movementComponent = GetComponent<MovementComponent>();
+        }
+
         healthComponent.OnDeath += HandleDeath;
     }
 
@@ -73,72 +72,12 @@ public class Unit : MonoBehaviour, IMoveable
 
     public bool CanMoveTo(Vector3Int position)
     {
-        if (GridManager.Instance == null || PathFinder.Instance == null)
-        {
-            Debug.LogWarning("Required managers not available for movement validation.");
-            return false;
-        }
-
-        if (!GridManager.Instance.IsValidPosition(position))
-        {
-            return false;
-        }
-
-        return PathFinder.Instance.GetReachableTiles(gridPosition, movementRange, GridManager.Instance.IsValidPosition).Contains(position);
+        return movementComponent.CanMoveTo(position);
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
     {
-        if (isMoving || !CanMoveTo(targetPosition))
-        {
-            onComplete?.Invoke();
-            return;
-        }
-
-        var path = PathFinder.Instance.GetPath(gridPosition, targetPosition, GridManager.Instance.IsValidPosition);
-        if (path.Count == 0)
-        {
-            onComplete?.Invoke();
-            return;
-        }
-
-        moveCoroutine = StartCoroutine(MoveAlongPath(path, onComplete));
-    }
-
-    private IEnumerator MoveAlongPath(List<Vector3Int> path, Action onComplete = null)
-    {
-        isMoving = true;
-
-        Vector3Int oldPosition = gridPosition;
-
-        GridObjectRegistry.Instance.MoveUnit(this, oldPosition, path[path.Count - 1]);
-
-        for (int i = 1; i < path.Count; i++)
-        {
-            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(path[i]);
-            while (Vector3.Distance(transform.position, targetWorldPosition) > 0.01f)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, targetWorldPosition, moveSpeed * Time.deltaTime);
-                yield return null;
-            }
-
-            transform.position = targetWorldPosition;
-
-            CheckForTraps(path[i]);
-        }
-
-        isMoving = false;
-        onComplete?.Invoke();
-
-    }
-
-    private void CheckForTraps(Vector3Int position)
-    {
-        IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(position);
-        if (obj is Trap trap)
-        {
-            trap.TriggerTrap(this);
-        }
+        movementComponent.MoveTo(targetPosition, onComplete);
     }
     public void OnGridPositionChanged(Vector3Int newGridPosition)
     {
@@ -188,14 +127,4 @@ public class Unit : MonoBehaviour, IMoveable
 
         abilitySO.Execute(this, targetPosition);
     }
-
-    internal void Select()
-    {
-
-    }
-
-    //internal void Select()
-    //{
-    //    reachableTiles = PathFinder.Instance.GetReachableTiles(gridPosition, movementRange, GridManager.Instance.IsValidPosition);
-    //}
 }
