@@ -5,9 +5,10 @@ using UnityEngine;
 
 public class Unit : MonoBehaviour, IMoveable
 {
+    [Header("Components")]
+    [SerializeField] private HealthComponent healthComponent;
+
     [Header("Unit stats")]
-    [SerializeField] private int maxHealth = 100;
-    [SerializeField] private int currentHealth;
     [SerializeField] private int movementRange = 3;
     [SerializeField] private float moveSpeed = 2f;
     [SerializeField] private CharacterActionsSO actionsSO;
@@ -21,13 +22,11 @@ public class Unit : MonoBehaviour, IMoveable
     private Vector3Int gridPosition;
     private bool isMoving = false;
     private Coroutine moveCoroutine;
-
-    public event Action<int, int> OnHealthChanged; // current health, max health
-    public event Action OnDeath;
     public List<AbilityBaseSO> Abilities {  get { return abilities; } }
-    public int CurrentHealth { get { return currentHealth; } }
-    public int MaxHealth { get { return maxHealth; } }
-
+    public int CurrentHealth { get { return healthComponent.CurrentHealth; } }
+    public int MaxHealth { get { return healthComponent.MaxHealth; } }
+    public HealthComponent Health { get { return healthComponent; } }
+    
     public Vector3Int GridPosition
     {
         get => gridPosition;
@@ -42,14 +41,21 @@ public class Unit : MonoBehaviour, IMoveable
     public int MovementRange => movementRange;
     public float MoveSpeed => moveSpeed;
     public bool IsMoving => isMoving;
+
+    private void Awake()
+    {
+        if (healthComponent == null)
+        {
+            healthComponent = GetComponent<HealthComponent>();
+        }
+        healthComponent.OnDeath += HandleDeath;
+    }
+
     private void Start()
     {
-        currentHealth = maxHealth;
         gridPosition = GridManager.Instance.WorldToGrid(transform.position);
         GridObjectRegistry.Instance.RegisterUnit(this);
         transform.position = GridManager.Instance.GridToWorld(gridPosition);
-
-        Debug.Log(gridPosition);
     }
 
     private void OnDestroy()
@@ -57,6 +63,11 @@ public class Unit : MonoBehaviour, IMoveable
         if (GridObjectRegistry.Instance != null)
         {
             GridObjectRegistry.Instance.UnregisterUnit(this, gridPosition);
+        }
+
+        if (healthComponent != null)
+        {
+            healthComponent.OnDeath -= HandleDeath; 
         }
     }
 
@@ -136,32 +147,18 @@ public class Unit : MonoBehaviour, IMoveable
 
     public void TakeDamage(int damage, Unit attacker)
     {
-        currentHealth -= damage;
-        currentHealth = Mathf.Max(0, currentHealth);
-
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        healthComponent.TakeDamage(damage);
     }
 
     public void Heal(int amount)
     {
-        currentHealth += amount;
-        currentHealth = Mathf.Min(currentHealth, maxHealth);
-
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        healthComponent.Heal(amount);
     }
 
-    private void Die()
+    private void HandleDeath()
     {
-        Debug.Log("Unit has died");
-        OnDeath?.Invoke();
-
+        
         GridObjectRegistry.Instance.UnregisterUnit(this, gridPosition);
-
         Destroy(gameObject);
     }
 
