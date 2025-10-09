@@ -24,7 +24,6 @@ public class Unit : MonoBehaviour, IMoveable
 
     public event Action<int, int> OnHealthChanged; // current health, max health
     public event Action OnDeath;
-
     public List<AbilityBaseSO> Abilities {  get { return abilities; } }
     public int CurrentHealth { get { return currentHealth; } }
     public int MaxHealth { get { return maxHealth; } }
@@ -33,6 +32,11 @@ public class Unit : MonoBehaviour, IMoveable
     {
         get => gridPosition;
         set => gridPosition = value;
+    }
+
+    public bool BlocksMovement
+    {
+        get => true;
     }
 
     public int MovementRange => movementRange;
@@ -108,6 +112,8 @@ public class Unit : MonoBehaviour, IMoveable
             }
 
             transform.position = targetWorldPosition;
+
+            CheckForTraps(path[i]);
         }
 
         isMoving = false;
@@ -115,6 +121,14 @@ public class Unit : MonoBehaviour, IMoveable
 
     }
 
+    private void CheckForTraps(Vector3Int position)
+    {
+        IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(position);
+        if (obj is Trap trap)
+        {
+            trap.TriggerTrap(this);
+        }
+    }
     public void OnGridPositionChanged(Vector3Int newGridPosition)
     {
         Debug.Log($"Unit moved to a new position: {newGridPosition}");

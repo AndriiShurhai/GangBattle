@@ -16,6 +16,11 @@ public class CharacterSelectionController : MonoBehaviour
         GameInput.Instance.OnClickAction += GameInput_OnClickAction;
     }
 
+    private void OnDestroy()
+    {
+        GameInput.Instance.OnClickAction -= GameInput_OnClickAction;    
+    }
+
     private void GameInput_OnClickAction(Vector2 mousePosition)
     {
         Vector3 worldPoint = mainCamera.ScreenToWorldPoint(mousePosition);
@@ -28,17 +33,18 @@ public class CharacterSelectionController : MonoBehaviour
             if (selectedUnit != null && selectedUnit.CanMoveTo(gridPosition))
             {
                 selectedUnit.MoveTo(gridPosition);
-                GridVisualizer.Instance.ClearHighlights();
-                selectedUnit = null;
+                ClearSelection();
             }
             else if (selectedUnit != null && !selectedUnit.CanMoveTo(gridPosition))
             {
-                Debug.Log("Clearing highlights");
-                GridVisualizer.Instance.ClearHighlights();
                 IGridObject clickedObject = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
                 if (clickedObject is Unit unit)
                 {
                     SelectUnit(unit);
+                }
+                else
+                {
+                    ClearSelection();
                 }
             }
             else
@@ -52,17 +58,30 @@ public class CharacterSelectionController : MonoBehaviour
         }
         else
         {
-            GridVisualizer.Instance.ClearHighlights();
+            ClearSelection();
         }
     }
 
     private void SelectUnit(Unit unit)
     {
+        if (selectedUnit != null)
+        {
+            ClearSelection();
+        }
+
         selectedUnit = unit;
         selectedUnit.Select();
+
         GridVisualizer.Instance.ShowMovementRange(unit.GridPosition, unit.MovementRange, GridManager.Instance.IsValidPosition);
 
-        //CharacterActionPanelUI.Instance.SetCharacterActionsPanel(selectedUnit.ActionsSO);
+        CharacterActionPanelUI.Instance.ShowAbilitiesForUnit(unit); 
     }
 
+
+    private void ClearSelection()
+    {
+        GridVisualizer.Instance.ClearHighlights();
+        CharacterActionPanelUI.Instance.HideAbilityPanel();
+        selectedUnit = null;
+    }
 }

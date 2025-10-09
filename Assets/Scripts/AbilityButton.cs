@@ -45,6 +45,7 @@ public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, 
         if (ability == null || caster == null) return;
 
         Debug.Log("Start dragging");
+        GridVisualizer.Instance.HideHighlights();
 
         isDragging = true;
         originalPosition = rectTransform.position;
@@ -53,7 +54,7 @@ public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, 
         canvasGroup.alpha = 0.6f;
         canvasGroup.blocksRaycasts = false;
 
-
+        AbilityTargetingVisualizer.Instance.ShowAbilityRange(ability, caster);
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -65,7 +66,7 @@ public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, 
         Vector3 worldPoint = Camera.main.ScreenToWorldPoint(eventData.position);
         Vector3Int gridPosition = GridManager.Instance.WorldToGrid(worldPoint);
 
-
+        AbilityTargetingVisualizer.Instance.UpdateTargetPreview(gridPosition, ability, caster);
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -77,6 +78,8 @@ public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, 
         canvasGroup.blocksRaycasts = true;
 
         rectTransform.position = originalPosition;
+        //GridVisualizer.Instance.ShowHighlights();
+
 
         Vector3 worldPoint = Camera.main.ScreenToWorldPoint(eventData.position);
         Vector3Int targetPosition = GridManager.Instance.WorldToGrid(worldPoint);
@@ -89,6 +92,8 @@ public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, 
         {
             Debug.Log("Invalid target position for ability");
         }
+
+        AbilityTargetingVisualizer.Instance.HideAbilityRange();
 
     }
 }
