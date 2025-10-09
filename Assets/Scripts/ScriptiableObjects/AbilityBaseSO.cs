@@ -42,23 +42,23 @@ public abstract class AbilityBaseSO : ScriptableObject
         switch (rangeType)
         {
             case RangeType.Square:
-                tiles = GetSquareRange(casterPosition, range);
+                tiles = RangeFinder.GetSquareRange(casterPosition, range);
                 break;
 
             case RangeType.Diamond:
-                tiles = GetDiamonRange(casterPosition, range);
+                tiles = RangeFinder.GetDiamondRange(casterPosition, range);
                 break;
 
             case RangeType.Cross:
-                tiles = GetCrossRange(casterPosition, range);
+                tiles = RangeFinder.GetCrossRange(casterPosition, range);
                 break;
 
             case RangeType.Line:
-                tiles = GetLineRange(casterPosition, range);
+                tiles = RangeFinder.GetLineRange(casterPosition, range);
                 break;
 
             case RangeType.Circle:
-                tiles = GetCircleRange(casterPosition, range);
+                tiles = RangeFinder.GetCircleRange(casterPosition, range);
                 break;
         }
 
@@ -101,81 +101,5 @@ public abstract class AbilityBaseSO : ScriptableObject
     {
         // at the future might be cooldown checks or resources checks etc.
         return true;
-    }
-
-    private List<Vector3Int> GetSquareRange(Vector3Int center, int range)
-    {
-        List<Vector3Int> tiles = new List<Vector3Int>();
-
-        for (int x = -range; x <= range; x++)
-        {
-            for (int y = -range; y <= range; y++)
-            {
-                tiles.Add(center + new Vector3Int(x, y, 0));
-            }
-        }
-
-        return tiles;
-    }
-
-    private List<Vector3Int> GetDiamonRange(Vector3Int center, int range)
-    {
-        List<Vector3Int> tiles = new List<Vector3Int>();
-
-        for (int x = -range; x <= range; x++)
-        {
-            for (int y = -range;y <= range; y++)
-            {
-                if (Mathf.Abs(x) + Mathf.Abs(y) <= range)
-                {
-                    tiles.Add(center + new Vector3Int(x, y, 0));
-                }
-            }
-        }
-
-        return tiles;
-    }
-
-    private List<Vector3Int> GetCrossRange(Vector3Int center, int range)
-    {
-        List<Vector3Int> tiles = new List<Vector3Int>();
-
-        for (int x = - range; x <= range; x++)
-        {
-            tiles.Add(center + new Vector3Int(x, 0, 0));
-        }
-
-        for (int y = - range; y <= range; y++)
-        {
-            tiles.Add(center + new Vector3Int(0, y, 0));
-        }
-
-        return tiles;
-    }
-
-    private List<Vector3Int> GetLineRange(Vector3Int center, int range)
-    {
-        return GetCrossRange(center, range);
-    }
-
-    private List<Vector3Int> GetCircleRange(Vector3Int center, int range)
-    {
-        List<Vector3Int> tiles = new List<Vector3Int>();
-        float rangeSqr = range * range;
-
-        for (int x = -range; x <= range; x++)
-        {
-            for (int y = -range; y <= range; y++)
-            {
-                float distSqr = x * x + y * y;  
-                if (distSqr <= rangeSqr)
-                {
-                    tiles.Add(center + new Vector3Int(x, y, 0));
-                }
-            }
-        }
-
-
-        return tiles;
     }
 }
