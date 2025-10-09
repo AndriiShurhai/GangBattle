@@ -9,6 +9,7 @@ public class GridVisualizer : MonoBehaviour
     [SerializeField] private GameObject movementHighlightPrefab;
     [SerializeField] private Color validMoveColor = Color.green;
     [SerializeField] private Color invalidMoveColor = Color.red;
+    [SerializeField] private Transform highlightsContainer;
 
     private List<GameObject> highlightObjects = new List<GameObject>();
 
@@ -46,12 +47,28 @@ public class GridVisualizer : MonoBehaviour
         highlightObjects.Clear();
     }
 
+    public void HideHighlights()
+    {
+        foreach (GameObject highlight in highlightObjects)
+        {
+            if (highlight != null) highlight.SetActive(false);   
+        }
+    }
+
+    public void ShowHighlights()
+    {
+        foreach (GameObject highlight in highlightObjects)
+        {
+            if (highlight != null) highlight.SetActive(true);
+        }
+    }
+
     public void CreateHighlight(Vector3Int gridPosition, Color color)
     {
         if (movementHighlightPrefab == null) return;
 
         Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
-        GameObject highlight = Instantiate(movementHighlightPrefab, worldPosition, Quaternion.identity);
+        GameObject highlight = Instantiate(movementHighlightPrefab, worldPosition, Quaternion.identity, highlightsContainer);
 
         var renderer = highlight.GetComponent<SpriteRenderer>();
         if (renderer != null) renderer.color = color;

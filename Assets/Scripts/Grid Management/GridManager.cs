@@ -51,7 +51,10 @@ public class GridManager : MonoBehaviour
     }
     public bool IsValidPosition(Vector3Int gridPosition)
     {
-        return IsWalkable(gridPosition) && !GridObjectRegistry.Instance.IsOccupied(gridPosition);
+        if (!IsWalkable(gridPosition)) return false;
+
+        IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
+        return obj == null || !obj.BlocksMovement; 
     }
 
     #endregion

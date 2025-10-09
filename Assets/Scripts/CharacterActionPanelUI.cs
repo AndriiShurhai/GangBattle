@@ -1,13 +1,15 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-
 public class CharacterActionPanelUI : MonoBehaviour
 {
     public static CharacterActionPanelUI Instance { get; private set; }
 
-    [SerializeField] private Button buttonTemplate;
-    [SerializeField] private GameObject actionButtonsContainer;
+    [SerializeField] private GameObject abilityButtonPrefab;
+    [SerializeField] private Transform actionButtonsContainer;
+
+    private List<GameObject> activeButtons = new List<GameObject>();
+    private Unit currentUnit;
 
     private void Awake()
     {
@@ -21,33 +23,47 @@ public class CharacterActionPanelUI : MonoBehaviour
             return;
         }
     }
-    public void SetCharacterActionsPanel(CharacterActionsSO characterActions)
-    {
-        ResetCharacterActionsPanel();
 
-        for (int i = 0; i < characterActions.characterAbilities.Length; i++)
+    public void ShowAbilitiesForUnit(Unit unit)
+    {
+        ClearAbilityButtons();
+        currentUnit = unit;
+
+        if (unit == null || unit.Abilities.Count == 0) return;
+
+        foreach (AbilityBaseSO ability in unit.Abilities)
         {
-            int index = i;
-            Button button = Instantiate(buttonTemplate, actionButtonsContainer.transform);
-            button.GetComponent<Image>().sprite = characterActions.characterAbilities[i];
-            button.onClick.AddListener(() => OnActionButtonClicked(index));
-            button.gameObject.SetActive(true);
+            CreateAbilityButton(ability, unit);
         }
     }
 
-
-    public void ResetCharacterActionsPanel()
+    public void HideAbilityPanel()
     {
-        foreach (Transform child in actionButtonsContainer.transform)
-        {
-            if (child != buttonTemplate.transform) 
-            {
-                Destroy(child.gameObject);
-            }
-        }
+        ClearAbilityButtons();
+        currentUnit = null;
     }
-    private void OnActionButtonClicked(int actionIndex)
+
+    private void CreateAbilityButton(AbilityBaseSO ability, Unit caster)
     {
-        Debug.Log($"Action {actionIndex} clicked");
+        GameObject buttonObj = Instantiate(abilityButtonPrefab, actionButtonsContainer);
+
+        AbilityButton abilityButton = buttonObj.GetComponent<AbilityButton>();
+
+        if (abilityButton != null)
+        {
+            abilityButton.Setup(ability, caster);
+        }
+
+        buttonObj.SetActive(true);
+        activeButtons.Add(buttonObj);
+    }
+
+    private void ClearAbilityButtons()
+    {
+        foreach (GameObject button in activeButtons)
+        {
+            if (button != null) Destroy(button);
+        }
+        activeButtons.Clear();
     }
 }
