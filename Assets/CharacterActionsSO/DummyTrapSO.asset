@@ -21,6 +21,7 @@ MonoBehaviour:
   targetType: 3
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 1}
   abilityEffectPrefab: {fileID: 0}
+  trapPrefab: {fileID: 3806955268432990606, guid: f8895feb428142a42befcc79f43e3862,
+    type: 3}
   trapDamage: 15
   duration: 3
-  trapVisualPrefab: {fileID: 0}

@@ -61,7 +61,7 @@ public class MovementComponent : MonoBehaviour
         isMoving = true;
 
         Vector3Int oldPosition = moveableObject.GridPosition;
-        GridObjectRegistry.Instance.MoveUnit(moveableObject, oldPosition, path[path.Count - 1]);
+        GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
 
         for (int i = 1; i < path.Count; i++)
         {

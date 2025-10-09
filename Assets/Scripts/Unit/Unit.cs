@@ -53,7 +53,7 @@ public class Unit : MonoBehaviour, IMoveable
     private void Start()
     {
         gridPosition = GridManager.Instance.WorldToGrid(transform.position);
-        GridObjectRegistry.Instance.RegisterUnit(this);
+        GridObjectRegistry.Instance.RegisterObject(this);
         transform.position = GridManager.Instance.GridToWorld(gridPosition);
     }
 
@@ -61,7 +61,7 @@ public class Unit : MonoBehaviour, IMoveable
     {
         if (GridObjectRegistry.Instance != null)
         {
-            GridObjectRegistry.Instance.UnregisterUnit(this, gridPosition);
+            GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
         }
 
         if (healthComponent != null)
@@ -97,7 +97,7 @@ public class Unit : MonoBehaviour, IMoveable
     private void HandleDeath()
     {
         
-        GridObjectRegistry.Instance.UnregisterUnit(this, gridPosition);
+        GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
         Destroy(gameObject);
     }
 

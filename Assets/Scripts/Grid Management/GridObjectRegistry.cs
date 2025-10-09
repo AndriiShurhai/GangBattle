@@ -19,31 +19,31 @@ public class GridObjectRegistry : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    public void RegisterUnit(IGridObject unit)
+    public void RegisterObject(IGridObject obj)
     {
-        if (IsOccupied(unit.GridPosition))
+        if (IsOccupied(obj.GridPosition))
         {
-            Debug.LogWarning($"Trying to register unit at occupied position: {unit.GridPosition}");
+            Debug.LogWarning($"Trying to register unit at occupied position: {obj.GridPosition}");
             return;
         }
 
-        occupiedTiles[unit.GridPosition] = unit;
+        occupiedTiles[obj.GridPosition] = obj;
     }
 
-    public void UnregisterUnit(IGridObject unit, Vector3Int position)
+    public void UnregisterObject(IGridObject obj, Vector3Int position)
     {
-        if (occupiedTiles.ContainsKey(position) && occupiedTiles[position] == unit)
+        if (occupiedTiles.ContainsKey(position) && occupiedTiles[position] == obj)
         {
             occupiedTiles.Remove(position);
         }
     }
 
-    public void MoveUnit(IGridObject unit, Vector3Int fromPosition, Vector3Int toPosition)
+    public void MoveObject(IGridObject obj, Vector3Int fromPosition, Vector3Int toPosition)
     {
-        UnregisterUnit(unit, fromPosition);
-        unit.GridPosition = toPosition;
-        RegisterUnit(unit);
-        unit.OnGridPositionChanged(toPosition);
+        UnregisterObject(obj, fromPosition);
+        obj.GridPosition = toPosition;
+        RegisterObject(obj);
+        obj.OnGridPositionChanged(toPosition);
     }
 
     public IGridObject GetObjectAt(Vector3Int gridPosition)
