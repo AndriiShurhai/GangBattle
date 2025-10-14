@@ -14,6 +14,8 @@ public class Unit : MonoBehaviour, IMoveable
 
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private GameObject healthBarPrefab;
+    [SerializeField] private Transform healthBarAttachPoint;
 
     private Vector3Int gridPosition;
     public List<AbilityBaseSO> Abilities {  get { return abilities; } }
@@ -55,6 +57,12 @@ public class Unit : MonoBehaviour, IMoveable
         gridPosition = GridManager.Instance.WorldToGrid(transform.position);
         GridObjectRegistry.Instance.RegisterObject(this);
         transform.position = GridManager.Instance.GridToWorld(gridPosition);
+
+        if(healthBarPrefab != null && healthBarAttachPoint != null)
+        {
+            GameObject healthBarInstance = Instantiate(healthBarPrefab, healthBarAttachPoint.position, Quaternion.identity, healthBarAttachPoint);
+            healthBarInstance.GetComponent<UnitHealthUI>().Initialize(healthComponent);
+        }
     }
 
     private void OnDestroy()
