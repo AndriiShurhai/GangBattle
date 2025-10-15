@@ -3,11 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+public enum Faction
+{
+    Player, 
+    Enemy
+}
 public class Unit : MonoBehaviour, IMoveable
 {
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
     [SerializeField] private MovementComponent movementComponent;
+
+    [Header("Unit Settings")]
+    [SerializeField] private Faction faction;
 
     [Header("Abilites")]
     [SerializeField] private List<AbilityBaseSO> abilities = new List<AbilityBaseSO>();
@@ -36,6 +45,9 @@ public class Unit : MonoBehaviour, IMoveable
 
     public int MovementRange => movementComponent.MovementRange;
     public bool IsMoving => movementComponent.IsMoving;
+
+    public bool HasTakenActionThisTurn { get; set; }
+    public Faction UnitFaction { get => faction; }
 
     private void Awake()
     {
