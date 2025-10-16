@@ -6,6 +6,8 @@ public class TurnManager : MonoBehaviour
 {
     public static TurnManager Instance { get; private set; }
 
+    [SerializeField] private CharacterSelectionController characterSelectionController;
+
     public enum TurnState { PlayerTurn, EnemyTurn }
     private TurnState currentState;
 
@@ -47,6 +49,12 @@ public class TurnManager : MonoBehaviour
         currentState = TurnState.PlayerTurn;
         Debug.Log("--- PLAYER TURN START ---");
 
+        if (characterSelectionController != null)
+        {
+            Debug.Log("enabling character selection controller");
+            characterSelectionController.gameObject.SetActive(true);
+        }
+
         foreach (Unit unit in playerUnits)
         {
             unit.HasTakenActionThisTurn = false;
@@ -57,6 +65,12 @@ public class TurnManager : MonoBehaviour
     {
         currentState = TurnState.EnemyTurn;
         Debug.Log("--- ENEMY TURN START ---");
+
+        if (characterSelectionController != null)
+        {
+            Debug.Log("Disabling character selection controller");
+            characterSelectionController.gameObject.SetActive(false);
+        }
 
         foreach (Unit unit in enemyUnits)
         {
@@ -82,7 +96,7 @@ public class TurnManager : MonoBehaviour
         foreach (Unit enemyUnit in enemyUnits)
         {
             Debug.Log($"{enemyUnit.name} is thinking...");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(3f);
             enemyUnit.HasTakenActionThisTurn = true;
         }
 
