@@ -14,8 +14,18 @@ public class UnitSelectedState : IPlayerState
     {
         Debug.Log($"Entering unit selected state for {_selectedUnit.name}");
 
-        GridVisualizer.Instance.ShowMovementRange(_selectedUnit.GridPosition, _selectedUnit.MovementRange, GridManager.Instance.IsValidPosition);
-        CharacterActionPanelUI.Instance.ShowAbilitiesForUnit(_selectedUnit);
+        if (_selectedUnit.UnitFaction == Faction.Player)
+        {
+            GridVisualizer.Instance.ShowMovementRange(_selectedUnit.GridPosition, _selectedUnit.MovementRange, GridManager.Instance.IsValidPosition);
+            CharacterActionPanelUI.Instance.ShowAbilitiesForUnit(_selectedUnit);
+        }
+        else
+        {
+            Debug.Log("Enemy has been selected");
+            GridVisualizer.Instance.ClearHighlights();
+            CharacterActionPanelUI.Instance.HideAbilityPanel();
+        }
+
     }
 
     public void Exit()
@@ -25,7 +35,7 @@ public class UnitSelectedState : IPlayerState
 
     public void OnClick(Vector3Int gridPosition)
     {
-        if (_selectedUnit.CanMoveTo(gridPosition))
+        if (_selectedUnit.CanMoveTo(gridPosition) && _selectedUnit.UnitFaction == Faction.Player)
         {
             _selectedUnit.MoveTo(gridPosition);
             _controller.ChangeState(_controller.noSelectionState);
