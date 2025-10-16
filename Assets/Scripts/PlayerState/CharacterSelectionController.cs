@@ -18,18 +18,19 @@ public class CharacterSelectionController : MonoBehaviour
     }
     private void Start()
     {
-        GameInput.Instance.OnClickAction += GameInput_OnClickAction;
-
         ChangeState(noSelectionState);
     }
-
-    private void OnDestroy()
+    private void OnEnable()
     {
-        GameInput.Instance.OnClickAction -= GameInput_OnClickAction;    
+        GameInput.Instance.OnClickAction += GameInput_OnClickAction;
     }
-
+    private void OnDisable()
+    {
+        GameInput.Instance.OnClickAction -= GameInput_OnClickAction;
+    }
     private void GameInput_OnClickAction(Vector2 mousePosition)
     {
+        Debug.Log("Clicked action");
         Vector3 worldPoint = mainCamera.ScreenToWorldPoint(mousePosition);
         Vector3Int gridPosition = GridManager.Instance.WorldToGrid(worldPoint);
 
