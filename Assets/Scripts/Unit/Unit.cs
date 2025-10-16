@@ -18,6 +18,9 @@ public class Unit : MonoBehaviour, IMoveable
     [Header("Unit Settings")]
     [SerializeField] private Faction faction;
 
+    [Header("Class Defenition")]
+    [SerializeField] private CharacterClassSO characterClassSO;
+
     [Header("Abilites")]
     [SerializeField] private List<AbilityBaseSO> abilities = new List<AbilityBaseSO>();
 
@@ -27,7 +30,7 @@ public class Unit : MonoBehaviour, IMoveable
     [SerializeField] private Transform healthBarAttachPoint;
 
     private Vector3Int gridPosition;
-    public List<AbilityBaseSO> Abilities {  get { return abilities; } }
+    public List<AbilityBaseSO> Abilities {  get { return characterClassSO.abilities; } }
     public int CurrentHealth { get { return healthComponent.CurrentHealth; } }
     public int MaxHealth { get { return healthComponent.MaxHealth; } }
     public HealthComponent Health { get { return healthComponent; } }
@@ -62,6 +65,16 @@ public class Unit : MonoBehaviour, IMoveable
         }
 
         healthComponent.OnDeath += HandleDeath;
+
+        InitializeFromClass();
+    }
+
+    private void InitializeFromClass()
+    {
+        if (characterClassSO == null) return;
+
+        healthComponent.Initialize(characterClassSO);
+        movementComponent.Initialize(characterClassSO);
     }
 
     private void Start()

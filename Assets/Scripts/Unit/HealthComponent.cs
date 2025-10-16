@@ -12,11 +12,11 @@ public class HealthComponent : MonoBehaviour
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
 
-    private void Awake()
+    public void Initialize(CharacterClassSO characterClassSO)
     {
+        maxHealth = characterClassSO.maxHealth;
         currentHealth = maxHealth;
     }
-
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;

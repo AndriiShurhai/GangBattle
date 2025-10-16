@@ -17,8 +17,8 @@ MonoBehaviour:
   abilityDescription: Heals user by 20 hp.
   range: 10
   rangeType: 0
-  targetType: 2
+  targetType: 1
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   abilityEffectPrefab: {fileID: 0}
   healAmount: 20
-  canHealSelf: 1
+  canHealSelf: 0

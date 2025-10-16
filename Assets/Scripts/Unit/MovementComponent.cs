@@ -21,6 +21,11 @@ public class MovementComponent : MonoBehaviour
         moveableObject = GetComponent<IMoveable>();
     }
 
+    public void Initialize(CharacterClassSO characterClassSO)
+    {
+        movementRange = characterClassSO.movementRange; 
+    }
+
     public bool CanMoveTo(Vector3Int gridPosition)
     {
         if (GridManager.Instance == null || PathFinder.Instance == null)
@@ -74,13 +79,14 @@ public class MovementComponent : MonoBehaviour
             }
 
             transform.position = targetWorldPosition;
-            CheckForTraps(path[i]);
+            bool isTrapHere = CheckForTraps(path[i]);
         }
+
         isMoving = false;
         onComplete?.Invoke();
     }
 
-    private void CheckForTraps(Vector3Int gridPosition)
+    private bool CheckForTraps(Vector3Int gridPosition)
     {
         IGridObject gridObject = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
 
@@ -89,7 +95,10 @@ public class MovementComponent : MonoBehaviour
             if (moveableObject is Unit unit)
             {
                 trap.TriggerTrap(unit);
+                return true;
             }
         }
+
+        return false;
     }
 }
