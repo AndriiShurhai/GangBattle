@@ -17,4 +17,5 @@ MonoBehaviour:
   classIcon: {fileID: 0}
   maxHealth: 100
   movementRange: 2
-  abilities: []
+  abilities:
+  - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
