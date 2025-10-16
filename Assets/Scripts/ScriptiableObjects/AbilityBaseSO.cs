@@ -77,10 +77,10 @@ public abstract class AbilityBaseSO : ScriptableObject
         switch (targetType)
         {
             case TargetType.Enemy:
-                return targetObject is Unit unit && unit != caster;
+                return targetObject is Unit enemy && enemy.UnitFaction != caster.UnitFaction;
 
             case TargetType.Ally:
-                return targetObject is Unit;
+                return targetObject is Unit ally && ally.UnitFaction == caster.UnitFaction;
 
             case TargetType.Self:
                 return targetPosition == casterPosition;

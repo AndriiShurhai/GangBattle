@@ -45,7 +45,12 @@ public class HealAbilitySO : AbilityBaseSO
         if (targetUnit.CurrentHealth <= 0)
             return false;
 
+
         // TODO: Add team check - only heal allies
+        if (targetType == TargetType.Ally && targetUnit.UnitFaction != caster.UnitFaction)
+        {
+            return false;
+        }
 
         return true;
     }
