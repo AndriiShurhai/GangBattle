@@ -80,6 +80,11 @@ public class MovementComponent : MonoBehaviour
 
             transform.position = targetWorldPosition;
             bool isTrapHere = CheckForTraps(path[i]);
+            if (isTrapHere && i == path.Count - 1)
+            {
+                // reregistriring object after the trap was destroyed
+                GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
+            }
         }
 
         isMoving = false;
