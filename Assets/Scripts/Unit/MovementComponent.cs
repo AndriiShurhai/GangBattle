@@ -79,14 +79,15 @@ public class MovementComponent : MonoBehaviour
             }
 
             transform.position = targetWorldPosition;
-            bool isTrapHere = CheckForTraps(path[i]);
-            if (isTrapHere && i == path.Count - 1)
+            //bool isTrapHere = CheckForTraps(path[i]);
+
+            if (moveableObject is Unit unit)
             {
-                // re-registriring object after the trap was destroyed
-                GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
+                Unit.InvokeUnitEnteredTile(unit, path[i]);
             }
         }
 
+        GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
         isMoving = false;
         onComplete?.Invoke();
     }

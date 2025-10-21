@@ -11,6 +11,8 @@ public enum Faction
 }
 public class Unit : MonoBehaviour, IMoveable
 {
+    public static event Action<Unit, Vector3Int> OnUnitEnteredTile;
+
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
     [SerializeField] private MovementComponent movementComponent;
@@ -159,5 +161,10 @@ public class Unit : MonoBehaviour, IMoveable
         }
 
         abilitySO.Execute(this, targetPosition);
+    }
+
+    public static void InvokeUnitEnteredTile(Unit unit, Vector3Int tilePosition)
+    {
+        OnUnitEnteredTile?.Invoke(unit, tilePosition);
     }
 }

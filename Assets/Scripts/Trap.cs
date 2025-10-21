@@ -9,6 +9,23 @@ public class Trap : MonoBehaviour, IGridObject
     public Vector3Int GridPosition { get => gridPosition; set => gridPosition = value; }
     public bool BlocksMovement { get => false; }
 
+    public void OnEnable()
+    {
+        Unit.OnUnitEnteredTile += Unit_OnUnitEnteredTile;
+    }
+
+    public void OnDisable()
+    {
+        Unit.OnUnitEnteredTile -= Unit_OnUnitEnteredTile;
+    }
+    private void Unit_OnUnitEnteredTile(Unit unit, Vector3Int tilePosition)
+    {
+        if (tilePosition == this.GridPosition)
+        {
+            TriggerTrap(unit);
+        }
+    }
+
     public void Initialize(Vector3Int position, int trapDamage, int duration)
     {
         gridPosition = position;    
