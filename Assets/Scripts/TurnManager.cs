@@ -41,7 +41,7 @@ public class TurnManager : MonoBehaviour
             }
         }
 
-        StartEnemyTurn();
+        StartPlayerTurn();
     }
 
     public void StartPlayerTurn()
