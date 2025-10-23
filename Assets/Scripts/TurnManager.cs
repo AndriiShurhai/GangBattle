@@ -130,7 +130,7 @@ public class TurnManager : MonoBehaviour
     {
         foreach (Unit enemyUnit in enemyUnits)
         {
-            Debug.Log($"{enemyUnit.name} is thinking...");
+            enemyUnit.GetComponent<AIBrain>()?.TakeTurn();
             yield return new WaitForSeconds(3f);
             enemyUnit.HasTakenActionThisTurn = true;
         }
