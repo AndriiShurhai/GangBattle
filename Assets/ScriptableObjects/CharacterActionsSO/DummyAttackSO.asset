@@ -15,10 +15,10 @@ MonoBehaviour:
   abilityName: Dummy attack
   abilityIcon: {fileID: 21300104, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
   abilityDescription: Attack unit and gives damage
-  range: 3
+  range: 20
   rangeType: 0
   targetType: 0
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   abilityEffectPrefab: {fileID: 0}
-  damage: 10
+  damage: 100
   canAttackDiagonally: 1

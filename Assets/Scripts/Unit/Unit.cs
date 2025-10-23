@@ -13,6 +13,8 @@ public class Unit : MonoBehaviour, IMoveable
 {
     public static event Action<Unit, Vector3Int> OnUnitEnteredTile;
 
+    public event Action<Unit> OnUnitDied;
+
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
     [SerializeField] private MovementComponent movementComponent;
@@ -133,6 +135,7 @@ public class Unit : MonoBehaviour, IMoveable
     {
         
         GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
+        OnUnitDied?.Invoke(this);
         Destroy(gameObject);
     }
 

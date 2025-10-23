@@ -14,6 +14,8 @@ public class TurnManager : MonoBehaviour
     private List<Unit> playerUnits = new List<Unit>();
     private List<Unit> enemyUnits = new List<Unit>();
 
+    private bool isGameOver;
+
     private void Awake()
     {
         if (Instance == null)
@@ -39,9 +41,42 @@ public class TurnManager : MonoBehaviour
             {
                 enemyUnits.Add(unit);
             }
+
+            unit.OnUnitDied += Unit_OnUnitDied;
         }
 
         StartPlayerTurn();
+    }
+
+    private void Unit_OnUnitDied(Unit unit)
+    {
+        if (isGameOver) return;
+
+        if (playerUnits.Contains(unit))
+        {
+            playerUnits.Remove(unit);  
+            unit.OnUnitDied -= Unit_OnUnitDied;
+            
+            if (playerUnits.Count == 0)
+            {
+                Debug.Log("enemies win");
+                isGameOver = true;
+                EndGame();
+            }
+        }
+
+        else if(enemyUnits.Contains(unit))
+        {
+            enemyUnits.Remove(unit);
+            unit.OnUnitDied -= Unit_OnUnitDied;
+
+            if (enemyUnits.Count == 0)
+            {
+                Debug.Log("player wins");
+                isGameOver = true;
+                EndGame();
+            }
+        }
     }
 
     public void StartPlayerTurn()
@@ -103,5 +138,16 @@ public class TurnManager : MonoBehaviour
         Debug.Log("--- ENEMY TURN END ---");
 
         EndTurn();
+    }
+
+    private void EndGame()
+    {
+        StopAllCoroutines();
+
+        characterSelectionController.ClearSelection();
+
+        characterSelectionController.gameObject.SetActive(false);
+
+        // show a victory or defeat screen or something
     }
 }
