@@ -79,7 +79,6 @@ public class MovementComponent : MonoBehaviour
             }
 
             transform.position = targetWorldPosition;
-            //bool isTrapHere = CheckForTraps(path[i]);
 
             if (moveableObject is Unit unit)
             {
@@ -87,24 +86,8 @@ public class MovementComponent : MonoBehaviour
             }
         }
 
-        GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
+        //GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
         isMoving = false;
         onComplete?.Invoke();
-    }
-
-    private bool CheckForTraps(Vector3Int gridPosition)
-    {
-        IGridObject gridObject = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
-
-        if (gridObject is Trap trap)
-        {
-            if (moveableObject is Unit unit)
-            {
-                trap.TriggerTrap(unit);
-                return true;
-            }
-        }
-
-        return false;
     }
 }

@@ -32,7 +32,7 @@ public class Trap : MonoBehaviour, IGridObject
         damage = trapDamage;
         remainingDuration = duration;
 
-        GridObjectRegistry.Instance.RegisterObject(this);
+        //GridObjectRegistry.Instance.RegisterObject(this);
 
         Debug.Log($"Trap placed at position {position} with damage {damage} for {duration} turns");
     }

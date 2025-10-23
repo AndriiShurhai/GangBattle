@@ -11,6 +11,8 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Tilemap walkableTilemap;
     [SerializeField] private Tilemap blockedTilemap;
 
+    public Tilemap WalkableTilemap => walkableTilemap;
+    public Tilemap BlockedTilemap => blockedTilemap;
 
     private void Awake()
     {
