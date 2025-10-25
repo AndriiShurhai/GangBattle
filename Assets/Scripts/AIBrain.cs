@@ -17,18 +17,26 @@ public class AIBrain : MonoBehaviour
     {
         if (aiActions == null || aiActions.Count == 0) return;
 
-        AIActionSO bestAction = aiActions
-            .OrderByDescending(action => action.GetScoreAction(aiUnit).score)
+        List<AIScoreData> allScoreData = new List<AIScoreData>();   
+        foreach(AIActionSO action in aiActions)
+        {
+            AIScoreData scoreData = action.GetScoreAction(aiUnit);
+            scoreData.action = action;
+            allScoreData.Add(scoreData);
+        }
+
+        AIScoreData bestScoreData = allScoreData
+            .OrderByDescending(data => data.score)
             .FirstOrDefault();
 
-        if (bestAction != null)
+        if (bestScoreData.action != null && bestScoreData.score >= 0)
         {
-            bestAction.Execute(aiUnit, bestAction.GetScoreAction(aiUnit).target);
+            bestScoreData.action.Execute(aiUnit, bestScoreData.target);
         }
 
         else
         {
-            Debug.Log("Best action is equal to null");
+            Debug.Log($"{aiUnit.name} has no valid actions to take");
         }
     }
 }

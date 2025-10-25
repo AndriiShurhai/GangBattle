@@ -5,6 +5,7 @@ public struct AIScoreData
 {
     public float score;
     public object target;
+    public AIActionSO action;
 }
 public abstract class AIActionSO : ScriptableObject
 {
