@@ -128,11 +128,17 @@ public class TurnManager : MonoBehaviour
 
     private IEnumerator EnemyTurnRoutine()
     {
-        foreach (Unit enemyUnit in enemyUnits)
+        List<Unit> enemiesToTakeTurn = new List<Unit>(enemyUnits);
+
+        foreach (Unit enemyUnit in enemiesToTakeTurn)
         {
-            enemyUnit.GetComponent<AIBrain>()?.TakeTurn();
-            yield return new WaitForSeconds(3f);
-            enemyUnit.HasTakenActionThisTurn = true;
+            if (enemyUnits.Contains(enemyUnit)) 
+            {
+                enemyUnit.GetComponent<AIBrain>()?.TakeTurn();
+                yield return new WaitForSeconds(3f);
+
+                if (enemyUnit != null) enemyUnit.HasTakenActionThisTurn = true;
+            }
         }
 
         Debug.Log("--- ENEMY TURN END ---");
