@@ -44,7 +44,7 @@ public class Trap : MonoBehaviour, IGridObject
 
     public void TriggerTrap(Unit steppingUnit)
     {
-        Debug.Log($"{steppingUnit} stepped on a trap");
+        Debug.Log($"{steppingUnit} stepped on a trap, {damage}");
 
         steppingUnit.TakeDamage(damage, null);
 
@@ -63,9 +63,7 @@ public class Trap : MonoBehaviour, IGridObject
 
     private void DestroyTrap()
     {
-        GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
-
-
+        //GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
         Destroy(gameObject);
     }
     public void OnGridPositionChanged(Vector3Int newGridPosition)

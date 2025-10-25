@@ -86,7 +86,6 @@ public class MovementComponent : MonoBehaviour
             }
         }
 
-        //GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
         isMoving = false;
         onComplete?.Invoke();
     }
