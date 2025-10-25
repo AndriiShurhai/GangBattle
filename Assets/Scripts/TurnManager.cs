@@ -150,4 +150,15 @@ public class TurnManager : MonoBehaviour
 
         // show a victory or defeat screen or something
     }
+
+
+    public List<Unit> GetPlayerUnits()
+    {
+        return playerUnits;
+    }
+
+    public List<Unit> GetEnemyUnits()
+    {
+        return enemyUnits;
+    }
 }

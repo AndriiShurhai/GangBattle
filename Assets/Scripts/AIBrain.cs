@@ -18,12 +18,12 @@ public class AIBrain : MonoBehaviour
         if (aiActions == null || aiActions.Count == 0) return;
 
         AIActionSO bestAction = aiActions
-            .OrderByDescending(action => action.GetScoreAction(aiUnit))
+            .OrderByDescending(action => action.GetScoreAction(aiUnit).score)
             .FirstOrDefault();
 
         if (bestAction != null)
         {
-            bestAction.Execute(aiUnit);
+            bestAction.Execute(aiUnit, bestAction.GetScoreAction(aiUnit).target);
         }
 
         else

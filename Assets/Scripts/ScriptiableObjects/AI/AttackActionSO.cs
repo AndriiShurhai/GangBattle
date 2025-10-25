@@ -1,36 +1,62 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 [CreateAssetMenu(fileName = "AttackActionSO", menuName = "AI/Actions/Attack Action")]
 public class AttackActionSO : AIActionSO
 {
     [SerializeField] private AbilityBaseSO attackAbility;
 
-    public override float GetScoreAction(Unit aiUnit)
+    public override AIScoreData GetScoreAction(Unit aiUnit)
     {
-        Unit target = FindNearestPlayerUnit(aiUnit);
+        AIScoreData scoreData = new AIScoreData() { score = 0f, target = null }; 
 
-        if (target == null) return 0f;
+        List<Unit> targetsInRange = FindPlayerUnitsInRange(aiUnit);
+        if (targetsInRange.Count == 0) return scoreData;
 
-        if (attackAbility.IsValidTarget(aiUnit.GridPosition, target.GridPosition, aiUnit))
+        Unit bestTarget = targetsInRange[0];
+        foreach (Unit targetUnit in targetsInRange)
         {
-            return 100 - (target.CurrentHealth / target.MaxHealth) * 100f;
+            if (targetUnit.CurrentHealth <= bestTarget.CurrentHealth)
+            {
+                bestTarget = targetUnit;    
+            }
         }
 
-        return 0f;
-    }
-
-    public override void Execute(Unit aiUnit)
-    {
-        Unit targetUnit = FindNearestPlayerUnit(aiUnit);
-
-        if (targetUnit != null)
+        if (attackAbility.IsValidTarget(aiUnit.GridPosition, bestTarget.GridPosition, aiUnit))
         {
-            attackAbility.Execute(aiUnit, targetUnit.GridPosition);
+            float healthPercentage = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
+            scoreData.score = 100f + (1f - healthPercentage) * 100f;
+            scoreData.target = bestTarget;
         }
+
+        return scoreData;
     }
 
-    private Unit FindNearestPlayerUnit(Unit aiUnit)
+    public override void Execute(Unit aiUnit, object target)
     {
-        return null;
+        Unit targetUnit = target as Unit;
+
+        if (targetUnit == null) return;
+
+        attackAbility.Execute(aiUnit, targetUnit.GridPosition);
+        
+    }
+
+    private List<Unit> FindPlayerUnitsInRange(Unit aiUnit)
+    {
+        List<Unit> units = new List<Unit>();
+
+        List<Vector3Int> tilesInRange = attackAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        foreach (var tile in tilesInRange)
+        {
+            if (GridObjectRegistry.Instance.GetObjectAt(tile) is Unit unit && unit.UnitFaction == Faction.Player)
+            {
+                units.Add(unit);
+            }
+        }
+
+        return units;
     }
 }
