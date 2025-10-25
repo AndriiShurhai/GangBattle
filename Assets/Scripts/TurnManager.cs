@@ -132,10 +132,16 @@ public class TurnManager : MonoBehaviour
 
         foreach (Unit enemyUnit in enemiesToTakeTurn)
         {
-            if (enemyUnits.Contains(enemyUnit)) 
+            if (enemyUnits.Contains(enemyUnit))
             {
-                enemyUnit.GetComponent<AIBrain>()?.TakeTurn();
-                yield return new WaitForSeconds(3f);
+                bool isTurnComplete = false;
+
+                enemyUnit.GetComponent<AIBrain>()?.TakeTurn(() =>
+                {
+                    isTurnComplete = true;
+                });
+
+                yield return new WaitUntil(() => isTurnComplete);
 
                 if (enemyUnit != null) enemyUnit.HasTakenActionThisTurn = true;
             }

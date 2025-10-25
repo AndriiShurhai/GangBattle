@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 
@@ -11,5 +12,5 @@ public abstract class AIActionSO : ScriptableObject
 {
     public abstract AIScoreData GetScoreAction(Unit aiUnit);
 
-    public abstract void Execute(Unit aiUnit, object target);  
+    public abstract void Execute(Unit aiUnit, object target, Action onComplete);  
 }

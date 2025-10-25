@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -13,7 +14,7 @@ public class AIBrain : MonoBehaviour
         aiUnit = GetComponent<Unit>();   
     }
 
-    public void TakeTurn()
+    public void TakeTurn(Action onComplete)
     {
         if (aiActions == null || aiActions.Count == 0) return;
 
@@ -31,11 +32,12 @@ public class AIBrain : MonoBehaviour
 
         if (bestScoreData.action != null && bestScoreData.score >= 0)
         {
-            bestScoreData.action.Execute(aiUnit, bestScoreData.target);
+            bestScoreData.action.Execute(aiUnit, bestScoreData.target, onComplete);
         }
 
         else
         {
+            onComplete?.Invoke();
             Debug.Log($"{aiUnit.name} has no valid actions to take");
         }
     }

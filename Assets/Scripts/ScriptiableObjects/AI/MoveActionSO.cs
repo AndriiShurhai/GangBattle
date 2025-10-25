@@ -1,4 +1,5 @@
 using NUnit.Framework.Interfaces;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -24,7 +25,7 @@ public class MoveActionSO : AIActionSO
         scoreData.target = closestUnit;
         return scoreData;
     }
-    public override void Execute(Unit aiUnit, object target)
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
     {
         Unit targetUnit = target as Unit;
         if (targetUnit == null) return;
@@ -52,7 +53,7 @@ public class MoveActionSO : AIActionSO
             }
         }
 
-        aiUnit.MoveTo(bestTile);
+        aiUnit.MoveTo(bestTile, onComplete);
     }
 
     private List<Unit> FindPlayerUnits(Unit aiUnit)

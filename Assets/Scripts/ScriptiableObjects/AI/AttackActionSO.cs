@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -33,13 +34,19 @@ public class AttackActionSO : AIActionSO
         return scoreData;
     }
 
-    public override void Execute(Unit aiUnit, object target)
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
     {
         Unit targetUnit = target as Unit;
 
-        if (targetUnit == null) return;
+        if (targetUnit == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
 
         attackAbility.Execute(aiUnit, targetUnit.GridPosition);
+
+        onComplete?.Invoke();
         
     }
 
