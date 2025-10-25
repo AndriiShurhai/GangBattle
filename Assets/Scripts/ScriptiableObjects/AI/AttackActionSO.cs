@@ -1,0 +1,62 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+
+[CreateAssetMenu(fileName = "AttackActionSO", menuName = "AI/Actions/Attack Action")]
+public class AttackActionSO : AIActionSO
+{
+    [SerializeField] private AbilityBaseSO attackAbility;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData() { score = 0f, target = null }; 
+
+        List<Unit> targetsInRange = FindPlayerUnitsInRange(aiUnit);
+        if (targetsInRange.Count == 0) return scoreData;
+
+        Unit bestTarget = targetsInRange[0];
+        foreach (Unit targetUnit in targetsInRange)
+        {
+            if (targetUnit.CurrentHealth <= bestTarget.CurrentHealth)
+            {
+                bestTarget = targetUnit;    
+            }
+        }
+
+        if (attackAbility.IsValidTarget(aiUnit.GridPosition, bestTarget.GridPosition, aiUnit))
+        {
+            float healthPercentage = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
+            scoreData.score = 100f + (1f - healthPercentage) * 100f;
+            scoreData.target = bestTarget;
+        }
+
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target)
+    {
+        Unit targetUnit = target as Unit;
+
+        if (targetUnit == null) return;
+
+        attackAbility.Execute(aiUnit, targetUnit.GridPosition);
+        
+    }
+
+    private List<Unit> FindPlayerUnitsInRange(Unit aiUnit)
+    {
+        List<Unit> units = new List<Unit>();
+
+        List<Vector3Int> tilesInRange = attackAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        foreach (var tile in tilesInRange)
+        {
+            if (GridObjectRegistry.Instance.GetObjectAt(tile) is Unit unit && unit.UnitFaction == Faction.Player)
+            {
+                units.Add(unit);
+            }
+        }
+
+        return units;
+    }
+}

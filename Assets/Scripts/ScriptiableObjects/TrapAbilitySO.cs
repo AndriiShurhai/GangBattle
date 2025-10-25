@@ -40,7 +40,7 @@ public class TrapAbilitySO : AbilityBaseSO
         Vector3 worldPosition = GridManager.Instance.GridToWorld(position);
         GameObject trapObject = Instantiate(trapPrefab, worldPosition, Quaternion.identity);
 
-        Trap trap = trapObject.AddComponent<Trap>();
+        Trap trap = trapObject.GetComponent<Trap>();
         if (trap != null) trap.Initialize(position, trapDamage, duration);
     }
 }
