@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using Unity.VisualScripting;
 
 public class TurnManager : MonoBehaviour
 {
@@ -123,6 +124,13 @@ public class TurnManager : MonoBehaviour
         else if (currentState == TurnState.EnemyTurn)
         {
             StartPlayerTurn();
+        }
+
+
+        List<Trap> traps = new List<Trap> (TrapRegistry.Instance.GetTraps());
+        foreach (Trap trap in traps)
+        {
+            trap.DecreaseDuration();
         }
     }
 

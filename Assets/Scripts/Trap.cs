@@ -32,7 +32,7 @@ public class Trap : MonoBehaviour, IGridObject
         damage = trapDamage;
         remainingDuration = duration;
 
-        //GridObjectRegistry.Instance.RegisterObject(this);
+        TrapRegistry.Instance.RegisterTrap(this);
 
         Debug.Log($"Trap placed at position {position} with damage {damage} for {duration} turns");
     }
@@ -51,11 +51,11 @@ public class Trap : MonoBehaviour, IGridObject
         DestroyTrap();
     }
 
-    private void DecreaseDuration()
+    public void DecreaseDuration()
     {
         remainingDuration--;
 
-        if (remainingDuration <=0)
+        if (remainingDuration <= 0)
         {
             DestroyTrap();
         }
@@ -63,7 +63,7 @@ public class Trap : MonoBehaviour, IGridObject
 
     private void DestroyTrap()
     {
-        //GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
+        TrapRegistry.Instance.UnregisterTrap(this);
         Destroy(gameObject);
     }
     public void OnGridPositionChanged(Vector3Int newGridPosition)
