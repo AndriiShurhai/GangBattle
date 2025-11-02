@@ -25,8 +25,8 @@ public class Unit : MonoBehaviour, IMoveable
     [Header("Class Defenition")]
     [SerializeField] private CharacterClassSO characterClassSO;
 
-    [Header("Abilites")]
-    [SerializeField] private List<AbilityBaseSO> abilities = new List<AbilityBaseSO>();
+    //[Header("Abilites")]
+    //[SerializeField] private List<AbilityBaseSO> abilities = new List<AbilityBaseSO>();
 
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
@@ -141,7 +141,7 @@ public class Unit : MonoBehaviour, IMoveable
 
     public bool CanUseAbility(AbilityBaseSO abilitySO)
     {
-        if (!abilities.Contains(abilitySO))
+        if (!characterClassSO.abilities.Contains(abilitySO))
         {
             return false;
         }
