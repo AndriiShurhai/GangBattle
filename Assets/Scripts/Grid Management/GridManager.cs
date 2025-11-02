@@ -59,5 +59,15 @@ public class GridManager : MonoBehaviour
         return obj == null || !obj.BlocksMovement; 
     }
 
+    public bool HasWalkableTilemap(Vector3Int gridPosition)
+    {
+        return walkableTilemap.HasTile(gridPosition);
+    }
+
+    public bool HasBlockedTilemap(Vector3Int gridPosition)
+    {
+        return blockedTilemap.HasTile(gridPosition);
+    }
+
     #endregion
 }

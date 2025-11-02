@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class AbilityTargetingVisualizer : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
     [SerializeField] private Color validTargetColor;
     [SerializeField] private Color invalidTargetColor;
     [SerializeField] private Color currentTargetColor;
+    [SerializeField] private Color blockedLOSColor;
     [SerializeField] private Transform rangeHighlightsContainer;
 
     private HighlightManager _rangeHighlightManager;
@@ -37,8 +39,26 @@ public class AbilityTargetingVisualizer : MonoBehaviour
 
         foreach (var gridPosition in reachableTiles)
         {
+            bool hasLineOfSight = GridUtility.HasLineOfSight(caster.GridPosition, gridPosition);
+
             bool isValidTarget = abilityBaseSO.IsValidTarget(caster.GridPosition, gridPosition, caster);
-            Color highlightColor = isValidTarget ? validTargetColor : invalidTargetColor;
+            
+            Color highlightColor;
+
+            if (isValidTarget)
+            {
+                highlightColor = validTargetColor;
+            }
+            else if (!hasLineOfSight)
+            {
+                highlightColor = blockedLOSColor;
+            }
+            else
+            {
+                highlightColor = invalidTargetColor;
+            }
+
+            if (!GridManager.Instance.HasWalkableTilemap(gridPosition)) continue;
 
             _rangeHighlightManager.CreateHighlight(gridPosition, highlightColor);
         }
