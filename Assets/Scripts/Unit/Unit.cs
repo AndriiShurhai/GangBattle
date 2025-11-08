@@ -25,9 +25,6 @@ public class Unit : MonoBehaviour, IMoveable
     [Header("Class Defenition")]
     [SerializeField] private CharacterClassSO characterClassSO;
 
-    //[Header("Abilites")]
-    //[SerializeField] private List<AbilityBaseSO> abilities = new List<AbilityBaseSO>();
-
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private GameObject healthBarPrefab;

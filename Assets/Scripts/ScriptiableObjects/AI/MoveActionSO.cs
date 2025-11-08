@@ -1,13 +1,13 @@
 using NUnit.Framework.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 [CreateAssetMenu(fileName = "Move Action SO", menuName = "AI/Actions/Move Action")]
 public class MoveActionSO : AIActionSO
 {
-    [SerializeField] private AbilityBaseSO attackAbility;
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
         AIScoreData scoreData = new AIScoreData() { score = 0f, target = null };
@@ -16,11 +16,6 @@ public class MoveActionSO : AIActionSO
 
         if (closestUnit == null) return scoreData;
 
-        if (attackAbility != null && attackAbility.IsValidTarget(aiUnit.GridPosition, closestUnit.GridPosition, aiUnit))
-        {
-            return scoreData; 
-        }
-
         scoreData.score = 25f; 
         scoreData.target = closestUnit;
         return scoreData;
@@ -28,7 +23,7 @@ public class MoveActionSO : AIActionSO
     public override void Execute(Unit aiUnit, object target, Action onComplete)
     {
         Unit targetUnit = target as Unit;
-        if (targetUnit == null) return;
+        if (targetUnit == null) { onComplete?.Invoke(); return; }
 
         Debug.Log($"{aiUnit.name} is moving towards {targetUnit.name}");
 
@@ -38,20 +33,14 @@ public class MoveActionSO : AIActionSO
             GridManager.Instance.IsValidPosition
         );
 
-        if (reachableTiles.Count == 0) return; 
+        if (reachableTiles.Count == 0) { onComplete?.Invoke(); return; }
 
-        Vector3Int bestTile = reachableTiles[0];
-        float closestDist = Vector3.Distance(bestTile, targetUnit.GridPosition);
-
-        foreach (Vector3Int tile in reachableTiles)
-        {
-            float dist = Vector3.Distance(tile, targetUnit.GridPosition);
-            if (dist < closestDist)
-            {
-                closestDist = dist;
-                bestTile = tile;
-            }
-        }
+        Vector3Int bestTile;
+        
+        bestTile = reachableTiles
+            .OrderBy(t => Vector3.Distance(t, targetUnit.GridPosition))
+            .First();
+        
 
         aiUnit.MoveTo(bestTile, onComplete);
     }

@@ -1548,7 +1548,7 @@ PrefabInstance:
         type: 3}
       propertyPath: characterClassSO
       value: 
-      objectReference: {fileID: 11400000, guid: 6bd846f75a6adf349be73523b32d2334,
+      objectReference: {fileID: 11400000, guid: d1eae47a763809846a471c93e913a128,
         type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1578,8 +1578,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   aiActions:
-  - {fileID: 11400000, guid: 6cd5222e2595f254aabce1fae82240a2, type: 2}
   - {fileID: 11400000, guid: b80783d68ef0b524e91d43d5037c9bcb, type: 2}
+  - {fileID: 11400000, guid: 0f67fcfcff148904b9fba1de40c1cab4, type: 2}
 --- !u!1 &1284050093
 GameObject:
   m_ObjectHideFlags: 0
