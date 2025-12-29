@@ -7,6 +7,7 @@ public abstract class AbilityBaseSO : ScriptableObject
     public string abilityName;
     public Sprite abilityIcon;
     [TextArea] public string abilityDescription;
+    public int howMuchCanBeUsed = 1;
 
     [Header("Range Settings")]
     public int range = 3;

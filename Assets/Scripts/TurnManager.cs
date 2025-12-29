@@ -7,13 +7,16 @@ public class TurnManager : MonoBehaviour
 {
     public static TurnManager Instance { get; private set; }
 
+    public List<Transform> playersPositions;
+    public List<Transform> enemiesPositions;
+
+    public List<Unit> playerUnits;
+    public List<Unit> enemyUnits;
+
     [SerializeField] private CharacterSelectionController characterSelectionController;
 
     public enum TurnState { PlayerTurn, EnemyTurn }
     private TurnState currentState;
-
-    private List<Unit> playerUnits = new List<Unit>();
-    private List<Unit> enemyUnits = new List<Unit>();
 
     private bool isGameOver;
 
@@ -31,19 +34,39 @@ public class TurnManager : MonoBehaviour
 
     private void Start()
     {
-        Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
-        foreach (Unit unit in allUnits)
-        {
-            if (unit.UnitFaction == Faction.Player)
-            {
-                playerUnits.Add(unit);
-            }
-            else if (unit.UnitFaction == Faction.Enemy)
-            {
-                enemyUnits.Add(unit);
-            }
+        //Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        //foreach (Unit unit in allUnits)
+        //{
+        //    if (unit.UnitFaction == Faction.Player)
+        //    {
+        //        playerUnits.Add(unit);
+        //    }
+        //    else if (unit.UnitFaction == Faction.Enemy)
+        //    {
+        //        enemyUnits.Add(unit);
+        //    }
 
-            unit.OnUnitDied += Unit_OnUnitDied;
+        //    unit.OnUnitDied += Unit_OnUnitDied;
+        //}
+
+        for (int i = 0; i < enemyUnits.Count; i++)
+        {
+            GameObject enemy = Instantiate(enemyUnits[i].gameObject);
+            Unit enemyScript = enemy.GetComponent<Unit>();
+            enemyScript.Initialize();
+            enemyScript.PlaceUnit(enemiesPositions[i].position);
+
+            enemyUnits[i] = enemyScript;
+        }
+
+        for (int i = 0; i < playerUnits.Count; i++)
+        {
+            GameObject player = Instantiate(playerUnits[i].gameObject);
+            Unit playerScript = player.GetComponent<Unit>();
+            playerScript.Initialize();
+            playerScript.PlaceUnit(playersPositions[i].position);
+
+            playerUnits[i] = playerScript;
         }
 
         StartPlayerTurn();
@@ -93,6 +116,7 @@ public class TurnManager : MonoBehaviour
 
         foreach (Unit unit in playerUnits)
         {
+            unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
         }
     }

@@ -45,7 +45,7 @@ GameObject:
   - component: {fileID: 429967286947534935}
   - component: {fileID: 308900601190229545}
   m_Layer: 0
-  m_Name: Unit
+  m_Name: BaseUnit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -82,10 +82,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   healthComponent: {fileID: 429967286947534935}
   movementComponent: {fileID: 308900601190229545}
-  abilities:
-  - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
-  - {fileID: 11400000, guid: 9b64640e2f8dd3844a9b831414490ff5, type: 2}
-  - {fileID: 11400000, guid: f885206980a1fab478f8474534704435, type: 2}
+  faction: 0
+  characterClassSO: {fileID: 0}
   spriteRenderer: {fileID: 4055082497103941424}
   healthBarPrefab: {fileID: 7318747018441688184, guid: 8534980054f718645bb599a9f57ab515,
     type: 3}
@@ -197,6 +195,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &4055082497103941424
 SpriteRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -215,6 +214,8 @@ SpriteRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -236,9 +237,11 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -105541197
   m_SortingLayer: 5
   m_SortingOrder: 1
+  m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: ec47f75fe8aff1644ac73998f4ad31b5, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -248,5 +251,4 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 
@@ -53,7 +54,9 @@ public class Unit : MonoBehaviour, IMoveable
     public bool HasTakenActionThisTurn { get; set; }
     public Faction UnitFaction { get => faction; }
 
-    private void Awake()
+    private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
+
+    public void Initialize()
     {
         if (healthComponent == null)
         {
@@ -68,8 +71,19 @@ public class Unit : MonoBehaviour, IMoveable
         healthComponent.OnDeath += HandleDeath;
 
         InitializeFromClass();
+
+        foreach (AbilityBaseSO ability in Abilities)
+        {
+            usedAbilitiesAmountPerTurn[ability] = 0;
+        }
     }
 
+    public void PlaceUnit(Vector3 position)
+    {
+        gridPosition = GridManager.Instance.WorldToGrid(position);
+        GridObjectRegistry.Instance.RegisterObject(this);
+        transform.position = GridManager.Instance.GridToWorld(gridPosition);
+    }
     private void InitializeFromClass()
     {
         if (characterClassSO == null) return;
@@ -80,10 +94,6 @@ public class Unit : MonoBehaviour, IMoveable
 
     private void Start()
     {
-        gridPosition = GridManager.Instance.WorldToGrid(transform.position);
-        GridObjectRegistry.Instance.RegisterObject(this);
-        transform.position = GridManager.Instance.GridToWorld(gridPosition);
-
         if(healthBarPrefab != null && healthBarAttachPoint != null)
         {
             GameObject healthBarInstance = Instantiate(healthBarPrefab, healthBarAttachPoint.position, Quaternion.identity, healthBarAttachPoint);
@@ -143,6 +153,11 @@ public class Unit : MonoBehaviour, IMoveable
             return false;
         }
 
+        if (abilitySO.howMuchCanBeUsed <= usedAbilitiesAmountPerTurn[abilitySO])
+        {
+            return false;
+        }
+
         return abilitySO.CanUse(this);
     }
 
@@ -161,6 +176,15 @@ public class Unit : MonoBehaviour, IMoveable
         }
 
         abilitySO.Execute(this, targetPosition);
+        usedAbilitiesAmountPerTurn[abilitySO]++;
+    }
+
+    public void ResetUsedAbilities()
+    {
+        foreach (AbilityBaseSO ability in usedAbilitiesAmountPerTurn.Keys.ToList())
+        {
+            usedAbilitiesAmountPerTurn[ability] = 0;
+        }
     }
 
     public static void InvokeUnitEnteredTile(Unit unit, Vector3Int tilePosition)
