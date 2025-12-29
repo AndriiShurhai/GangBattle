@@ -12,6 +12,7 @@ public class NoSelectionState : IPlayerState
     public void Enter()
     {
         _controller.ClearSelection();
+        AbilityTargetingVisualizer.Instance.HideAbilityRange();
         Debug.Log("Entering no selection state");
     }
     public void Exit()
