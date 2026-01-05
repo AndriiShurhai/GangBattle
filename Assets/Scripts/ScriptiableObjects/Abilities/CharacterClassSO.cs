@@ -12,6 +12,7 @@ public class CharacterClassSO : ScriptableObject
     [Header("Base Stats")]
     public int maxHealth = 100;
     public int movementRange = 2;
+    public int movementAmountPerTurn = 2;
 
     [Header("Abilites")]
     public List<AbilityBaseSO> abilities;

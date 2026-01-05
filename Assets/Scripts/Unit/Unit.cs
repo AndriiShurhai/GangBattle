@@ -55,6 +55,7 @@ public class Unit : MonoBehaviour, IMoveable
     public Faction UnitFaction { get => faction; }
 
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
+    private int movedPerTurn = 0;
 
     public void Initialize()
     {
@@ -116,12 +117,13 @@ public class Unit : MonoBehaviour, IMoveable
 
     public bool CanMoveTo(Vector3Int position)
     {
-        return movementComponent.CanMoveTo(position);
+        return movedPerTurn <= characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
     {
         movementComponent.MoveTo(targetPosition, onComplete);
+        movedPerTurn++;
     }
     public void OnGridPositionChanged(Vector3Int newGridPosition)
     {
@@ -185,6 +187,11 @@ public class Unit : MonoBehaviour, IMoveable
         {
             usedAbilitiesAmountPerTurn[ability] = 0;
         }
+    }
+
+    public void ResetUsedMovement()
+    {
+        movedPerTurn = 0;
     }
 
     public static void InvokeUnitEnteredTile(Unit unit, Vector3Int tilePosition)

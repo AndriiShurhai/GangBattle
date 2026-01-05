@@ -120,6 +120,7 @@ public class TurnManager : MonoBehaviour
         {
             unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
+            unit.ResetUsedMovement();
         }
     }
 
