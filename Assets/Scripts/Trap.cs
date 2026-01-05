@@ -5,6 +5,7 @@ public class Trap : MonoBehaviour, IGridObject
     private Vector3Int gridPosition;
     private int damage;
     private int remainingDuration;
+    private int roundSinceRegister = 0;
 
     public Vector3Int GridPosition { get => gridPosition; set => gridPosition = value; }
     public bool BlocksMovement { get => false; }
@@ -30,7 +31,7 @@ public class Trap : MonoBehaviour, IGridObject
     {
         gridPosition = position;    
         damage = trapDamage;
-        remainingDuration = duration;
+        remainingDuration = duration; 
 
         TrapRegistry.Instance.RegisterTrap(this);
 
@@ -53,6 +54,11 @@ public class Trap : MonoBehaviour, IGridObject
 
     public void DecreaseDuration()
     {
+        if (roundSinceRegister == 0)
+        {
+            roundSinceRegister = 1;
+            return;
+        }
         remainingDuration--;
 
         if (remainingDuration <= 0)

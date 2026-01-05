@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using Unity.VisualScripting;
+using UnityEngine.UI;
+using System;
 
 public class TurnManager : MonoBehaviour
 {
@@ -14,7 +16,7 @@ public class TurnManager : MonoBehaviour
     public List<Unit> enemyUnits;
 
     [SerializeField] private CharacterSelectionController characterSelectionController;
-
+    [SerializeField] private Button endPlayerTurnButton;
     public enum TurnState { PlayerTurn, EnemyTurn }
     private TurnState currentState;
 
@@ -30,25 +32,15 @@ public class TurnManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        endPlayerTurnButton.onClick.AddListener(() =>
+        {
+            EndTurn();
+        });
     }
 
     private void Start()
     {
-        //Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
-        //foreach (Unit unit in allUnits)
-        //{
-        //    if (unit.UnitFaction == Faction.Player)
-        //    {
-        //        playerUnits.Add(unit);
-        //    }
-        //    else if (unit.UnitFaction == Faction.Enemy)
-        //    {
-        //        enemyUnits.Add(unit);
-        //    }
-
-        //    unit.OnUnitDied += Unit_OnUnitDied;
-        //}
-
         for (int i = 0; i < enemyUnits.Count; i++)
         {
             GameObject enemy = Instantiate(enemyUnits[i].gameObject);
@@ -67,6 +59,16 @@ public class TurnManager : MonoBehaviour
             playerScript.PlaceUnit(playersPositions[i].position);
 
             playerUnits[i] = playerScript;
+        }
+
+        foreach (var playerUnit in playerUnits)
+        {
+            playerUnit.OnUnitDied += Unit_OnUnitDied;
+        }
+
+        foreach (var enemyUnit in enemyUnits)
+        {
+            enemyUnit.OnUnitDied += Unit_OnUnitDied;
         }
 
         StartPlayerTurn();
@@ -143,10 +145,12 @@ public class TurnManager : MonoBehaviour
     {
         if (currentState == TurnState.PlayerTurn)
         {
+            endPlayerTurnButton.gameObject.SetActive(false);
             StartEnemyTurn();
         }
         else if (currentState == TurnState.EnemyTurn)
         {
+            endPlayerTurnButton.gameObject.SetActive(true);
             StartPlayerTurn();
         }
 
