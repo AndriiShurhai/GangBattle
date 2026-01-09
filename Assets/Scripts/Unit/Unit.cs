@@ -20,6 +20,8 @@ public class UnitSnapshotState
     public bool hasTakenActionThisTurn;
     public Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn;
     public int movedPerTurn;
+
+    public bool isAlive;
 }
 public enum Faction
 {
@@ -70,6 +72,11 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         get => id.ID;
     }
 
+    public bool IsAlive
+    {
+        get => isAlive;
+    }
+
     public int MovementRange => movementComponent.MovementRange;
     public bool IsMoving => movementComponent.IsMoving;
 
@@ -79,6 +86,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
     private int movedPerTurn = 0;
     private RewindableID id;
+
+    private bool isAlive = true;
 
     public void Initialize()
     {
@@ -175,6 +184,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             spriteRenderer = this.spriteRenderer,
             healthBarPrefab = this.healthBarPrefab,
             abilities = this.Abilities,
+
+            isAlive = this.IsAlive
         };
 
         Debug.Log($"Capture State has been called.\nGridPosition: {gridPosition}");
@@ -186,6 +197,16 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         StopAllCoroutines();
         movementComponent.StopAllCoroutines();
         var s = (UnitSnapshotState)state;
+
+        if (!s.isAlive && isAlive)
+        {
+            SetUnitDead(false);
+            return;
+        }
+        else if (s.isAlive && !isAlive)
+        {
+            RessurectUnit();
+        }
 
         Debug.Log($"RESTORE STATE HAS BEEN CALLED IN UNIT. \nGridPositionToMove: {s.gridPosition}");
 
@@ -247,10 +268,28 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
     private void HandleDeath()
     {
-        
+        SetUnitDead(true);
+    }
+
+    private void SetUnitDead(bool triggerEvent = true)
+    {
+        isAlive = false;
+        gameObject.SetActive(false);
         GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
-        OnUnitDied?.Invoke(this);
-        Destroy(gameObject);
+
+        if (triggerEvent)
+        {
+            OnUnitDied?.Invoke(this);
+        }
+    }
+
+    private void RessurectUnit()
+    {
+        isAlive = true;
+        gameObject.SetActive(true);
+        GridObjectRegistry.Instance.RegisterObject(this);
+
+        Debug.Log($"{gameObject.name} has been resurrected");
     }
 
     public bool CanUseAbility(AbilityBaseSO abilitySO)
