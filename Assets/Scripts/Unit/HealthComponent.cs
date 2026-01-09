@@ -39,6 +39,13 @@ public class HealthComponent : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
+    public void SetHealth(int currentHealth, int maxHealth)
+    {
+        this.maxHealth = maxHealth;
+        this.currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
     private void Die()
     {
         Debug.Log($"{gameObject.name} has died");

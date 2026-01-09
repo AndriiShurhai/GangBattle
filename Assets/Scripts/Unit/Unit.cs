@@ -3,18 +3,35 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using DG.Tweening;
 
+public class UnitSnapshotState
+{
+    public SpriteRenderer spriteRenderer;
+    public GameObject healthBarPrefab;
+    public Vector3Int gridPosition;
+    public List<AbilityBaseSO> abilities;
 
+    public int currentHealth;
+    public int maxHealth;
+
+    public bool isMoving;
+
+    public bool hasTakenActionThisTurn;
+    public Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn;
+    public int movedPerTurn;
+}
 public enum Faction
 {
     Player, 
     Enemy
 }
-public class Unit : MonoBehaviour, IMoveable
+public class Unit : MonoBehaviour, IMoveable, IRewindable
 {
     public static event Action<Unit, Vector3Int> OnUnitEnteredTile;
 
     public event Action<Unit> OnUnitDied;
+    public event Action OnUnitMadeAction;
 
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
@@ -48,6 +65,11 @@ public class Unit : MonoBehaviour, IMoveable
         get => true;
     }
 
+    public string RewindID
+    {
+        get => id.ID;
+    }
+
     public int MovementRange => movementComponent.MovementRange;
     public bool IsMoving => movementComponent.IsMoving;
 
@@ -56,6 +78,7 @@ public class Unit : MonoBehaviour, IMoveable
 
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
     private int movedPerTurn = 0;
+    private RewindableID id;
 
     public void Initialize()
     {
@@ -77,6 +100,9 @@ public class Unit : MonoBehaviour, IMoveable
         {
             usedAbilitiesAmountPerTurn[ability] = 0;
         }
+
+        id = gameObject.AddComponent<RewindableID>();
+        RegisterSelf();
     }
 
     public void PlaceUnit(Vector3 position)
@@ -109,10 +135,88 @@ public class Unit : MonoBehaviour, IMoveable
             GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
         }
 
+        if (RewindManager.Instance != null)
+        {
+            RewindManager.Instance.UnregisterRewindable(this);
+        }
+
         if (healthComponent != null)
         {
             healthComponent.OnDeath -= HandleDeath; 
         }
+    }
+
+    public void RegisterSelf()
+    {
+        RewindManager.Instance.RegisterRewindable(this);
+    }
+    
+    public object CaptureState()
+    {
+        Dictionary<AbilityBaseSO, int> abilitiesCopy = new();
+
+        foreach (var kvp in usedAbilitiesAmountPerTurn)
+        {
+            abilitiesCopy[kvp.Key] = kvp.Value;
+        }
+
+        UnitSnapshotState state = new UnitSnapshotState
+        {
+            gridPosition = this.gridPosition,
+            hasTakenActionThisTurn = this.HasTakenActionThisTurn,
+            usedAbilitiesAmountPerTurn = abilitiesCopy,
+            movedPerTurn = this.movedPerTurn,
+
+            currentHealth = healthComponent.CurrentHealth,
+            maxHealth = healthComponent.MaxHealth,
+
+            isMoving = movementComponent.IsMoving,
+
+            spriteRenderer = this.spriteRenderer,
+            healthBarPrefab = this.healthBarPrefab,
+            abilities = this.Abilities,
+        };
+
+        Debug.Log($"Capture State has been called.\nGridPosition: {gridPosition}");
+        return state;
+    }
+
+    public void RestoreState(object state)
+    {
+        StopAllCoroutines();
+        movementComponent.StopAllCoroutines();
+        var s = (UnitSnapshotState)state;
+
+        Debug.Log($"RESTORE STATE HAS BEEN CALLED IN UNIT. \nGridPositionToMove: {s.gridPosition}");
+
+        if (gridPosition != s.gridPosition)
+        {
+            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(s.gridPosition);
+            transform.DOMove(targetWorldPosition, 1f);
+
+            IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(s.gridPosition);
+            GridObjectRegistry.Instance.UnregisterObject(obj, s.gridPosition);
+            GridObjectRegistry.Instance.MoveObject(this, gridPosition, s.gridPosition);
+        }
+
+        spriteRenderer = s.spriteRenderer;
+        healthBarPrefab = s.healthBarPrefab;
+
+        gridPosition = s.gridPosition;
+        characterClassSO.abilities = s.abilities;
+        HasTakenActionThisTurn = s.hasTakenActionThisTurn;
+
+        healthComponent.SetHealth(s.currentHealth, s.maxHealth);
+        movementComponent.SetMovingState(s.isMoving);
+
+        usedAbilitiesAmountPerTurn.Clear();
+        foreach (var kvp in s.usedAbilitiesAmountPerTurn)
+        {
+            usedAbilitiesAmountPerTurn[kvp.Key] = kvp.Value;    
+        }
+
+        movedPerTurn = s.movedPerTurn;
+
     }
 
     public bool CanMoveTo(Vector3Int position)
@@ -127,6 +231,7 @@ public class Unit : MonoBehaviour, IMoveable
     }
     public void OnGridPositionChanged(Vector3Int newGridPosition)
     {
+        OnUnitMadeAction?.Invoke();
         Debug.Log($"Unit moved to a new position: {newGridPosition}");
     }
 
@@ -179,6 +284,7 @@ public class Unit : MonoBehaviour, IMoveable
 
         abilitySO.Execute(this, targetPosition);
         usedAbilitiesAmountPerTurn[abilitySO]++;
+        OnUnitMadeAction?.Invoke();
     }
 
     public void ResetUsedAbilities()

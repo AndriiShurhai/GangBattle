@@ -5,6 +5,9 @@ using System.Linq;
 public class RewindManager : MonoBehaviour
 {
     public static RewindManager Instance;
+
+    [SerializeField] private int maxHistorySize = 20;
+
     private List<TurnSnapshot> history = new();
     private List<IRewindable> rewindables = new();
 
@@ -22,13 +25,15 @@ public class RewindManager : MonoBehaviour
 
     public void SaveTurn(int currentTurn)
     {
-        var snapshot = new TurnSnapshot 
+        var snapshot = new TurnSnapshot
         {
             turnIndex = currentTurn,
         };
 
         foreach (var r in rewindables)
         {
+            if (r == null) continue;
+
             if (!snapshot.objectStates.ContainsKey(r.RewindID))
             {
                 snapshot.objectStates.Add(r.RewindID, r.CaptureState());
@@ -39,12 +44,35 @@ public class RewindManager : MonoBehaviour
             }
         }
 
+        var previousSnapshotOnCurrentTurn = history.FirstOrDefault(r => r.turnIndex == currentTurn);
+        if (previousSnapshotOnCurrentTurn != null)
+        {
+            history.Remove(previousSnapshotOnCurrentTurn);
+        }
         history.Add(snapshot);
+
+        if (history.Count > maxHistorySize)
+        {
+            history.RemoveAt(0);
+            Debug.Log($"Removed oldest snapshot. History size: {history.Count}");
+        }
+
+        Debug.Log($"Saved turn {currentTurn}. Total snapshots: {history.Count}");
     }
 
     public void RewindTo(int turnIndex)
     {
-        var snapshot = history.First(r => r.turnIndex == turnIndex);
+        var snapshot = history.FirstOrDefault(r => r.turnIndex == turnIndex);
+
+        if (snapshot == null)
+        {
+            Debug.LogError($"No snapshot found for turn {turnIndex}");
+            return;
+        }
+
+        Debug.Log($"Rewinding to turn {turnIndex}");
+
+        rewindables.RemoveAll(r => r == null);
 
         foreach (var r in rewindables)
         {
@@ -52,16 +80,50 @@ public class RewindManager : MonoBehaviour
             {
                 r.RestoreState(state);
             }
+            else
+            {
+                Debug.LogWarning($"No state found for {r.RewindID} in turn {turnIndex}");
+            }
         }
     }
 
     public void RegisterRewindable(IRewindable rewindable)
     {
-        rewindables.Add(rewindable);
+        if (rewindable == null)
+        {
+            Debug.LogError("Attempted to register null rewindable");
+            return;
+        }
+
+        if (!rewindables.Contains(rewindable))
+        {
+            rewindables.Add(rewindable);
+            Debug.Log($"Registered rewindable: {rewindable.RewindID}");
+        }
     }
 
     public void UnregisterRewindable(IRewindable rewindable)
     {
-        rewindables.Remove(rewindable);
+        if (rewindable != null)
+        {
+            rewindables.Remove(rewindable);
+            Debug.Log($"Unregistered rewindable: {rewindable.RewindID}");
+        }
+    }
+
+    public int GetHistoryCount()
+    {
+        return history.Count;
+    }
+
+    public List<int> GetAvailableTurns()
+    {
+        return history.Select(h => h.turnIndex).ToList();
+    }
+
+    public void ClearHistory()
+    {
+        history.Clear();
+        Debug.Log("History cleared");
     }
 }

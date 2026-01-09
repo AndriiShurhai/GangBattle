@@ -89,4 +89,9 @@ public class MovementComponent : MonoBehaviour
         isMoving = false;
         onComplete?.Invoke();
     }
+
+    public void SetMovingState(bool moving)
+    {
+        isMoving = moving;
+    }
 }
