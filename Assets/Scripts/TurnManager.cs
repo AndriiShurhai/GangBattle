@@ -4,12 +4,16 @@ using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine.UI;
 using System;
+using System.Linq;
 
 public class  TurnManagerSnaphsotState
 {
     public int currentTurn;
     public TurnManager.TurnState currentState;
     public bool isGameOver;
+
+    public List<string> alivePlayerUnitIds;
+    public List<string> aliveEnemyUnitIds;
 }
 
 public class TurnManager : MonoBehaviour, IRewindable
@@ -34,6 +38,8 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     private RewindableID id;
 
+    private List<Unit> allPlayerUnits = new();
+    private List<Unit> allEnemyUnits = new();
     private void Awake()
     {
         if (Instance == null)
@@ -70,6 +76,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             enemyScript.OnUnitMadeAction += Unit_OnUnitMadeAction;
 
             enemyUnits[i] = enemyScript;
+            allEnemyUnits.Add(enemyScript);
         }
 
         for (int i = 0; i < playerUnits.Count; i++)
@@ -81,14 +88,15 @@ public class TurnManager : MonoBehaviour, IRewindable
             playerScript.OnUnitMadeAction += Unit_OnUnitMadeAction;
 
             playerUnits[i] = playerScript;
+            allPlayerUnits.Add(playerScript);
         }
 
-        foreach (var playerUnit in playerUnits)
+        foreach (var playerUnit in allPlayerUnits)
         {
             playerUnit.OnUnitDied += Unit_OnUnitDied;
         }
 
-        foreach (var enemyUnit in enemyUnits)
+        foreach (var enemyUnit in allEnemyUnits)
         {
             enemyUnit.OnUnitDied += Unit_OnUnitDied;
         }
@@ -103,7 +111,11 @@ public class TurnManager : MonoBehaviour, IRewindable
             currentState = this.currentState,
             currentTurn = this.currentTurn,
             isGameOver = this.isGameOver,
+
+            alivePlayerUnitIds = playerUnits.Select(u => u.RewindID).ToList(),
+            aliveEnemyUnitIds = enemyUnits.Select(u => u.RewindID).ToList()
         };
+
         return currentState;
     }
 
@@ -114,6 +126,26 @@ public class TurnManager : MonoBehaviour, IRewindable
         this.currentState = s.currentState;
         this.currentTurn = s.currentTurn;
         this.isGameOver = s.isGameOver;
+
+        playerUnits.Clear();
+        foreach (string unitId in s.alivePlayerUnitIds)
+        {
+            Unit unit = allPlayerUnits.Find(u => u.RewindID == unitId);
+            if (unit != null)
+            {
+                playerUnits.Add(unit);
+            }
+        }
+
+        enemyUnits.Clear();
+        foreach (string unitId in s.aliveEnemyUnitIds)
+        {
+            Unit unit = allEnemyUnits.Find(u => u.RewindID == unitId);
+            if (unit != null)
+            {
+                enemyUnits.Add(unit);
+            }
+        }
 
         if (currentState == TurnState.PlayerTurn)
         {
@@ -195,7 +227,6 @@ public class TurnManager : MonoBehaviour, IRewindable
         if (playerUnits.Contains(unit))
         {
             playerUnits.Remove(unit);  
-            unit.OnUnitDied -= Unit_OnUnitDied;
             
             if (playerUnits.Count == 0)
             {
@@ -208,7 +239,6 @@ public class TurnManager : MonoBehaviour, IRewindable
         else if(enemyUnits.Contains(unit))
         {
             enemyUnits.Remove(unit);
-            unit.OnUnitDied -= Unit_OnUnitDied;
 
             if (enemyUnits.Count == 0)
             {
@@ -332,5 +362,15 @@ public class TurnManager : MonoBehaviour, IRewindable
         allUnits.AddRange(enemyUnits);
 
         return allUnits;
+    }
+
+    public List<Unit> GetAlivePlayerUnits()
+    {
+        return playerUnits.Where(unit => unit.IsAlive).ToList();
+    }
+
+    public List<Unit> GetAliveEnemyUnits()
+    {
+        return enemyUnits.Where(unit => unit.IsAlive).ToList(); 
     }
 }
