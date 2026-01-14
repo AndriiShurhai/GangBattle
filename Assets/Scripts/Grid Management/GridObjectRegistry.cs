@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -56,6 +57,21 @@ public class GridObjectRegistry : MonoBehaviour
     public bool IsOccupied(Vector3Int gridPosition)
     {
         return occupiedTiles.ContainsKey(gridPosition);
+    }
+
+    public List<IGridObject> GetAllGridObjects()
+    {
+        List<IGridObject> gridObjects = new List<IGridObject>();
+
+        foreach (var obj in occupiedTiles.Values)
+        {
+            if(obj != null)
+            {
+                gridObjects.Add(obj);
+            }
+        }
+
+        return gridObjects;
     }
 
 }
