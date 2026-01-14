@@ -289,6 +289,12 @@ public class TurnManager : MonoBehaviour, IRewindable
     }
     public void EndTurn()
     {
+        List<Trap> traps = new List<Trap>(TrapRegistry.Instance.GetTraps());
+        foreach (Trap trap in traps)
+        {
+            trap.DecreaseDuration();
+        }
+
         if (currentState == TurnState.PlayerTurn)
         {
             endPlayerTurnButton.gameObject.SetActive(false);
@@ -298,13 +304,6 @@ public class TurnManager : MonoBehaviour, IRewindable
         {
             endPlayerTurnButton.gameObject.SetActive(true);
             StartPlayerTurn();
-        }
-
-
-        List<Trap> traps = new List<Trap> (TrapRegistry.Instance.GetTraps());
-        foreach (Trap trap in traps)
-        {
-            trap.DecreaseDuration();
         }
     }
 

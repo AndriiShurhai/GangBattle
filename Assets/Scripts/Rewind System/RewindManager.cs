@@ -6,10 +6,11 @@ public class RewindManager : MonoBehaviour
 {
     public static RewindManager Instance;
 
-    [SerializeField] private int maxHistorySize = 20;
+    [SerializeField] private int maxHistorySize = 100;
 
     private List<TurnSnapshot> history = new();
     private List<IRewindable> rewindables = new();
+    private int currentTurn = 0;
 
     private void Awake()
     {
@@ -57,6 +58,7 @@ public class RewindManager : MonoBehaviour
             Debug.Log($"Removed oldest snapshot. History size: {history.Count}");
         }
 
+        this.currentTurn = currentTurn;
         Debug.Log($"Saved turn {currentTurn}. Total snapshots: {history.Count}");
     }
 
@@ -74,7 +76,9 @@ public class RewindManager : MonoBehaviour
 
         rewindables.RemoveAll(r => r == null);
 
-        foreach (var r in rewindables)
+        var rewindablesCopy= new List<IRewindable>(rewindables);
+
+        foreach (var r in rewindablesCopy)
         {
             if (snapshot.objectStates.TryGetValue(r.RewindID, out var state))
             {
@@ -83,8 +87,23 @@ public class RewindManager : MonoBehaviour
             else
             {
                 Debug.LogWarning($"No state found for {r.RewindID} in turn {turnIndex}");
+                if (r is Trap trap)
+                {
+                    var deactivatedState = new TrapSnapshotState
+                    {
+                        gridPosition = trap.GridPosition,
+                        remainingDuration = 0,
+                        isActive = false,
+                        roundSinceRegister = 0
+                    };
+                    trap.RestoreState(deactivatedState);
+
+                    rewindables.Remove(trap);
+                }
             }
         }
+
+        this.currentTurn = turnIndex;
     }
 
     public void RegisterRewindable(IRewindable rewindable)
