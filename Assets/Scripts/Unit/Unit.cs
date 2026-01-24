@@ -36,6 +36,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
     [SerializeField] private MovementComponent movementComponent;
+    private UnitRewindComponent rewindComponent = new UnitRewindComponent();
 
     [Header("Unit Settings")]
     [SerializeField] private Faction faction;
@@ -81,6 +82,15 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public bool HasTakenActionThisTurn { get; set; }
     public Faction UnitFaction { get => faction; }
 
+    public Dictionary<AbilityBaseSO, int> UsedAbilitiesAmountPerTurn
+        => new Dictionary<AbilityBaseSO, int>(usedAbilitiesAmountPerTurn);
+
+    public int MovedPerTurn
+    {
+        get => movedPerTurn;
+        set => movedPerTurn = value;
+    }
+
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
     private int movedPerTurn = 0;
     private RewindableID id;
@@ -109,6 +119,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         }
 
         id = gameObject.AddComponent<RewindableID>();
+        rewindComponent.Initialize(this);
         RegisterSelf();
     }
 
@@ -160,117 +171,36 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     
     public object CaptureState()
     {
-        Dictionary<AbilityBaseSO, int> abilitiesCopy = new();
-
-        foreach (var kvp in usedAbilitiesAmountPerTurn)
-        {
-            abilitiesCopy[kvp.Key] = kvp.Value;
-        }
-
-        UnitSnapshotState state = new UnitSnapshotState
-        {
-            gridPosition = this.gridPosition,
-            hasTakenActionThisTurn = this.HasTakenActionThisTurn,
-            usedAbilitiesAmountPerTurn = abilitiesCopy,
-            movedPerTurn = this.movedPerTurn,
-
-            currentHealth = healthComponent.CurrentHealth,
-            maxHealth = healthComponent.MaxHealth,
-
-            isMoving = movementComponent.IsMoving,
-
-            abilities = this.Abilities,
-
-            isAlive = this.IsAlive
-        };
-
         Debug.Log($"Capture State has been called.\nGridPosition: {gridPosition}");
-        return state;
+        return rewindComponent.CaptureState();
     }
 
     public object CaptureDeactivatedState()
     {
-        Dictionary<AbilityBaseSO, int> abilitiesCopy = new();
-
-        foreach (var kvp in usedAbilitiesAmountPerTurn)
-        {
-            abilitiesCopy[kvp.Key] = kvp.Value;
-        }
-
-        UnitSnapshotState state = new UnitSnapshotState
-        {
-            gridPosition = this.gridPosition,
-            hasTakenActionThisTurn = this.HasTakenActionThisTurn,
-            usedAbilitiesAmountPerTurn = abilitiesCopy,
-            movedPerTurn = this.movedPerTurn,
-
-            currentHealth = 0,
-            maxHealth = 0,
-
-            isMoving = false,
-
-            abilities = this.Abilities,
-
-            isAlive = false
-        };
-
-        return state;
+        return rewindComponent.CaptureDeactivatedState();
     }
 
     public void RestoreState(object state)
     {
         StopAllCoroutines();
         movementComponent.StopAllCoroutines();
-        var s = (UnitSnapshotState)state;
-
-        if (!s.isAlive && isAlive)
-        {
-            SetUnitDead(false);
-            return;
-        }
-        else if (s.isAlive && !isAlive)
-        {
-            RessurectUnit();
-        }
-
-        Debug.Log($"RESTORE STATE HAS BEEN CALLED IN UNIT. \nGridPositionToMove: {s.gridPosition}");
-
-        if (gridPosition != s.gridPosition)
-        {
-            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(s.gridPosition);
-            transform.DOMove(targetWorldPosition, 1f);
-
-            IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(s.gridPosition);
-            GridObjectRegistry.Instance.UnregisterObject(obj, s.gridPosition);
-            GridObjectRegistry.Instance.MoveObject(this, gridPosition, s.gridPosition);
-        }
-
-        gridPosition = s.gridPosition;
-        characterClassSO.abilities = s.abilities;
-        HasTakenActionThisTurn = s.hasTakenActionThisTurn;
-
-        healthComponent.SetHealth(s.currentHealth, s.maxHealth);
-        movementComponent.SetMovingState(s.isMoving);
-
-        usedAbilitiesAmountPerTurn.Clear();
-        foreach (var kvp in s.usedAbilitiesAmountPerTurn)
-        {
-            usedAbilitiesAmountPerTurn[kvp.Key] = kvp.Value;    
-        }
-
-        movedPerTurn = s.movedPerTurn;
-
+        rewindComponent.RestoreState(state);
     }
 
     public bool CanMoveTo(Vector3Int position)
     {
-        return movedPerTurn <= characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
+        return movedPerTurn < characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
     {
         movementComponent.MoveTo(targetPosition, onComplete);
         movedPerTurn++;
+    }
+
+    public void SetMovingState(bool isMoving)
+    {
+        movementComponent.SetMovingState(isMoving);
     }
     public void OnGridPositionChanged(Vector3Int newGridPosition)
     {
@@ -287,13 +217,16 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     {
         healthComponent.Heal(amount);
     }
-
+    public void SetHealth(int currentHealth, int maxHealth)
+    {
+        healthComponent.SetHealth(currentHealth, maxHealth);
+    }
     private void HandleDeath()
     {
         SetUnitDead(true);
     }
 
-    private void SetUnitDead(bool triggerEvent = true)
+    public void SetUnitDead(bool triggerEvent = true)
     {
         isAlive = false;
         gameObject.SetActive(false);
@@ -305,7 +238,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         }
     }
 
-    private void RessurectUnit()
+    public void RessurectUnit()
     {
         isAlive = true;
         gameObject.SetActive(true);
@@ -353,6 +286,15 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         foreach (AbilityBaseSO ability in usedAbilitiesAmountPerTurn.Keys.ToList())
         {
             usedAbilitiesAmountPerTurn[ability] = 0;
+        }
+    }
+
+    public void CopyUsedAbilities(Dictionary<AbilityBaseSO, int> abilities)
+    {
+        usedAbilitiesAmountPerTurn.Clear();
+        foreach (var kvp in abilities)
+        {
+            usedAbilitiesAmountPerTurn[kvp.Key] = kvp.Value;
         }
     }
 
