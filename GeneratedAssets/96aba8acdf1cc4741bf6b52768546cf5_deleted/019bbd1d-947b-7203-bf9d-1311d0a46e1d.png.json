@@ -1,0 +1,26 @@
+{
+    "asset": "96aba8acdf1cc4741bf6b52768546cf5",
+    "fileName": "019bbd1d-947b-7203-bf9d-1311d0a46e1d.png",
+    "prompt": "Full body 2d chici game character concept art, cyber ninja warrior, standing straight, arms slightly out from body, clear separation between limbs, flat vector style, neutral background. Generate a spritesheet with animations for this character",
+    "negativePrompt": "",
+    "model": "5b5b2af1-6ea4-4266-b087-cc9f3bf4f450",
+    "modelName": "Flux.1 Dev",
+    "customSeed": -1,
+    "w3CTraceId": "0467d7d19067e017b2e90ff372918de3",
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

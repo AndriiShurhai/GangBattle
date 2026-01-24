@@ -7,8 +7,6 @@ using DG.Tweening;
 
 public class UnitSnapshotState
 {
-    public SpriteRenderer spriteRenderer;
-    public GameObject healthBarPrefab;
     public Vector3Int gridPosition;
     public List<AbilityBaseSO> abilities;
 
@@ -181,14 +179,41 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
             isMoving = movementComponent.IsMoving,
 
-            spriteRenderer = this.spriteRenderer,
-            healthBarPrefab = this.healthBarPrefab,
             abilities = this.Abilities,
 
             isAlive = this.IsAlive
         };
 
         Debug.Log($"Capture State has been called.\nGridPosition: {gridPosition}");
+        return state;
+    }
+
+    public object CaptureDeactivatedState()
+    {
+        Dictionary<AbilityBaseSO, int> abilitiesCopy = new();
+
+        foreach (var kvp in usedAbilitiesAmountPerTurn)
+        {
+            abilitiesCopy[kvp.Key] = kvp.Value;
+        }
+
+        UnitSnapshotState state = new UnitSnapshotState
+        {
+            gridPosition = this.gridPosition,
+            hasTakenActionThisTurn = this.HasTakenActionThisTurn,
+            usedAbilitiesAmountPerTurn = abilitiesCopy,
+            movedPerTurn = this.movedPerTurn,
+
+            currentHealth = 0,
+            maxHealth = 0,
+
+            isMoving = false,
+
+            abilities = this.Abilities,
+
+            isAlive = false
+        };
+
         return state;
     }
 
@@ -219,9 +244,6 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             GridObjectRegistry.Instance.UnregisterObject(obj, s.gridPosition);
             GridObjectRegistry.Instance.MoveObject(this, gridPosition, s.gridPosition);
         }
-
-        spriteRenderer = s.spriteRenderer;
-        healthBarPrefab = s.healthBarPrefab;
 
         gridPosition = s.gridPosition;
         characterClassSO.abilities = s.abilities;

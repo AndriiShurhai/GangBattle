@@ -50,6 +50,18 @@ public class Trap : MonoBehaviour, IGridObject, IRewindable
         return state;
     }
 
+    public object CaptureDeactivatedState()
+    {
+        TrapSnapshotState state = new TrapSnapshotState
+        {
+            gridPosition = this.gridPosition,
+            remainingDuration = 0,
+            isActive = false,
+            roundSinceRegister = 0
+        };
+
+        return state;
+    }
     public void RestoreState(object state)
     {
         var s = (TrapSnapshotState)state;

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using System;
 using System.Linq;
 
-public class  TurnManagerSnaphsotState
+public class  TurnManagerSnapshotState
 {
     public int currentTurn;
     public TurnManager.TurnState currentState;
@@ -106,7 +106,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     public object CaptureState()
     {
-        TurnManagerSnaphsotState currentState = new TurnManagerSnaphsotState
+        TurnManagerSnapshotState currentState = new TurnManagerSnapshotState
         {
             currentState = this.currentState,
             currentTurn = this.currentTurn,
@@ -119,9 +119,13 @@ public class TurnManager : MonoBehaviour, IRewindable
         return currentState;
     }
 
+    public object CaptureDeactivatedState()
+    {
+        return CaptureState();
+    }
     public void RestoreState(object state)
     {
-        var s = (TurnManagerSnaphsotState)state;
+        var s = (TurnManagerSnapshotState)state;
 
         this.currentState = s.currentState;
         this.currentTurn = s.currentTurn;

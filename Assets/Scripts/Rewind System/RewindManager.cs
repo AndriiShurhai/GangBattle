@@ -87,19 +87,11 @@ public class RewindManager : MonoBehaviour
             else
             {
                 Debug.LogWarning($"No state found for {r.RewindID} in turn {turnIndex}");
-                if (r is Trap trap)
-                {
-                    var deactivatedState = new TrapSnapshotState
-                    {
-                        gridPosition = trap.GridPosition,
-                        remainingDuration = 0,
-                        isActive = false,
-                        roundSinceRegister = 0
-                    };
-                    trap.RestoreState(deactivatedState);
+                var deactivatedState = r.CaptureDeactivatedState();
+                
+                r.RestoreState(deactivatedState);
 
-                    rewindables.Remove(trap);
-                }
+                rewindables.Remove(r);
             }
         }
 
