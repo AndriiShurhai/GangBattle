@@ -18,7 +18,7 @@ public class AttackActionSO : AIActionSO
         Unit bestTarget = targetsInRange[0];
         foreach (Unit targetUnit in targetsInRange)
         {
-            if (targetUnit.CurrentHealth <= bestTarget.CurrentHealth)
+            if (targetUnit.CurrentHealth < bestTarget.CurrentHealth)
             {
                 bestTarget = targetUnit;    
             }

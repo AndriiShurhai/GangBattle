@@ -33,6 +33,11 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public event Action<Unit> OnUnitDied;
     public event Action OnUnitMadeAction;
 
+    public static event Action<Unit> OnAnyUnitSpawned;
+    public static event Action<Unit> OnAnyUnitDied;
+    public static event Action<Unit, int, int> OnAnyUnitTookDamage;
+    public static event Action<Unit, int, int> OnAnyUnitHealed;
+
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
     [SerializeField] private MovementComponent movementComponent;
@@ -46,7 +51,6 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
-    [SerializeField] private GameObject healthBarPrefab;
     [SerializeField] private Transform healthBarAttachPoint;
 
     private Vector3Int gridPosition;
@@ -139,11 +143,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
     private void Start()
     {
-        if(healthBarPrefab != null && healthBarAttachPoint != null)
-        {
-            GameObject healthBarInstance = Instantiate(healthBarPrefab, healthBarAttachPoint.position, Quaternion.identity, healthBarAttachPoint);
-            healthBarInstance.GetComponent<UnitHealthUI>().Initialize(healthComponent);
-        }
+        OnAnyUnitSpawned?.Invoke(this);
     }
 
     private void OnDestroy()
@@ -162,6 +162,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         {
             healthComponent.OnDeath -= HandleDeath; 
         }
+
+        OnAnyUnitDied?.Invoke(this);
     }
 
     public void RegisterSelf()
@@ -189,7 +191,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
     public bool CanMoveTo(Vector3Int position)
     {
-        return movedPerTurn < characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
+        return !movementComponent.IsMoving && movedPerTurn < characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
@@ -211,11 +213,13 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public void TakeDamage(int damage, Unit attacker)
     {
         healthComponent.TakeDamage(damage);
+        OnAnyUnitTookDamage?.Invoke(this, damage, CurrentHealth);
     }
 
     public void Heal(int amount)
     {
         healthComponent.Heal(amount);
+        OnAnyUnitHealed?.Invoke(this, amount, CurrentHealth);
     }
     public void SetHealth(int currentHealth, int maxHealth)
     {
@@ -306,5 +310,15 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public static void InvokeUnitEnteredTile(Unit unit, Vector3Int tilePosition)
     {
         OnUnitEnteredTile?.Invoke(unit, tilePosition);
+    }
+
+    public Transform GetHealthBarAttachPoint()
+    {
+        return healthBarAttachPoint;
+    }
+
+    public SpriteRenderer GetSpriteRenderer()
+    {
+        return spriteRenderer;
     }
 }

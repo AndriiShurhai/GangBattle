@@ -327,6 +327,7 @@ public class TurnManager : MonoBehaviour, IRewindable
                 });
 
                 yield return new WaitUntil(() => isTurnComplete);
+                yield return new WaitForSeconds(0.5f);
 
                 if (enemyUnit != null) enemyUnit.HasTakenActionThisTurn = true;
             }

@@ -1,4 +1,7 @@
+using System.Collections;
 using UnityEngine;
+using DG;
+using DG.Tweening;
 
 [CreateAssetMenu(menuName = "Abilities/Attack Ability")]
 public class AttackAbilitySO : AbilityBaseSO
@@ -13,13 +16,23 @@ public class AttackAbilitySO : AbilityBaseSO
 
         if (targetObject is Unit targetUnit)
         {
-            targetUnit.TakeDamage(damage, caster);
-
-            Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
-
             // TODO: Play attack animation
             // TODO: Show damage numbers
             // TODO: Play sound effect
+
+            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
+            Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
+
+            Sequence attackSequence = DOTween.Sequence();
+
+            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 1f, 1, 0.5f).SetEase(Ease.OutQuad));
+            attackSequence.AppendCallback(() =>
+            {
+                targetUnit.TakeDamage(damage, caster);
+                Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
+            });
+
+            attackSequence.Append(caster.transform.DOMove(caster.transform.position, 0.4f).SetEase(Ease.InQuad));
 
             // Spawn effect if available
             if (abilityEffectPrefab != null)
