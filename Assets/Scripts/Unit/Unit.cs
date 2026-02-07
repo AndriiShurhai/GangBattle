@@ -59,6 +59,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public int MaxHealth { get { return healthComponent.MaxHealth; } }
     public HealthComponent Health { get { return healthComponent; } }
     
+    public int Damage { get; private set; }
     public Vector3Int GridPosition
     {
         get => gridPosition;
@@ -139,6 +140,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
         healthComponent.Initialize(characterClassSO);
         movementComponent.Initialize(characterClassSO);
+
+        this.Damage = characterClassSO.damage;
     }
 
     private void Start()

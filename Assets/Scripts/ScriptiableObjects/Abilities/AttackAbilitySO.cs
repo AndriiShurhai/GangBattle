@@ -6,10 +6,20 @@ using DG.Tweening;
 [CreateAssetMenu(menuName = "Abilities/Attack Ability")]
 public class AttackAbilitySO : AbilityBaseSO
 {
+    [Header("Scaling")]
+    [SerializeField] private int damageMultiplier = 1;
+
     [Header("Attack Settings")]
-    public int damage = 10;
     public bool canAttackDiagonally = true;
 
+
+    private void OnValidate()
+    {
+        if (damageMultiplier == 0)
+        {
+            damageMultiplier = 1;
+        }
+    }
     public override void Execute(Unit caster, Vector3Int targetPosition)
     {
         IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
@@ -23,6 +33,8 @@ public class AttackAbilitySO : AbilityBaseSO
             Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
             Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
 
+            int damage = Mathf.RoundToInt(caster.Damage * damageMultiplier);
+
             Sequence attackSequence = DOTween.Sequence();
 
             attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 1f, 1, 0.5f).SetEase(Ease.OutQuad));
@@ -30,17 +42,17 @@ public class AttackAbilitySO : AbilityBaseSO
             {
                 targetUnit.TakeDamage(damage, caster);
                 Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
+
+                // Spawn effect if available
+                if (abilityEffectPrefab != null)
+                {
+                    Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
+                    GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                    Destroy(effect, 2f);
+                }
             });
 
             attackSequence.Append(caster.transform.DOMove(caster.transform.position, 0.4f).SetEase(Ease.InQuad));
-
-            // Spawn effect if available
-            if (abilityEffectPrefab != null)
-            {
-                Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
-                GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
-                Destroy(effect, 2f); 
-            }
         }
         else
         {

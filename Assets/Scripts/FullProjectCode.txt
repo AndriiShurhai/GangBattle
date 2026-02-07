@@ -1,0 +1,3559 @@
+
+
+// ==================================================
+// FILE: AIBrain.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+public class AIBrain : MonoBehaviour
+{
+    [SerializeField] private List<AIActionSO> aiActions;
+
+    private Unit aiUnit;
+
+    private void Awake()
+    {
+        aiUnit = GetComponent<Unit>();   
+    }
+
+    public void TakeTurn(Action onComplete)
+    {
+        if (aiActions == null || aiActions.Count == 0) return;
+
+        List<AIScoreData> allScoreData = new List<AIScoreData>();   
+        foreach(AIActionSO action in aiActions)
+        {
+            AIScoreData scoreData = action.GetScoreAction(aiUnit);
+            scoreData.action = action;
+            allScoreData.Add(scoreData);
+        }
+
+        AIScoreData bestScoreData = allScoreData
+            .OrderByDescending(data => data.score)
+            .FirstOrDefault();
+
+        if (bestScoreData.action != null && bestScoreData.score >= 0)
+        {
+            bestScoreData.action.Execute(aiUnit, bestScoreData.target, onComplete);
+        }
+
+        else
+        {
+            onComplete?.Invoke();
+            Debug.Log($"{aiUnit.name} has no valid actions to take");
+        }
+    }
+}
+
+
+// ==================================================
+// FILE: Trap.cs
+// ==================================================
+
+using UnityEngine;
+
+public class TrapSnapshotState
+{
+    public Vector3Int gridPosition;
+    public int remainingDuration;
+    public int roundSinceRegister;
+    public bool isActive;
+
+}
+public class Trap : MonoBehaviour, IGridObject, IRewindable
+{
+    private Vector3Int gridPosition;
+    private int damage;
+    private int remainingDuration;
+    private int roundSinceRegister = 0;
+    private bool isActive = true;
+    private RewindableID id;
+
+    public string RewindID => id.ID;
+
+    public Vector3Int GridPosition { get => gridPosition; set => gridPosition = value; }
+    public bool BlocksMovement { get => false; }
+    public void OnEnable()
+    {
+        Unit.OnUnitEnteredTile += Unit_OnUnitEnteredTile;
+    }
+
+    public void OnDisable()
+    {
+        Unit.OnUnitEnteredTile -= Unit_OnUnitEnteredTile;
+    }
+
+    public void RegisterSelf()
+    {
+        RewindManager.Instance.RegisterRewindable(this);
+    }
+
+    public object CaptureState()
+    {
+        Debug.Log($"Remaining duration before snapshot: {remainingDuration}");
+        TrapSnapshotState state = new TrapSnapshotState
+        {
+            gridPosition = this.gridPosition,
+            remainingDuration = this.remainingDuration,
+            isActive = this.isActive,
+            roundSinceRegister = this.roundSinceRegister,
+        };
+
+        return state;
+    }
+
+    public object CaptureDeactivatedState()
+    {
+        TrapSnapshotState state = new TrapSnapshotState
+        {
+            gridPosition = this.gridPosition,
+            remainingDuration = 0,
+            isActive = false,
+            roundSinceRegister = 0
+        };
+
+        return state;
+    }
+    public void RestoreState(object state)
+    {
+        var s = (TrapSnapshotState)state;
+
+        gameObject.SetActive(s.isActive);
+        if (!isActive && s.isActive)
+        {
+            TrapRegistry.Instance.RegisterTrap(this);
+        }
+        else if (isActive && !s.isActive)
+        {
+            TrapRegistry.Instance.UnregisterTrap(this);
+        }
+
+        this.gridPosition = s.gridPosition;
+        this.remainingDuration = s.remainingDuration;
+        this.isActive = s.isActive;
+        this.roundSinceRegister = s.roundSinceRegister;
+
+
+        Debug.Log($"Trap has been restored. Duration: {remainingDuration}");
+    }
+    private void Unit_OnUnitEnteredTile(Unit unit, Vector3Int tilePosition)
+    {
+        if (tilePosition == this.GridPosition)
+        {
+            TriggerTrap(unit);
+        }
+    }
+
+    public void Initialize(Vector3Int position, int trapDamage, int duration)
+    {
+        gridPosition = position;    
+        damage = trapDamage;
+        remainingDuration = duration; 
+
+        TrapRegistry.Instance.RegisterTrap(this);
+
+        id = gameObject.AddComponent<RewindableID>();
+        RegisterSelf();
+
+        Debug.Log($"Trap placed at position {position} with damage {damage} for {duration} turns");
+    }
+
+    public void OnGridPositionChanged()
+    {
+        //
+    }
+
+    public void TriggerTrap(Unit steppingUnit)
+    {
+        Debug.Log($"{steppingUnit} stepped on a trap, {damage}");
+
+        steppingUnit.TakeDamage(damage, null);
+
+        DestroyTrap();
+    }
+
+    public void DecreaseDuration()
+    {
+        if (roundSinceRegister == 0)
+        {
+            roundSinceRegister = 1;
+            return;
+        }
+        remainingDuration--;
+
+        if (remainingDuration <= 0)
+        {
+            DestroyTrap();
+        }
+    }
+
+    private void DestroyTrap()
+    {
+        isActive = false; 
+        gameObject.SetActive(false);
+        TrapRegistry.Instance.UnregisterTrap(this);
+    }
+    public void OnGridPositionChanged(Vector3Int newGridPosition)
+    {
+    }
+}
+
+
+// ==================================================
+// FILE: TrapRegistry.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections.Generic;
+public class TrapRegistry : MonoBehaviour
+{
+    public static TrapRegistry Instance { get; private set; }
+
+    [SerializeField] private List<Trap> registeredTraps;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void RegisterTrap(Trap trap)
+    {
+        if (registeredTraps.Contains(trap)) return;
+
+        registeredTraps.Add(trap);
+    }
+
+    public void UnregisterTrap(Trap trap)
+    {
+        if (!registeredTraps.Contains(trap)) return;
+
+        registeredTraps.Remove(trap);
+    }
+
+    public List<Trap> GetTraps()
+    {
+        return registeredTraps;
+    }
+}
+
+
+// ==================================================
+// FILE: TurnManager.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections.Generic;
+using System.Collections;
+using Unity.VisualScripting;
+using UnityEngine.UI;
+using System;
+using System.Linq;
+
+public class  TurnManagerSnapshotState
+{
+    public int currentTurn;
+    public TurnManager.TurnState currentState;
+    public bool isGameOver;
+
+    public List<string> alivePlayerUnitIds;
+    public List<string> aliveEnemyUnitIds;
+}
+
+public class TurnManager : MonoBehaviour, IRewindable
+{
+    public static TurnManager Instance { get; private set; }
+
+    public List<Transform> playersPositions;
+    public List<Transform> enemiesPositions;
+
+    public List<Unit> playerUnits;
+    public List<Unit> enemyUnits;
+
+    public string RewindID => id.ID;
+
+    [SerializeField] private CharacterSelectionController characterSelectionController;
+    [SerializeField] private Button endPlayerTurnButton;
+    public enum TurnState { PlayerTurn, EnemyTurn }
+    private TurnState currentState;
+
+    private bool isGameOver;
+    private int currentTurn = -1;
+
+    private RewindableID id;
+
+    private List<Unit> allPlayerUnits = new();
+    private List<Unit> allEnemyUnits = new();
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
+        endPlayerTurnButton.onClick.AddListener(() =>
+        {
+            EndTurn();
+        });
+
+        id = GetComponent<RewindableID>();
+    }
+
+    private void Unit_OnUnitMadeAction()
+    {
+    }
+
+    private void Start()
+    {
+        RegisterSelf();
+
+        for (int i = 0; i < enemyUnits.Count; i++)
+        {
+            GameObject enemy = Instantiate(enemyUnits[i].gameObject);
+            Unit enemyScript = enemy.GetComponent<Unit>();
+            enemyScript.Initialize();
+            enemyScript.PlaceUnit(enemiesPositions[i].position);
+            enemyScript.OnUnitMadeAction += Unit_OnUnitMadeAction;
+
+            enemyUnits[i] = enemyScript;
+            allEnemyUnits.Add(enemyScript);
+        }
+
+        for (int i = 0; i < playerUnits.Count; i++)
+        {
+            GameObject player = Instantiate(playerUnits[i].gameObject);
+            Unit playerScript = player.GetComponent<Unit>();
+            playerScript.Initialize();
+            playerScript.PlaceUnit(playersPositions[i].position);
+            playerScript.OnUnitMadeAction += Unit_OnUnitMadeAction;
+
+            playerUnits[i] = playerScript;
+            allPlayerUnits.Add(playerScript);
+        }
+
+        foreach (var playerUnit in allPlayerUnits)
+        {
+            playerUnit.OnUnitDied += Unit_OnUnitDied;
+        }
+
+        foreach (var enemyUnit in allEnemyUnits)
+        {
+            enemyUnit.OnUnitDied += Unit_OnUnitDied;
+        }
+
+        StartPlayerTurn();
+    }
+
+    public object CaptureState()
+    {
+        TurnManagerSnapshotState currentState = new TurnManagerSnapshotState
+        {
+            currentState = this.currentState,
+            currentTurn = this.currentTurn,
+            isGameOver = this.isGameOver,
+
+            alivePlayerUnitIds = playerUnits.Select(u => u.RewindID).ToList(),
+            aliveEnemyUnitIds = enemyUnits.Select(u => u.RewindID).ToList()
+        };
+
+        return currentState;
+    }
+
+    public object CaptureDeactivatedState()
+    {
+        return CaptureState();
+    }
+    public void RestoreState(object state)
+    {
+        var s = (TurnManagerSnapshotState)state;
+
+        this.currentState = s.currentState;
+        this.currentTurn = s.currentTurn;
+        this.isGameOver = s.isGameOver;
+
+        playerUnits.Clear();
+        foreach (string unitId in s.alivePlayerUnitIds)
+        {
+            Unit unit = allPlayerUnits.Find(u => u.RewindID == unitId);
+            if (unit != null)
+            {
+                playerUnits.Add(unit);
+            }
+        }
+
+        enemyUnits.Clear();
+        foreach (string unitId in s.aliveEnemyUnitIds)
+        {
+            Unit unit = allEnemyUnits.Find(u => u.RewindID == unitId);
+            if (unit != null)
+            {
+                enemyUnits.Add(unit);
+            }
+        }
+
+        if (currentState == TurnState.PlayerTurn)
+        {
+            endPlayerTurnButton.gameObject.SetActive(true);
+            if (characterSelectionController != null)
+                characterSelectionController.gameObject.SetActive(true);
+        }
+        else
+        {
+            endPlayerTurnButton.gameObject.SetActive(false);
+            if (characterSelectionController != null)
+                characterSelectionController.gameObject.SetActive(false);
+        }
+
+        Debug.Log("Restore in the Manager has been called");
+    }
+
+    public void RegisterSelf()
+    {
+        RewindManager.Instance.RegisterRewindable(this);
+    }
+    private void SaveTurn()
+    {
+        currentTurn++;
+        RewindManager.Instance.SaveTurn(currentTurn);
+    }
+
+    private void RewindTo(int turnIndex)
+    {
+        RewindManager.Instance.RewindTo(turnIndex);
+    }
+
+    public void RewindOneStep()
+    {
+        if (currentTurn < 0)
+        {
+            Debug.Log("Already at the beginning, cannot rewind");
+            return;
+        }
+
+        var availableTurns = RewindManager.Instance.GetAvailableTurns();
+
+        if (availableTurns.Count == 0)
+        {
+            Debug.Log("No snapshots available to rewind");
+            return;
+        }
+
+        int targetTurn = -1;
+        for (int i = currentTurn - 1; i >= 0; i--)
+        {
+            if (availableTurns.Contains(i))
+            {
+                targetTurn = i;
+                break;
+            }
+        }
+
+        if (targetTurn == -1)
+        {
+            Debug.Log("No previous snapshot found");
+            RewindManager.Instance.RewindTo(currentTurn);
+            return;
+        }
+
+        Debug.Log($"Rewinding from turn {currentTurn} to turn {targetTurn}");
+        RewindManager.Instance.RewindTo(targetTurn);
+    }
+
+    public void RewindToCurrentTurn()
+    {
+        Debug.Log($"Reset current turn has been called. Current turn: {currentTurn}");
+        RewindManager.Instance.RewindTo(currentTurn);
+    }
+    private void Unit_OnUnitDied(Unit unit)
+    {
+        if (isGameOver) return;
+
+        if (playerUnits.Contains(unit))
+        {
+            playerUnits.Remove(unit);  
+            
+            if (playerUnits.Count == 0)
+            {
+                Debug.Log("enemies win");
+                isGameOver = true;
+                EndGame();
+            }
+        }
+
+        else if(enemyUnits.Contains(unit))
+        {
+            enemyUnits.Remove(unit);
+
+            if (enemyUnits.Count == 0)
+            {
+                Debug.Log("player wins");
+                isGameOver = true;
+                EndGame();
+            }
+        }
+    }
+
+    public void StartPlayerTurn()
+    {
+        currentState = TurnState.PlayerTurn;
+        Debug.Log("--- PLAYER TURN START ---");
+
+        if (characterSelectionController != null)
+        {
+            Debug.Log("enabling character selection controller");
+            characterSelectionController.gameObject.SetActive(true);
+        }
+
+        foreach (Unit unit in playerUnits)
+        {
+            unit.ResetUsedAbilities();
+            unit.HasTakenActionThisTurn = false;
+            unit.ResetUsedMovement();
+        }
+        SaveTurn();
+    }
+
+    public void StartEnemyTurn()
+    {
+        currentState = TurnState.EnemyTurn;
+        Debug.Log("--- ENEMY TURN START ---");
+
+        if (characterSelectionController != null)
+        {
+            Debug.Log("Disabling character selection controller");
+            characterSelectionController.gameObject.SetActive(false);
+        }
+
+        foreach (Unit unit in enemyUnits)
+        {
+            unit.HasTakenActionThisTurn = false;
+        }
+
+        StartCoroutine(EnemyTurnRoutine());
+    }
+    public void EndTurn()
+    {
+        List<Trap> traps = new List<Trap>(TrapRegistry.Instance.GetTraps());
+        foreach (Trap trap in traps)
+        {
+            trap.DecreaseDuration();
+        }
+
+        if (currentState == TurnState.PlayerTurn)
+        {
+            endPlayerTurnButton.gameObject.SetActive(false);
+            StartEnemyTurn();
+        }
+        else if (currentState == TurnState.EnemyTurn)
+        {
+            endPlayerTurnButton.gameObject.SetActive(true);
+            StartPlayerTurn();
+        }
+    }
+
+    private IEnumerator EnemyTurnRoutine()
+    {
+        List<Unit> enemiesToTakeTurn = new List<Unit>(enemyUnits);
+
+        foreach (Unit enemyUnit in enemiesToTakeTurn)
+        {
+            if (enemyUnits.Contains(enemyUnit))
+            {
+                bool isTurnComplete = false;
+
+                enemyUnit.GetComponent<AIBrain>()?.TakeTurn(() =>
+                {
+                    isTurnComplete = true;
+                });
+
+                yield return new WaitUntil(() => isTurnComplete);
+                yield return new WaitForSeconds(0.5f);
+
+                if (enemyUnit != null) enemyUnit.HasTakenActionThisTurn = true;
+            }
+        }
+
+        Debug.Log("--- ENEMY TURN END ---");
+
+        EndTurn();
+    }
+
+    private void EndGame()
+    {
+        StopAllCoroutines();
+
+        characterSelectionController.ClearSelection();
+
+        characterSelectionController.gameObject.SetActive(false);
+
+        // show a victory or defeat screen or something
+    }
+
+    public List<Unit> GetPlayerUnits()
+    {
+        return playerUnits;
+    }
+
+    public List<Unit> GetEnemyUnits()
+    {
+        return enemyUnits;
+    }
+
+    public List<Unit> GetAllUnits()
+    {
+        List<Unit> allUnits = new List<Unit>();
+        allUnits.AddRange(playerUnits);
+        allUnits.AddRange(enemyUnits);
+
+        return allUnits;
+    }
+
+    public List<Unit> GetAlivePlayerUnits()
+    {
+        return playerUnits.Where(unit => unit.IsAlive).ToList();
+    }
+
+    public List<Unit> GetAliveEnemyUnits()
+    {
+        return enemyUnits.Where(unit => unit.IsAlive).ToList(); 
+    }
+}
+
+
+// ==================================================
+// FILE: GridManager.cs
+// ==================================================
+
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+
+public class GridManager : MonoBehaviour
+{
+    public static GridManager Instance { get; private set; }
+
+    [Header("Grid Setup")]
+    [SerializeField] private Grid grid;
+    [SerializeField] private Tilemap walkableTilemap;
+    [SerializeField] private Tilemap blockedTilemap;
+
+    public Tilemap WalkableTilemap => walkableTilemap;
+    public Tilemap BlockedTilemap => blockedTilemap;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void Start()
+    {
+    }
+
+    #region Coordinate Conversion
+    public Vector3 GridToWorld(Vector3Int gridPosition)
+    {
+        return grid.GetCellCenterWorld(gridPosition);
+    }
+
+    public Vector3Int WorldToGrid(Vector3 worldPosition)
+    {
+        return grid.WorldToCell(worldPosition);
+    }
+
+    #endregion
+
+    #region Tile Validation
+
+    public bool IsWalkable(Vector3Int gridPosition)
+    {
+        if (walkableTilemap.GetTile(gridPosition) == null) return false;
+        if (blockedTilemap.GetTile(gridPosition) != null) return false;
+        return true;
+    }
+    public bool IsValidPosition(Vector3Int gridPosition)
+    {
+        if (!IsWalkable(gridPosition)) return false;
+
+        IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
+        return obj == null || !obj.BlocksMovement; 
+    }
+
+    public bool HasWalkableTilemap(Vector3Int gridPosition)
+    {
+        return walkableTilemap.HasTile(gridPosition);
+    }
+
+    public bool HasBlockedTilemap(Vector3Int gridPosition)
+    {
+        return blockedTilemap.HasTile(gridPosition);
+    }
+
+    #endregion
+}
+
+
+// ==================================================
+// FILE: GridObjectRegistry.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GridObjectRegistry : MonoBehaviour
+{
+    public static GridObjectRegistry Instance { get; private set; }
+
+    private Dictionary<Vector3Int, IGridObject> occupiedTiles = new Dictionary<Vector3Int, IGridObject>();
+
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    public void RegisterObject(IGridObject obj)
+    {
+        if (IsOccupied(obj.GridPosition))
+        {
+            Debug.LogWarning($"Trying to register unit at occupied position: {obj.GridPosition}");
+            return;
+        }
+
+        occupiedTiles[obj.GridPosition] = obj;
+    }
+
+    public void UnregisterObject(IGridObject obj, Vector3Int position)
+    {
+        if (occupiedTiles.ContainsKey(position) && occupiedTiles[position] == obj)
+        {
+            occupiedTiles.Remove(position);
+        }
+    }
+
+    public void MoveObject(IGridObject obj, Vector3Int fromPosition, Vector3Int toPosition)
+    {
+        UnregisterObject(obj, fromPosition);
+        obj.GridPosition = toPosition;
+        RegisterObject(obj);
+        obj.OnGridPositionChanged(toPosition);
+    }
+
+    public IGridObject GetObjectAt(Vector3Int gridPosition)
+    {
+        if (!occupiedTiles.ContainsKey(gridPosition)) { return null; }
+
+        return occupiedTiles[gridPosition];
+    }
+
+    public bool IsOccupied(Vector3Int gridPosition)
+    {
+        return occupiedTiles.ContainsKey(gridPosition);
+    }
+
+    public List<IGridObject> GetAllGridObjects()
+    {
+        List<IGridObject> gridObjects = new List<IGridObject>();
+
+        foreach (var obj in occupiedTiles.Values)
+        {
+            if(obj != null)
+            {
+                gridObjects.Add(obj);
+            }
+        }
+
+        return gridObjects;
+    }
+
+}
+
+
+// ==================================================
+// FILE: GridUtility.cs
+// ==================================================
+
+using UnityEngine;
+
+public static class GridUtility
+{
+    public static bool HasLineOfSight(Vector3Int casterPosition, Vector3Int targetPositoin)
+    {
+        Vector3 start = GridManager.Instance.GridToWorld(casterPosition);
+        Vector3 end = GridManager.Instance.GridToWorld(targetPositoin);
+
+        Vector3 direction = (end - start).normalized;
+
+        float distance = Vector3.Distance(start, end);
+        LayerMask obstacleLayer = LayerMask.GetMask("Obstacle");
+
+        if (Physics2D.Raycast(start, direction, distance, obstacleLayer))
+        {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+
+// ==================================================
+// FILE: GridVisualizer.cs
+// ==================================================
+
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GridVisualizer : MonoBehaviour
+{
+    public static GridVisualizer Instance {  get; private set; }    
+
+    [Header("Visual Feedback")]
+    [SerializeField] private GameObject movementHighlightPrefab;
+    [SerializeField] private Color validMoveColor = Color.green;
+    [SerializeField] private Color invalidMoveColor = Color.red;
+    [SerializeField] private Transform highlightsContainer;
+
+    private HighlightManager _highlightManager;
+    private List<GameObject> highlightObjects = new List<GameObject>();
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            _highlightManager = new HighlightManager(movementHighlightPrefab, highlightsContainer);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void ShowMovementRange(Vector3Int centerPosition, int movementRange, System.Func<Vector3Int, bool> IsValidPosition)
+    {
+        ClearHighlights();
+
+        var validPositions = PathFinder.Instance.GetReachableTiles(centerPosition, movementRange, IsValidPosition);
+
+        foreach (var validPosition in validPositions)
+        {
+            _highlightManager.CreateHighlight(validPosition, validMoveColor);
+        }
+    }
+
+    public void ClearHighlights()
+    {
+        _highlightManager.ClearAllHighlights();
+    }
+
+    public void HideHighlights()
+    {
+        _highlightManager.SetHighlightsActive(false);
+    }
+
+    public void ShowHighlights()
+    {
+        _highlightManager.SetHighlightsActive(true);
+    }
+
+    //public void CreateHighlight(Vector3Int gridPosition, Color color)
+    //{
+    //    if (movementHighlightPrefab == null) return;
+
+    //    Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
+    //    GameObject highlight = Instantiate(movementHighlightPrefab, worldPosition, Quaternion.identity, highlightsContainer);
+
+    //    var renderer = highlight.GetComponent<SpriteRenderer>();
+    //    if (renderer != null) renderer.color = color;
+
+    //    highlightObjects.Add(highlight);
+    //}
+}
+
+
+// ==================================================
+// FILE: IGridObject.cs
+// ==================================================
+
+using UnityEngine;
+
+public interface IGridObject 
+{ 
+    Vector3Int GridPosition { get; set; }
+    bool BlocksMovement { get; }
+    void OnGridPositionChanged(Vector3Int newGridPosition);
+}
+
+
+// ==================================================
+// FILE: IMoveable.cs
+// ==================================================
+
+using System;
+using UnityEngine;
+
+public interface IMoveable : IGridObject
+{
+    int MovementRange { get; }
+    bool IsMoving { get; }
+    bool CanMoveTo(Vector3Int position);
+    void MoveTo(Vector3Int position, Action onComplete = null);
+}
+
+
+// ==================================================
+// FILE: PathFinder.cs
+// ==================================================
+
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PathFinder : MonoBehaviour
+{
+    public static PathFinder Instance { get; private set; }
+
+    public class PathNode
+    {
+        public Vector3Int position;
+        public int gCost; // Cost from the start node.
+        public int hCost; // Heuristic cost to the end node.
+        public PathNode parent; // The node that came before this one.
+
+        public int FCost => gCost + hCost;
+
+        public PathNode(Vector3Int position)
+        {
+            this.position = position;
+        }
+    }
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public List<Vector3Int> GetReachableTiles(Vector3Int startPosition, int movementRange, System.Func<Vector3Int, bool> IsValidPosition)
+    {
+        List<Vector3Int> reachableTiles = new List<Vector3Int>();
+        Dictionary<Vector3Int, int> costSoFar = new Dictionary<Vector3Int, int>();
+        Queue<Vector3Int> frontier = new Queue<Vector3Int>();
+
+        frontier.Enqueue(startPosition);
+        costSoFar[startPosition] = 0;
+
+        while (frontier.Count > 0)
+        {
+            var current = frontier.Dequeue();
+
+            foreach (var neighbor in GetNeighbours(current))
+            {
+                int newCost = costSoFar[current] + 1; // 1 cost per tile regardless of direction
+                if (newCost <= movementRange && IsValidPosition(neighbor))
+                {
+                    if (!costSoFar.ContainsKey(neighbor))
+                    {
+                        costSoFar[neighbor] = newCost;
+                        frontier.Enqueue(neighbor);
+                        reachableTiles.Add(neighbor);
+                    }
+                }
+            }
+        }
+        return reachableTiles;
+    }
+
+    public List<Vector3Int> GetPath(Vector3Int startPosition, Vector3Int endPosition, System.Func<Vector3Int, bool> IsValidPosition)
+    {
+        PathNode startNode = new PathNode(startPosition);
+        PathNode endNode = new PathNode(endPosition);
+
+        PriorityQueue<PathNode> openSet = new PriorityQueue<PathNode>();
+        HashSet<Vector3Int> closedSet = new HashSet<Vector3Int>();
+        Dictionary<Vector3Int, PathNode> openSetNodes = new Dictionary<Vector3Int, PathNode>();
+
+        startNode.gCost = 0;
+        startNode.hCost = CalculateDistanceCost(startNode.position, endNode.position);
+
+        openSet.Enqueue(startNode, startNode.FCost);
+        openSetNodes[startNode.position] = startNode;
+
+        while (openSet.Count > 0)
+        {
+            PathNode currentNode = openSet.Dequeue();
+            openSetNodes.Remove(currentNode.position);
+
+            // Path found
+            if (currentNode.position == endNode.position)
+            {
+                return ReconstructPath(currentNode);
+            }
+
+            closedSet.Add(currentNode.position);
+
+
+            foreach (Vector3Int neighbourPosition in GetNeighbours(currentNode.position))
+            {
+                if (closedSet.Contains(neighbourPosition) || !IsValidPosition(neighbourPosition))
+                {
+                    continue;
+                }
+
+                int tentativeGCost = currentNode.gCost + 1;
+
+                if (openSetNodes.TryGetValue(neighbourPosition, out PathNode neighbourNode))
+                {
+                    if (tentativeGCost < neighbourNode.gCost)
+                    {
+                        neighbourNode.parent = currentNode;
+                        neighbourNode.gCost = tentativeGCost;
+                        neighbourNode.hCost = CalculateDistanceCost(neighbourNode.position, endNode.position);
+
+                        openSet.Enqueue(neighbourNode, neighbourNode.FCost);
+                    }
+                }
+                else
+                {
+                    neighbourNode = new PathNode(neighbourPosition);
+                    neighbourNode.parent = currentNode;
+                    neighbourNode.gCost = tentativeGCost;
+                    neighbourNode.hCost = CalculateDistanceCost(neighbourNode.position, endNode.position);
+                    openSet.Enqueue(neighbourNode, neighbourNode.FCost);
+                    openSetNodes[neighbourPosition] = neighbourNode;
+                }
+            }
+        }
+
+        // Path not found
+        return new List<Vector3Int>();
+    }
+
+    private IEnumerable<Vector3Int> GetNeighbours(Vector3Int node)
+    {
+        // 4-directional movement (orthogonal)
+        yield return node + Vector3Int.right;
+        yield return node + Vector3Int.left;
+        yield return node + Vector3Int.up;
+        yield return node + Vector3Int.down;
+
+        // 4-directional diagonal movement
+        yield return node + new Vector3Int(1, 1, 0);
+        yield return node + new Vector3Int(-1, -1, 0);
+        yield return node + new Vector3Int(-1, 1, 0);
+        yield return node + new Vector3Int(1, -1, 0);
+    }
+
+    private List<Vector3Int> ReconstructPath(PathNode endNode)
+    {
+        List<Vector3Int> path = new List<Vector3Int>();
+        PathNode currentNode = endNode;
+
+        while (currentNode != null)
+        {
+            path.Add(currentNode.position);
+            currentNode = currentNode.parent;
+        }
+
+        path.Reverse();
+        return path;
+    }
+    private int CalculateDistanceCost(Vector3Int a, Vector3Int b)
+    {
+        int xDistance = Mathf.Abs(a.x - b.x);
+        int yDistance = Mathf.Abs(a.y - b.y);
+
+        // Chebyshev distance: max of horizontal and vertical distance
+        // This is admissible when diagonal movement costs the same as orthogonal
+        return Mathf.Max(xDistance, yDistance);
+    }
+}
+
+
+// ==================================================
+// FILE: GameInput.cs
+// ==================================================
+
+using System;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class GameInput : MonoBehaviour
+{
+    private const string PLAYER_PREFS_BINDINGS = "InputBindings";
+
+    private InputSystem_Actions inputAction;
+
+    public event Action OnInteractAction;
+    public event Action OnPauseAction;
+    public event Action OnBindingRebinding;
+    public event Action<Vector2> OnClickAction;
+
+    public enum Binding
+    {
+        Interact,
+        Pause,
+        GamepadInteract,
+        GamepadPause
+    }
+    public static GameInput Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        inputAction = new InputSystem_Actions();
+
+        if (PlayerPrefs.HasKey(PLAYER_PREFS_BINDINGS))
+        {
+            inputAction.LoadBindingOverridesFromJson(PlayerPrefs.GetString(PLAYER_PREFS_BINDINGS));
+        }
+
+        inputAction.Player.Enable();
+
+        inputAction.Player.Interact.performed += Interact_performed;
+        inputAction.Player.Pause.performed += Pause_performed;
+        inputAction.Player.Click.performed += Click_performed;
+    }
+
+    private void OnDestroy()
+    {
+        inputAction.Player.Interact.performed -= Interact_performed;
+        inputAction.Player.Pause.performed -= Pause_performed;
+        inputAction.Player.Click.performed -= Click_performed;
+        inputAction.Dispose();
+    }
+
+    private (InputAction action, int bindingIndex) GetInputActionForBinding(Binding binding)
+    {
+        switch (binding)
+        {
+            default:
+            case Binding.Interact: return (inputAction.Player.Interact, 0);
+            case Binding.Pause: return (inputAction.Player.Pause, 0);
+            case Binding.GamepadInteract: return (inputAction.Player.Interact, 1);
+            case Binding.GamepadPause: return (inputAction.Player.Pause, 1);
+        }
+    }
+
+    public string GetBindingText(Binding binding)
+    {
+        var (action, bindingIndex) = GetInputActionForBinding(binding);
+        return action.bindings[bindingIndex].ToDisplayString();
+    }
+
+    public void RebindBinding(Binding binding, Action OnComplete = null)
+    {
+        inputAction.Player.Disable();
+
+        var (action, bindingIndex) = GetInputActionForBinding(binding);
+
+        action.PerformInteractiveRebinding(bindingIndex)
+            .OnComplete(callback =>
+            {
+                callback.Dispose();
+                inputAction.Player.Enable();
+                OnComplete?.Invoke();
+
+                PlayerPrefs.SetString(PLAYER_PREFS_BINDINGS, inputAction.SaveBindingOverridesAsJson());
+                PlayerPrefs.Save();
+                OnBindingRebinding?.Invoke();
+            })
+            .OnCancel(callback =>
+            {
+                callback.Dispose();
+                inputAction.Player.Enable();
+            })
+            .Start();
+    }
+
+    private void Click_performed(InputAction.CallbackContext obj)
+    {
+        OnClickAction?.Invoke(GetPointerPosition());
+    }
+
+    private Vector2 GetPointerPosition()
+    {
+        return inputAction.Player.PointerPosition.ReadValue<Vector2>();
+    }
+
+    private void Pause_performed(InputAction.CallbackContext obj)
+    {
+        OnPauseAction?.Invoke();
+    }
+
+    private void Interact_performed(InputAction.CallbackContext obj)
+    {
+        OnInteractAction?.Invoke();
+    }
+}
+
+
+// ==================================================
+// FILE: PriorityQueue.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+
+public class PriorityQueue<T>
+{
+    private List<(T item, float priority)> elements = new List<(T, float)>();
+
+    public int Count => elements.Count;
+
+    public void Enqueue(T item, float priority)
+    {
+        elements.Add((item, priority));
+    }
+
+    public T Dequeue()
+    {
+        int bestIndex = 0;
+        for (int i = 1; i < elements.Count; i++)
+        {
+            if (elements[i].priority < elements[bestIndex].priority)
+            {
+                bestIndex = i;
+            }
+        }
+
+        T bestItem = elements[bestIndex].item;
+        elements.RemoveAt(bestIndex);
+        return bestItem;
+    }
+}
+
+
+// ==================================================
+// FILE: RangeFinder.cs
+// ==================================================
+
+using System.Collections.Generic;
+using UnityEngine;
+
+public static class RangeFinder
+{
+    public static List<Vector3Int> GetSquareRange(Vector3Int center, int range)
+    {
+        List<Vector3Int> tiles = new List<Vector3Int>();
+        for (int x = -range; x <= range; x++)
+        {
+            for (int y = -range; y <= range; y++)
+            {
+                tiles.Add(center + new Vector3Int(x, y, 0));
+            }
+        }
+        return tiles;
+    }
+
+    public static List<Vector3Int> GetDiamondRange(Vector3Int center, int range)
+    {
+        List<Vector3Int> tiles = new List<Vector3Int>();
+        for (int x = -range; x <= range; x++)
+        {
+            for (int y = -range; y <= range; y++)
+            {
+                if (Mathf.Abs(x) + Mathf.Abs(y) <= range)
+                {
+                    tiles.Add(center + new Vector3Int(x, y, 0));
+                }
+            }
+        }
+        return tiles;
+    }
+
+    public static List<Vector3Int> GetCrossRange(Vector3Int center, int range)
+    {
+        List<Vector3Int> tiles = new List<Vector3Int>();
+        for (int i = -range; i <= range; i++)
+        {
+            if (i == 0) continue;
+            tiles.Add(center + new Vector3Int(i, 0, 0));
+            tiles.Add(center + new Vector3Int(0, i, 0));
+        }
+        tiles.Add(center);
+        return tiles;
+    }
+
+    public static List<Vector3Int> GetLineRange(Vector3Int center, int range)
+    {
+        // For now, Line is the same as Cross. This can be expanded later.
+        return GetCrossRange(center, range);
+    }
+
+    public static List<Vector3Int> GetCircleRange(Vector3Int center, int range)
+    {
+        List<Vector3Int> tiles = new List<Vector3Int>();
+        float rangeSqr = range * range;
+        for (int x = -range; x <= range; x++)
+        {
+            for (int y = -range; y <= range; y++)
+            {
+                if (x * x + y * y <= rangeSqr)
+                {
+                    tiles.Add(center + new Vector3Int(x, y, 0));
+                }
+            }
+        }
+        return tiles;
+    }
+}
+
+
+// ==================================================
+// FILE: SceneLoader.cs
+// ==================================================
+
+using System;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class SceneLoader : MonoBehaviour
+{
+    public static SceneLoader Instance { get; private set; }
+
+    [SerializeField] private CanvasGroup fadeCanvas;
+    [SerializeField] private float fadeDuration = 4f;
+    [SerializeField] private AnimationCurve fadeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    public static event Action<string> OnSceneLoadStarted;
+    public static event Action<string, float> OnSceneLoadProgress; // sceneName, progress (0-1)
+    public static event Action<string> OnSceneLoadCompleted;
+    public static event Action<string, string> OnSceneLoadFailed; // sceneName, error message
+
+    public bool IsLoading { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        if (fadeCanvas == null)
+        {
+            Debug.LogWarning("SceneLoader: No fade canvas assigned. Scene transitions will be instant.");
+        }
+    }
+
+    public void LoadSceneByName(string name)
+    {
+        LoadScene(name);
+    }
+
+    public void LoadAdditiveSceneByName(string name)
+    {
+        LoadScene(name, true);
+    }
+
+    public void LoadScene(string sceneName, bool additive = false)
+    {
+        if (IsLoading)
+        {
+            Debug.LogWarning($"SceneLoader: Already loading a scene. Ignoring request to load '{sceneName}'");
+            return;
+        }
+
+        if (!IsSceneValid(sceneName))
+        {
+            string error = $"Scene '{sceneName}' not found in build settings";
+            Debug.LogError($"SceneLoader: {error}");
+            OnSceneLoadFailed?.Invoke(sceneName, error);
+            return;
+        }
+
+        StartCoroutine(LoadSceneRoutine(sceneName, additive));
+    }
+
+    private bool IsSceneValid(string sceneName)
+    {
+        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+        {
+            string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
+            string sceneNameFromPath = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+            if (sceneNameFromPath == sceneName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private IEnumerator LoadSceneRoutine(string sceneName, bool additive)
+    {
+        IsLoading = true;
+        OnSceneLoadStarted?.Invoke(sceneName);
+
+        yield return StartCoroutine(Fade(1));
+
+        AsyncOperation loadOp;
+        if (!additive)
+        {
+            loadOp = SceneManager.LoadSceneAsync(sceneName);
+        }
+        else
+        {
+            loadOp = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        }
+
+        if (loadOp == null)
+        {
+            string error = "Failed to start scene loading operation";
+            Debug.LogError($"SceneLoader: {error}");
+            OnSceneLoadFailed?.Invoke(sceneName, error);
+
+            // Fade back in on error
+            yield return StartCoroutine(Fade(0));
+            IsLoading = false;
+            yield break;
+        }
+
+        while (!loadOp.isDone)
+        {
+            float progress = Mathf.Clamp01(loadOp.progress / 0.9f); // LoadSceneAsync progress goes to 0.9f, then jumps to 1
+            OnSceneLoadProgress?.Invoke(sceneName, progress);
+            yield return null;
+        }
+
+        // Ensure final progress update
+        OnSceneLoadProgress?.Invoke(sceneName, 1f);
+
+        // Small delay to ensure scene is fully initialized
+        yield return new WaitForEndOfFrame();
+
+        // Fade back in
+        yield return StartCoroutine(Fade(0));
+
+        IsLoading = false;
+        OnSceneLoadCompleted?.Invoke(sceneName);
+    }
+
+    private IEnumerator Fade(float targetAlpha)
+    {
+        if (fadeCanvas == null) yield break;
+
+        fadeCanvas.blocksRaycasts = true;
+
+        float startAlpha = fadeCanvas.alpha;
+        float startTime = Time.realtimeSinceStartup;
+        float endTime = startTime + fadeDuration;
+
+        while (Time.realtimeSinceStartup < endTime)
+        {
+            float elapsed = Time.realtimeSinceStartup - startTime;
+            float normalizedTime = elapsed / fadeDuration;
+            float curveValue = fadeCurve.Evaluate(normalizedTime);
+            fadeCanvas.alpha = Mathf.Lerp(startAlpha, targetAlpha, curveValue);
+            yield return null;
+        }
+
+        fadeCanvas.alpha = targetAlpha;
+        fadeCanvas.blocksRaycasts = targetAlpha > 0;
+    }
+
+    public void ReloadCurrentScene()
+    {
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        LoadScene(currentSceneName);
+    }
+
+    public void UnloadScene(string sceneName)
+    {
+        if (IsLoading)
+        {
+            Debug.LogWarning("SceneLoader: Cannot unload scene while loading is in progress");
+            return;
+        }
+
+        StartCoroutine(UnloadSceneRoutine(sceneName));
+    }
+
+    private IEnumerator UnloadSceneRoutine(string sceneName)
+    {
+        AsyncOperation unloadOp = SceneManager.UnloadSceneAsync(sceneName);
+
+        if (unloadOp != null)
+        {
+            while (!unloadOp.isDone)
+            {
+                yield return null;
+            }
+
+            // Clean up memory
+            Resources.UnloadUnusedAssets();
+            System.GC.Collect();
+        }
+    }
+
+    public string[] GetAllSceneNames()
+    {
+        string[] sceneNames = new string[SceneManager.sceneCountInBuildSettings];
+        for (int i = 0; i < sceneNames.Length; i++)
+        {
+            string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
+            sceneNames[i] = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+        }
+        return sceneNames;
+    }
+}
+
+
+// ==================================================
+// FILE: CharacterSelectionController.cs
+// ==================================================
+
+using Unity.VisualScripting;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class CharacterSelectionController : MonoBehaviour
+{
+    private Camera mainCamera;
+    private Unit selectedUnit;
+
+    private IPlayerState currentState;
+
+    public NoSelectionState noSelectionState;
+
+    private void Awake()
+    {
+        mainCamera = Camera.main;
+        noSelectionState = new NoSelectionState(this);
+    }
+    private void Start()
+    {
+        ChangeState(noSelectionState);
+    }
+    private void OnEnable()
+    {
+        GameInput.Instance.OnClickAction += GameInput_OnClickAction;
+    }
+    private void OnDisable()
+    {
+        GameInput.Instance.OnClickAction -= GameInput_OnClickAction;
+    }
+    private void GameInput_OnClickAction(Vector2 mousePosition)
+    {
+        Debug.Log("Clicked action");
+        Vector3 worldPoint = mainCamera.ScreenToWorldPoint(mousePosition);
+        Vector3Int gridPosition = GridManager.Instance.WorldToGrid(worldPoint);
+
+        currentState?.OnClick(gridPosition);
+    }
+    public void ChangeState(IPlayerState state)
+    {
+        currentState?.Exit();
+        currentState = state;
+        currentState?.Enter();
+    }
+
+    public void SelectUnit(Unit unit)
+    {
+        selectedUnit = unit;
+        ChangeState(new UnitSelectedState(this, unit));
+    }
+
+
+    public void ClearSelection()
+    {
+        GridVisualizer.Instance.ClearHighlights();
+        CharacterActionPanelUI.Instance.HideAbilityPanel();
+        selectedUnit = null;
+    }
+}
+
+
+// ==================================================
+// FILE: IPlayerState.cs
+// ==================================================
+
+using UnityEngine;
+
+public interface IPlayerState
+{
+    void Enter();
+    void Exit();
+    void OnClick(Vector3Int position);
+}
+
+
+// ==================================================
+// FILE: NoSelectionState.cs
+// ==================================================
+
+using UnityEngine;
+
+public class NoSelectionState : IPlayerState
+{
+    private readonly CharacterSelectionController _controller;
+
+    public NoSelectionState(CharacterSelectionController controller)
+    {
+        _controller = controller;
+    }
+
+    public void Enter()
+    {
+        _controller.ClearSelection();
+        AbilityTargetingVisualizer.Instance.HideAbilityRange();
+        Debug.Log("Entering no selection state");
+    }
+    public void Exit()
+    {
+
+    }
+    public void OnClick(Vector3Int gridPosition)
+    {
+        IGridObject clickedObject = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
+
+        if (clickedObject is Unit unit)
+        {
+            _controller.SelectUnit(unit);
+        }
+    }
+}
+
+
+// ==================================================
+// FILE: UnitSelectedState.cs
+// ==================================================
+
+using UnityEngine;
+
+public class UnitSelectedState : IPlayerState
+{
+    private readonly CharacterSelectionController _controller;
+    private readonly Unit _selectedUnit;
+
+    public UnitSelectedState(CharacterSelectionController controller, Unit selectedUnit)
+    {
+        _controller = controller;
+        _selectedUnit = selectedUnit;
+    }
+    public void Enter()
+    {
+        Debug.Log($"Entering unit selected state for {_selectedUnit.name}");
+
+        if (_selectedUnit.UnitFaction == Faction.Player)
+        {
+            GridVisualizer.Instance.ShowMovementRange(_selectedUnit.GridPosition, _selectedUnit.MovementRange, GridManager.Instance.IsValidPosition);
+            CharacterActionPanelUI.Instance.ShowAbilitiesForUnit(_selectedUnit);
+        }
+        else
+        {
+            Debug.Log("Enemy has been selected");
+            GridVisualizer.Instance.ClearHighlights();
+            CharacterActionPanelUI.Instance.HideAbilityPanel();
+        }
+
+    }
+
+    public void Exit()
+    {
+
+    }
+
+    public void OnClick(Vector3Int gridPosition)
+    {
+        if (_selectedUnit.CanMoveTo(gridPosition) && _selectedUnit.UnitFaction == Faction.Player)
+        {
+            _selectedUnit.MoveTo(gridPosition);
+            _controller.ChangeState(_controller.noSelectionState);
+        }
+
+        else if (GridObjectRegistry.Instance.GetObjectAt(gridPosition) is Unit otherUnit && otherUnit != _selectedUnit)
+        {
+            _controller.SelectUnit(otherUnit);
+        }
+
+        else
+        {
+            _controller.ChangeState(_controller.noSelectionState);
+        }
+
+    }
+}
+
+
+// ==================================================
+// FILE: IRewindable.cs
+// ==================================================
+
+using UnityEngine;
+
+
+public interface IRewindable
+{
+    string RewindID { get; }
+    object CaptureState();
+    object CaptureDeactivatedState();
+    void RestoreState(object state);
+    void RegisterSelf();
+}
+
+
+// ==================================================
+// FILE: RewindableID.cs
+// ==================================================
+
+using System;
+using UnityEngine;
+
+public class RewindableID : MonoBehaviour
+{
+    [SerializeField] private string id;
+
+    public string ID => id;
+
+    private void Awake()
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            id = Guid.NewGuid().ToString();
+        }
+    }
+}
+
+
+// ==================================================
+// FILE: RewindManager.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+
+public class RewindManager : MonoBehaviour
+{
+    public static RewindManager Instance;
+
+    [SerializeField] private int maxHistorySize = 100;
+
+    private List<TurnSnapshot> history = new();
+    private List<IRewindable> rewindables = new();
+    private int currentTurn = 0;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void SaveTurn(int currentTurn)
+    {
+        var snapshot = new TurnSnapshot
+        {
+            turnIndex = currentTurn,
+        };
+
+        foreach (var r in rewindables)
+        {
+            if (r == null) continue;
+
+            if (!snapshot.objectStates.ContainsKey(r.RewindID))
+            {
+                snapshot.objectStates.Add(r.RewindID, r.CaptureState());
+            }
+            else
+            {
+                snapshot.objectStates[r.RewindID] = r.CaptureState();
+            }
+        }
+
+        var previousSnapshotOnCurrentTurn = history.FirstOrDefault(r => r.turnIndex == currentTurn);
+        if (previousSnapshotOnCurrentTurn != null)
+        {
+            history.Remove(previousSnapshotOnCurrentTurn);
+        }
+        history.Add(snapshot);
+
+        if (history.Count > maxHistorySize)
+        {
+            history.RemoveAt(0);
+            Debug.Log($"Removed oldest snapshot. History size: {history.Count}");
+        }
+
+        this.currentTurn = currentTurn;
+        Debug.Log($"Saved turn {currentTurn}. Total snapshots: {history.Count}");
+    }
+
+    public void RewindTo(int turnIndex)
+    {
+        var snapshot = history.FirstOrDefault(r => r.turnIndex == turnIndex);
+
+        if (snapshot == null)
+        {
+            Debug.LogError($"No snapshot found for turn {turnIndex}");
+            return;
+        }
+
+        Debug.Log($"Rewinding to turn {turnIndex}");
+
+        rewindables.RemoveAll(r => r == null);
+
+        var rewindablesCopy= new List<IRewindable>(rewindables);
+
+        foreach (var r in rewindablesCopy)
+        {
+            if (snapshot.objectStates.TryGetValue(r.RewindID, out var state))
+            {
+                r.RestoreState(state);
+            }
+            else
+            {
+                Debug.LogWarning($"No state found for {r.RewindID} in turn {turnIndex}");
+                var deactivatedState = r.CaptureDeactivatedState();
+                
+                r.RestoreState(deactivatedState);
+
+                rewindables.Remove(r);
+            }
+        }
+
+        this.currentTurn = turnIndex;
+    }
+
+    public void RegisterRewindable(IRewindable rewindable)
+    {
+        if (rewindable == null)
+        {
+            Debug.LogError("Attempted to register null rewindable");
+            return;
+        }
+
+        if (!rewindables.Contains(rewindable))
+        {
+            rewindables.Add(rewindable);
+            Debug.Log($"Registered rewindable: {rewindable.RewindID}");
+        }
+    }
+
+    public void UnregisterRewindable(IRewindable rewindable)
+    {
+        if (rewindable != null)
+        {
+            rewindables.Remove(rewindable);
+            Debug.Log($"Unregistered rewindable: {rewindable.RewindID}");
+        }
+    }
+
+    public int GetHistoryCount()
+    {
+        return history.Count;
+    }
+
+    public List<int> GetAvailableTurns()
+    {
+        return history.Select(h => h.turnIndex).ToList();
+    }
+
+    public void ClearHistory()
+    {
+        history.Clear();
+        Debug.Log("History cleared");
+    }
+}
+
+
+// ==================================================
+// FILE: TurnSnapshot.cs
+// ==================================================
+
+using System.Collections.Generic;
+using UnityEngine;
+
+[System.Serializable]
+public class TurnSnapshot
+{
+    public int turnIndex;
+    public Dictionary<string, object> objectStates = new();
+}
+
+
+// ==================================================
+// FILE: AbilityBaseSO.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections.Generic;
+
+public abstract class AbilityBaseSO : ScriptableObject
+{
+    [Header("Basic Information")]
+    public string abilityName;
+    public Sprite abilityIcon;
+    [TextArea] public string abilityDescription;
+    public int howMuchCanBeUsed = 1;
+
+    [Header("Range Settings")]
+    public int range = 3;
+    public RangeType rangeType = RangeType.Square;
+    public TargetType targetType = TargetType.Enemy;
+
+    [Header("Visual")]
+    public Color rangePreviewColor = new Color(1f, 0f, 0f, 0.3f);
+    public GameObject abilityEffectPrefab;
+
+    public enum RangeType
+    {
+        Square, // all tiles within range
+        Diamond, // manhattan distance
+        Cross, // plus shape
+        Line, // straight line in cardinal direction
+        Circle // Circular AOE
+    }
+
+    public enum TargetType
+    {
+        Enemy, 
+        Ally,
+        Self,
+        EmptyTile,
+        Any
+    }
+
+    public virtual List<Vector3Int> GetTilesInRange(Vector3Int casterPosition)
+    {
+        List<Vector3Int> tiles = new List<Vector3Int>();
+
+        switch (rangeType)
+        {
+            case RangeType.Square:
+                tiles = RangeFinder.GetSquareRange(casterPosition, range);
+                break;
+
+            case RangeType.Diamond:
+                tiles = RangeFinder.GetDiamondRange(casterPosition, range);
+                break;
+
+            case RangeType.Cross:
+                tiles = RangeFinder.GetCrossRange(casterPosition, range);
+                break;
+
+            case RangeType.Line:
+                tiles = RangeFinder.GetLineRange(casterPosition, range);
+                break;
+
+            case RangeType.Circle:
+                tiles = RangeFinder.GetCircleRange(casterPosition, range);
+                break;
+        }
+
+        return tiles;
+    }
+
+    public virtual bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)
+    {
+        if (!GetTilesInRange(casterPosition).Contains(targetPosition))
+        {
+            return false;
+        }
+
+        if (!HasLineOfSight(casterPosition, targetPosition))
+        {
+            return false;
+        }
+
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+
+        switch (targetType)
+        {
+            case TargetType.Enemy:
+                return targetObject is Unit enemy && enemy.UnitFaction != caster.UnitFaction;
+
+            case TargetType.Ally:
+                return targetObject is Unit ally && ally.UnitFaction == caster.UnitFaction;
+
+            case TargetType.Self:
+                return targetPosition == casterPosition;
+
+            case TargetType.EmptyTile:
+                return targetObject == null && GridManager.Instance.IsWalkable(targetPosition);
+
+            case TargetType.Any:
+                return GridManager.Instance.IsWalkable(targetPosition);
+        }
+
+        return false;
+    }
+
+    private bool HasLineOfSight(Vector3Int casterPosition, Vector3Int targetPositoin)
+    {
+        Vector3 start = GridManager.Instance.GridToWorld(casterPosition);
+        Vector3 end = GridManager.Instance.GridToWorld(targetPositoin);
+
+        Vector3 direction = (end - start).normalized;
+
+        float distance = Vector3.Distance(start, end);
+        LayerMask obstacleLayer = LayerMask.GetMask("Obstacle");
+
+        if (Physics2D.Raycast(start, direction, distance, obstacleLayer))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public abstract void Execute(Unit caster, Vector3Int targetPosition);
+
+    public virtual bool CanUse(Unit caster)
+    {
+        // at the future might be cooldown checks or resources checks etc.
+        return true;
+    }
+}
+
+
+// ==================================================
+// FILE: AttackAbilitySO.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+using DG;
+using DG.Tweening;
+
+[CreateAssetMenu(menuName = "Abilities/Attack Ability")]
+public class AttackAbilitySO : AbilityBaseSO
+{
+    [Header("Attack Settings")]
+    public int damage = 10;
+    public bool canAttackDiagonally = true;
+
+    public override void Execute(Unit caster, Vector3Int targetPosition)
+    {
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+
+        if (targetObject is Unit targetUnit)
+        {
+            // TODO: Play attack animation
+            // TODO: Show damage numbers
+            // TODO: Play sound effect
+
+            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
+            Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
+
+            Sequence attackSequence = DOTween.Sequence();
+
+            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 1f, 1, 0.5f).SetEase(Ease.OutQuad));
+            attackSequence.AppendCallback(() =>
+            {
+                targetUnit.TakeDamage(damage, caster);
+                Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
+
+                // Spawn effect if available
+                if (abilityEffectPrefab != null)
+                {
+                    Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
+                    GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                    Destroy(effect, 2f);
+                }
+            });
+
+            attackSequence.Append(caster.transform.DOMove(caster.transform.position, 0.4f).SetEase(Ease.InQuad));
+        }
+        else
+        {
+            Debug.LogWarning($"No valid target at {targetPosition}");
+        }
+    }
+
+    public override bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)
+    {
+        if (!base.IsValidTarget(casterPosition, targetPosition, caster))
+            return false;
+
+        if (!canAttackDiagonally)
+        {
+            int dx = Mathf.Abs(targetPosition.x - casterPosition.x);
+            int dy = Mathf.Abs(targetPosition.y - casterPosition.y);
+
+            // Must be orthogonal (either dx or dy should be 0)
+            if (dx > 0 && dy > 0)
+                return false;
+        }
+
+        return true;
+    }
+}
+
+
+// ==================================================
+// FILE: CharacterClassSO.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections.Generic;
+
+[CreateAssetMenu(fileName = "New Character Class", menuName = "Classes/Character Class")]
+public class CharacterClassSO : ScriptableObject
+{
+    [Header("Class Information")]
+    public string className;
+    [TextArea] public string description;
+    public Sprite classIcon;
+
+    [Header("Base Stats")]
+    public int maxHealth = 100;
+    public int movementRange = 2;
+    public int movementAmountPerTurn = 2;
+
+    [Header("Abilites")]
+    public List<AbilityBaseSO> abilities;
+}
+
+
+// ==================================================
+// FILE: HealAbilitySO.cs
+// ==================================================
+
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Abilities/Heal Ability")]
+public class HealAbilitySO : AbilityBaseSO
+{
+    [Header("Heal Settings")]
+    public int healAmount = 20;
+    public bool canHealSelf = true;
+
+    public override void Execute(Unit caster, Vector3Int targetPosition)
+    {
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+
+        if (targetObject is Unit targetUnit)
+        {
+            targetUnit.Heal(healAmount);
+
+            Debug.Log($"{caster.name} healed {targetUnit.name} for {healAmount} HP!");
+
+            if (abilityEffectPrefab != null)
+            {
+                Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
+                GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                Destroy(effect, 2f);
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"No unit to heal at {targetPosition}");
+        }
+    }
+
+    public override bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)
+    {
+        if (!GetTilesInRange(casterPosition).Contains(targetPosition))
+            return false;
+
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+        if (!(targetObject is Unit targetUnit))
+            return false;
+
+        if (!canHealSelf && targetUnit == caster)
+            return false;
+
+        if (targetUnit.CurrentHealth <= 0)
+            return false;
+
+
+        // TODO: Add team check - only heal allies
+        if (targetType == TargetType.Ally && targetUnit.UnitFaction != caster.UnitFaction)
+        {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+
+// ==================================================
+// FILE: TrapAbilitySO.cs
+// ==================================================
+
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Abilities/Trap Ability")]
+public class TrapAbilitySO : AbilityBaseSO
+{
+    [Header("Trap settings")]
+    public GameObject trapPrefab;
+    public int trapDamage = 15;
+    public int duration = 3;
+
+    public override void Execute(Unit caster, Vector3Int targetPosition)
+    {
+        IGridObject gridObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);   
+
+        if (gridObject != null)
+        {
+            Debug.LogWarning("Cannot place trap because tile is occupied");
+            return;
+        }
+
+        CreateTrap(targetPosition);
+
+        Debug.Log($"{caster.name} placed a trap at {targetPosition}");
+
+        if (abilityEffectPrefab != null)
+        {
+            Vector3 worldPosition = GridManager.Instance.GridToWorld(targetPosition);
+            GameObject effect = Instantiate(abilityEffectPrefab, worldPosition, Quaternion.identity);
+            Destroy(effect, 1);
+        }
+    }
+
+    private void CreateTrap(Vector3Int position)
+    {
+        if (trapPrefab == null)
+        {
+            Debug.LogError("Trap prefab is not assigned in the TrapAbilitySO!");
+            return;
+        }
+        Vector3 worldPosition = GridManager.Instance.GridToWorld(position);
+        GameObject trapObject = Instantiate(trapPrefab, worldPosition, Quaternion.identity);
+
+        Trap trap = trapObject.GetComponent<Trap>();
+        if (trap != null) trap.Initialize(position, trapDamage, duration);
+    }
+}
+
+
+// ==================================================
+// FILE: AIActionSO.cs
+// ==================================================
+
+using System;
+using UnityEngine;
+
+
+public struct AIScoreData
+{
+    public float score;
+    public object target;
+    public AIActionSO action;
+}
+public abstract class AIActionSO : ScriptableObject
+{
+    public abstract AIScoreData GetScoreAction(Unit aiUnit);
+
+    public abstract void Execute(Unit aiUnit, object target, Action onComplete);  
+}
+
+
+// ==================================================
+// FILE: AttackActionSO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+
+[CreateAssetMenu(fileName = "AttackActionSO", menuName = "AI/Actions/Attack Action")]
+public class AttackActionSO : AIActionSO
+{
+    [SerializeField] private AbilityBaseSO attackAbility;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData() { score = 0f, target = null }; 
+
+        List<Unit> targetsInRange = FindPlayerUnitsInRange(aiUnit);
+        if (targetsInRange.Count == 0) return scoreData;
+
+        Unit bestTarget = targetsInRange[0];
+        foreach (Unit targetUnit in targetsInRange)
+        {
+            if (targetUnit.CurrentHealth < bestTarget.CurrentHealth)
+            {
+                bestTarget = targetUnit;    
+            }
+        }
+
+        if (attackAbility.IsValidTarget(aiUnit.GridPosition, bestTarget.GridPosition, aiUnit))
+        {
+            float healthPercentage = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
+            scoreData.score = 100f + (1f - healthPercentage) * 100f;
+            scoreData.target = bestTarget;
+        }
+
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Unit targetUnit = target as Unit;
+
+        if (targetUnit == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        attackAbility.Execute(aiUnit, targetUnit.GridPosition);
+
+        onComplete?.Invoke();
+        
+    }
+
+    private List<Unit> FindPlayerUnitsInRange(Unit aiUnit)
+    {
+        List<Unit> units = new List<Unit>();
+
+        List<Vector3Int> tilesInRange = attackAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        foreach (var tile in tilesInRange)
+        {
+            if (GridObjectRegistry.Instance.GetObjectAt(tile) is Unit unit && unit.UnitFaction == Faction.Player)
+            {
+                units.Add(unit);
+            }
+        }
+
+        return units;
+    }
+}
+
+
+// ==================================================
+// FILE: MoveActionSO.cs
+// ==================================================
+
+using NUnit.Framework.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+[CreateAssetMenu(fileName = "Move Action SO", menuName = "AI/Actions/Move Action")]
+public class MoveActionSO : AIActionSO
+{
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData() { score = 0f, target = null };
+
+        Unit closestUnit = FindClosestPlayerUnit(aiUnit);
+
+        if (closestUnit == null) return scoreData;
+
+        scoreData.score = 25f; 
+        scoreData.target = closestUnit;
+        return scoreData;
+    }
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Unit targetUnit = target as Unit;
+        if (targetUnit == null) { onComplete?.Invoke(); return; }
+
+        Debug.Log($"{aiUnit.name} is moving towards {targetUnit.name}");
+
+        List<Vector3Int> reachableTiles = PathFinder.Instance.GetReachableTiles(
+            aiUnit.GridPosition,
+            aiUnit.MovementRange,
+            GridManager.Instance.IsValidPosition
+        );
+
+        if (reachableTiles.Count == 0) { onComplete?.Invoke(); return; }
+
+        Vector3Int bestTile;
+        
+        bestTile = reachableTiles
+            .OrderBy(t => Vector3.Distance(t, targetUnit.GridPosition))
+            .First();
+        
+
+        aiUnit.MoveTo(bestTile, onComplete);
+    }
+
+    private List<Unit> FindPlayerUnits(Unit aiUnit)
+    {
+        List<Unit> units = TurnManager.Instance.GetPlayerUnits();
+
+        return units;
+    }
+
+    private Unit FindClosestPlayerUnit(Unit aiUnit)
+    {
+        List<Unit> playerUnits = TurnManager.Instance.GetPlayerUnits();
+        if (playerUnits.Count == 0) return null;
+
+        Unit closest = null;
+        float minDistance = float.MaxValue;
+
+        foreach (Unit playerUnit in playerUnits)
+        {
+            float distance = Vector3.Distance(aiUnit.transform.position, playerUnit.transform.position);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closest = playerUnit;
+            }
+        }
+        return closest;
+    }
+
+}
+
+
+// ==================================================
+// FILE: AbilityButton.cs
+// ==================================================
+
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
+{
+    [SerializeField] private Image abilityIcon;
+    [SerializeField] private Canvas canvas;
+
+    private AbilityBaseSO ability;
+    private Unit caster;
+    private RectTransform rectTransform;
+    private CanvasGroup canvasGroup;
+    private Vector3 originalPosition;
+    private Transform originalParent;
+
+    private GameObject dragVisual;
+    private bool isDragging = false;
+
+    private void Awake()
+    {
+        rectTransform = GetComponent<RectTransform>();
+        canvasGroup = GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null)
+        {
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+
+        if (canvas == null)
+        {
+            canvas = gameObject.GetComponentInParent<Canvas>();
+        }
+    }
+
+    public void Setup(AbilityBaseSO abilityData, Unit unitCaster)
+    {
+        ability = abilityData;
+        caster = unitCaster;
+        abilityIcon.sprite = abilityData.abilityIcon;
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (ability == null || caster == null) return;
+
+        Debug.Log("Start dragging");
+        GridVisualizer.Instance.HideHighlights();
+
+        isDragging = true;
+        originalPosition = rectTransform.position;
+        originalParent = rectTransform.parent;
+
+        canvasGroup.alpha = 0.6f;
+        canvasGroup.blocksRaycasts = false;
+
+        AbilityTargetingVisualizer.Instance.ShowAbilityRange(ability, caster);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!isDragging) return;
+
+        rectTransform.position = eventData.position;
+
+        Vector3 worldPoint = Camera.main.ScreenToWorldPoint(eventData.position);
+        Vector3Int gridPosition = GridManager.Instance.WorldToGrid(worldPoint);
+
+        AbilityTargetingVisualizer.Instance.UpdateTargetPreview(gridPosition, ability, caster);
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (!isDragging) return;
+
+        isDragging = false;
+        canvasGroup.alpha = 1f;
+        canvasGroup.blocksRaycasts = true;
+
+        rectTransform.position = originalPosition;
+        GridVisualizer.Instance.ShowHighlights();
+
+
+        Vector3 worldPoint = Camera.main.ScreenToWorldPoint(eventData.position);
+        Vector3Int targetPosition = GridManager.Instance.WorldToGrid(worldPoint);
+
+        if (ability.IsValidTarget(caster.GridPosition, targetPosition, caster))
+        {
+            caster.UseAbility(ability, targetPosition);
+        }
+        else
+        {
+            Debug.Log("Invalid target position for ability");
+        }
+
+        AbilityTargetingVisualizer.Instance.HideAbilityRange();
+
+    }
+}
+
+
+// ==================================================
+// FILE: AbilityTargetingVisualizer.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections.Generic;
+using Unity.VisualScripting;
+
+public class AbilityTargetingVisualizer : MonoBehaviour
+{
+    public static AbilityTargetingVisualizer Instance { get; private set; }
+
+    [Header("Visual Settings")]
+    [SerializeField] private GameObject rangeHighlightPrefab;
+    [SerializeField] private GameObject targetHighlightPrefab;
+    [SerializeField] private Color validTargetColor;
+    [SerializeField] private Color invalidTargetColor;
+    [SerializeField] private Color currentTargetColor;
+    [SerializeField] private Color blockedLOSColor;
+    [SerializeField] private Transform rangeHighlightsContainer;
+
+    private HighlightManager _rangeHighlightManager;
+    private GameObject _targetHighlight;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            _rangeHighlightManager = new HighlightManager(rangeHighlightPrefab, rangeHighlightsContainer);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void ShowAbilityRange(AbilityBaseSO abilityBaseSO, Unit caster)
+    {
+        HideAbilityRange();
+
+        List<Vector3Int> reachableTiles = abilityBaseSO.GetTilesInRange(caster.GridPosition);
+
+        foreach (var gridPosition in reachableTiles)
+        {
+            bool hasLineOfSight = GridUtility.HasLineOfSight(caster.GridPosition, gridPosition);
+
+            bool isValidTarget = abilityBaseSO.IsValidTarget(caster.GridPosition, gridPosition, caster);
+            
+            Color highlightColor;
+
+            if (isValidTarget)
+            {
+                highlightColor = validTargetColor;
+            }
+            else if (!hasLineOfSight)
+            {
+                highlightColor = blockedLOSColor;
+            }
+            else
+            {
+                highlightColor = invalidTargetColor;
+            }
+
+            if (!GridManager.Instance.HasWalkableTilemap(gridPosition)) continue;
+
+            _rangeHighlightManager.CreateHighlight(gridPosition, highlightColor);
+        }
+    }
+
+    public void UpdateTargetPreview(Vector3Int targetPosition, AbilityBaseSO abilityBaseSO, Unit caster)
+    {
+        if (_targetHighlight != null)
+        {
+            Destroy(_targetHighlight);
+        }
+
+        if (abilityBaseSO.IsValidTarget(caster.GridPosition, targetPosition, caster))
+        {
+            CreateTargetHighlight(targetPosition, currentTargetColor);
+
+        }
+    }
+
+    public void HideAbilityRange()
+    {
+        _rangeHighlightManager.ClearAllHighlights();
+
+        if (_targetHighlight != null)
+        {
+            Destroy(_targetHighlight);
+            _targetHighlight = null;
+        }
+    }
+
+    private void CreateTargetHighlight(Vector3Int gridPosition, Color color)
+    {
+        if (targetHighlightPrefab == null) return;
+
+        Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
+        GameObject highlight = Instantiate(targetHighlightPrefab, worldPosition, Quaternion.identity, rangeHighlightsContainer);
+
+        var renderer = highlight.GetComponent<SpriteRenderer>();
+        if (renderer != null)
+        {
+            renderer.color = color;
+        }
+        _targetHighlight = highlight;
+    }
+}
+
+
+// ==================================================
+// FILE: CharacterActionPanelUI.cs
+// ==================================================
+
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+public class CharacterActionPanelUI : MonoBehaviour
+{
+    public static CharacterActionPanelUI Instance { get; private set; }
+
+    [SerializeField] private GameObject abilityButtonPrefab;
+    [SerializeField] private Transform actionButtonsContainer;
+
+    private List<GameObject> activeButtons = new List<GameObject>();
+    private Unit currentUnit;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
+
+    public void ShowAbilitiesForUnit(Unit unit)
+    {
+        ClearAbilityButtons();
+        currentUnit = unit;
+
+        if (unit == null || unit.Abilities.Count == 0) return;
+
+        foreach (AbilityBaseSO ability in unit.Abilities)
+        {
+            CreateAbilityButton(ability, unit);
+        }
+    }
+
+    public void HideAbilityPanel()
+    {
+        ClearAbilityButtons();
+        currentUnit = null;
+    }
+
+    private void CreateAbilityButton(AbilityBaseSO ability, Unit caster)
+    {
+        GameObject buttonObj = Instantiate(abilityButtonPrefab, actionButtonsContainer);
+
+        AbilityButton abilityButton = buttonObj.GetComponent<AbilityButton>();
+
+        if (abilityButton != null)
+        {
+            abilityButton.Setup(ability, caster);
+        }
+
+        buttonObj.SetActive(true);
+        activeButtons.Add(buttonObj);
+    }
+
+    private void ClearAbilityButtons()
+    {
+        foreach (GameObject button in activeButtons)
+        {
+            if (button != null) Destroy(button);
+        }
+        activeButtons.Clear();
+    }
+}
+
+
+// ==================================================
+// FILE: HighlightManager.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections.Generic;
+using Unity.VisualScripting;
+
+public class HighlightManager
+{
+    private readonly GameObject _highlightPrefab;
+    private readonly Transform _container;
+    private readonly List<GameObject> _activeHighlights = new List<GameObject>();
+    public HighlightManager(GameObject highlightPrefab, Transform container)
+    {
+        _highlightPrefab = highlightPrefab;
+        _container = container;
+    }
+
+    public void CreateHighlight(Vector3Int gridPosition, Color color)
+    {
+        if (_highlightPrefab == null) return;
+
+        Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
+        GameObject highlight = Object.Instantiate(_highlightPrefab, worldPosition, Quaternion.identity, _container);
+
+        var renderer = highlight.GetComponent<SpriteRenderer>();
+        if (renderer != null)
+        {
+            renderer.color = color;
+        }
+        _activeHighlights.Add(highlight);
+    }
+
+    public void ClearAllHighlights()
+    {
+        foreach (GameObject highlight in  _activeHighlights)
+        {
+            if (highlight != null) Object.Destroy(highlight);
+        }
+
+        _activeHighlights.Clear();
+    }
+
+    public void SetHighlightsActive(bool isActive)
+    {
+        foreach (GameObject highlight in _activeHighlights)
+        {
+            if (highlight != null) highlight.SetActive(isActive);   
+        }
+    }
+}
+
+
+// ==================================================
+// FILE: HpPopupText.cs
+// ==================================================
+
+using DG.Tweening;
+using TMPro;
+using UnityEngine;
+
+public class HpPopupText : MonoBehaviour
+{
+    [SerializeField] private TMP_Text textMesh;
+
+    public void Setup(int amount, Color color)
+    {
+        textMesh.text = amount.ToString();
+        textMesh.color = color;
+        transform.DOMoveY(transform.position.y + 1f, 1f);
+        textMesh.DOFade(0, 1f).OnComplete(() => Destroy(gameObject));
+
+    }
+}
+
+
+// ==================================================
+// FILE: HealthComponent.cs
+// ==================================================
+
+using System;
+using UnityEngine;
+
+public class HealthComponent : MonoBehaviour
+{
+    [SerializeField] private int maxHealth = 100;
+    private int currentHealth;
+
+    public event Action<int, int> OnHealthChanged; // current health, max health
+    public event Action OnDeath;
+
+    public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
+
+    public void Initialize(CharacterClassSO characterClassSO)
+    {
+        maxHealth = characterClassSO.maxHealth;
+        currentHealth = maxHealth;
+    }
+    public void TakeDamage(int damage)
+    {
+        currentHealth -= damage;
+
+        currentHealth = Mathf.Max(currentHealth, 0);
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    public void Heal(int amount)
+    {
+        currentHealth += amount;
+        currentHealth = Mathf.Min(currentHealth, maxHealth);
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
+    public void SetHealth(int currentHealth, int maxHealth)
+    {
+        this.maxHealth = maxHealth;
+        this.currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+    private void Die()
+    {
+        Debug.Log($"{gameObject.name} has died");
+        OnDeath?.Invoke();
+    }
+
+}
+
+
+// ==================================================
+// FILE: MovementComponent.cs
+// ==================================================
+
+using System;
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+[RequireComponent(typeof(IMoveable))]
+public class MovementComponent : MonoBehaviour
+{
+    [SerializeField] private int movementRange = 3;
+    [SerializeField] private float moveSpeed = 2f;
+
+    private IMoveable moveableObject;
+    private bool isMoving;
+    private Coroutine moveCoroutine;
+
+    public bool IsMoving => isMoving;
+    public int MovementRange => movementRange;
+
+    private void Awake()
+    {
+        moveableObject = GetComponent<IMoveable>();
+    }
+
+    public void Initialize(CharacterClassSO characterClassSO)
+    {
+        movementRange = characterClassSO.movementRange; 
+    }
+
+    public bool CanMoveTo(Vector3Int gridPosition)
+    {
+        if (GridManager.Instance == null || PathFinder.Instance == null)
+        {
+            Debug.LogWarning("Required managers not available for movement validation");
+            return false;
+        }
+
+        if (!GridManager.Instance.IsValidPosition(gridPosition))
+        {
+            return false;
+        }
+
+        return PathFinder.Instance.GetReachableTiles(moveableObject.GridPosition, movementRange, GridManager.Instance.IsValidPosition).Contains(gridPosition);
+    }
+
+    public void MoveTo(Vector3Int gridPosition, Action onComplete = null)
+    {
+        if (isMoving || !CanMoveTo(gridPosition))
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        List<Vector3Int> path = PathFinder.Instance.GetPath(moveableObject.GridPosition, gridPosition, GridManager.Instance.IsValidPosition);
+
+        if (path.Count == 0)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        moveCoroutine = StartCoroutine(MoveAlongPath(path, onComplete));
+    }
+
+    private IEnumerator MoveAlongPath(List<Vector3Int> path, Action onComplete = null)
+    {
+        isMoving = true;
+
+        Vector3Int oldPosition = moveableObject.GridPosition;
+        GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
+
+        for (int i = 1; i < path.Count; i++)
+        {
+            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(path[i]);
+
+            while (Vector3.Distance(transform.position, targetWorldPosition) > 0.01f)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, targetWorldPosition, moveSpeed * Time.deltaTime);
+                yield return null;
+            }
+
+            transform.position = targetWorldPosition;
+
+            if (moveableObject is Unit unit)
+            {
+                Unit.InvokeUnitEnteredTile(unit, path[i]);
+            }
+        }
+
+        isMoving = false;
+        onComplete?.Invoke();
+    }
+
+    public void SetMovingState(bool moving)
+    {
+        isMoving = moving;
+    }
+}
+
+
+// ==================================================
+// FILE: Unit.cs
+// ==================================================
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using DG.Tweening;
+
+public class UnitSnapshotState
+{
+    public Vector3Int gridPosition;
+    public List<AbilityBaseSO> abilities;
+
+    public int currentHealth;
+    public int maxHealth;
+
+    public bool isMoving;
+
+    public bool hasTakenActionThisTurn;
+    public Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn;
+    public int movedPerTurn;
+
+    public bool isAlive;
+}
+public enum Faction
+{
+    Player, 
+    Enemy
+}
+public class Unit : MonoBehaviour, IMoveable, IRewindable
+{
+    public static event Action<Unit, Vector3Int> OnUnitEnteredTile;
+
+    public event Action<Unit> OnUnitDied;
+    public event Action OnUnitMadeAction;
+
+    public static event Action<Unit> OnAnyUnitSpawned;
+    public static event Action<Unit> OnAnyUnitDied;
+    public static event Action<Unit, int, int> OnAnyUnitTookDamage;
+    public static event Action<Unit, int, int> OnAnyUnitHealed;
+
+    [Header("Components")]
+    [SerializeField] private HealthComponent healthComponent;
+    [SerializeField] private MovementComponent movementComponent;
+    private UnitRewindComponent rewindComponent = new UnitRewindComponent();
+
+    [Header("Unit Settings")]
+    [SerializeField] private Faction faction;
+
+    [Header("Class Defenition")]
+    [SerializeField] private CharacterClassSO characterClassSO;
+
+    [Header("Visual")]
+    [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private Transform healthBarAttachPoint;
+
+    private Vector3Int gridPosition;
+    public List<AbilityBaseSO> Abilities {  get { return characterClassSO.abilities; } }
+    public int CurrentHealth { get { return healthComponent.CurrentHealth; } }
+    public int MaxHealth { get { return healthComponent.MaxHealth; } }
+    public HealthComponent Health { get { return healthComponent; } }
+    
+    public Vector3Int GridPosition
+    {
+        get => gridPosition;
+        set => gridPosition = value;
+    }
+
+    public bool BlocksMovement
+    {
+        get => true;
+    }
+
+    public string RewindID
+    {
+        get => id.ID;
+    }
+
+    public bool IsAlive
+    {
+        get => isAlive;
+    }
+
+    public int MovementRange => movementComponent.MovementRange;
+    public bool IsMoving => movementComponent.IsMoving;
+
+    public bool HasTakenActionThisTurn { get; set; }
+    public Faction UnitFaction { get => faction; }
+
+    public Dictionary<AbilityBaseSO, int> UsedAbilitiesAmountPerTurn
+        => new Dictionary<AbilityBaseSO, int>(usedAbilitiesAmountPerTurn);
+
+    public int MovedPerTurn
+    {
+        get => movedPerTurn;
+        set => movedPerTurn = value;
+    }
+
+    private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
+    private int movedPerTurn = 0;
+    private RewindableID id;
+
+    private bool isAlive = true;
+
+    public void Initialize()
+    {
+        if (healthComponent == null)
+        {
+            healthComponent = GetComponent<HealthComponent>();
+        }
+
+        if (movementComponent == null)
+        {
+            movementComponent = GetComponent<MovementComponent>();
+        }
+
+        healthComponent.OnDeath += HandleDeath;
+
+        InitializeFromClass();
+
+        foreach (AbilityBaseSO ability in Abilities)
+        {
+            usedAbilitiesAmountPerTurn[ability] = 0;
+        }
+
+        id = gameObject.AddComponent<RewindableID>();
+        rewindComponent.Initialize(this);
+        RegisterSelf();
+    }
+
+    public void PlaceUnit(Vector3 position)
+    {
+        gridPosition = GridManager.Instance.WorldToGrid(position);
+        GridObjectRegistry.Instance.RegisterObject(this);
+        transform.position = GridManager.Instance.GridToWorld(gridPosition);
+    }
+    private void InitializeFromClass()
+    {
+        if (characterClassSO == null) return;
+
+        healthComponent.Initialize(characterClassSO);
+        movementComponent.Initialize(characterClassSO);
+    }
+
+    private void Start()
+    {
+        OnAnyUnitSpawned?.Invoke(this);
+    }
+
+    private void OnDestroy()
+    {
+        if (GridObjectRegistry.Instance != null)
+        {
+            GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
+        }
+
+        if (RewindManager.Instance != null)
+        {
+            RewindManager.Instance.UnregisterRewindable(this);
+        }
+
+        if (healthComponent != null)
+        {
+            healthComponent.OnDeath -= HandleDeath; 
+        }
+
+        OnAnyUnitDied?.Invoke(this);
+    }
+
+    public void RegisterSelf()
+    {
+        RewindManager.Instance.RegisterRewindable(this);
+    }
+    
+    public object CaptureState()
+    {
+        Debug.Log($"Capture State has been called.\nGridPosition: {gridPosition}");
+        return rewindComponent.CaptureState();
+    }
+
+    public object CaptureDeactivatedState()
+    {
+        return rewindComponent.CaptureDeactivatedState();
+    }
+
+    public void RestoreState(object state)
+    {
+        StopAllCoroutines();
+        movementComponent.StopAllCoroutines();
+        rewindComponent.RestoreState(state);
+    }
+
+    public bool CanMoveTo(Vector3Int position)
+    {
+        return !movementComponent.IsMoving && movedPerTurn < characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
+    }
+
+    public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
+    {
+        movementComponent.MoveTo(targetPosition, onComplete);
+        movedPerTurn++;
+    }
+
+    public void SetMovingState(bool isMoving)
+    {
+        movementComponent.SetMovingState(isMoving);
+    }
+    public void OnGridPositionChanged(Vector3Int newGridPosition)
+    {
+        OnUnitMadeAction?.Invoke();
+        Debug.Log($"Unit moved to a new position: {newGridPosition}");
+    }
+
+    public void TakeDamage(int damage, Unit attacker)
+    {
+        healthComponent.TakeDamage(damage);
+        OnAnyUnitTookDamage?.Invoke(this, damage, CurrentHealth);
+    }
+
+    public void Heal(int amount)
+    {
+        healthComponent.Heal(amount);
+        OnAnyUnitHealed?.Invoke(this, amount, CurrentHealth);
+    }
+    public void SetHealth(int currentHealth, int maxHealth)
+    {
+        healthComponent.SetHealth(currentHealth, maxHealth);
+    }
+    private void HandleDeath()
+    {
+        SetUnitDead(true);
+    }
+
+    public void SetUnitDead(bool triggerEvent = true)
+    {
+        isAlive = false;
+        gameObject.SetActive(false);
+        GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
+
+        if (triggerEvent)
+        {
+            OnUnitDied?.Invoke(this);
+        }
+    }
+
+    public void RessurectUnit()
+    {
+        isAlive = true;
+        gameObject.SetActive(true);
+        GridObjectRegistry.Instance.RegisterObject(this);
+
+        Debug.Log($"{gameObject.name} has been resurrected");
+    }
+
+    public bool CanUseAbility(AbilityBaseSO abilitySO)
+    {
+        if (!characterClassSO.abilities.Contains(abilitySO))
+        {
+            return false;
+        }
+
+        if (abilitySO.howMuchCanBeUsed <= usedAbilitiesAmountPerTurn[abilitySO])
+        {
+            return false;
+        }
+
+        return abilitySO.CanUse(this);
+    }
+
+    public void UseAbility(AbilityBaseSO abilitySO, Vector3Int targetPosition)
+    {
+        if (!CanUseAbility(abilitySO))
+        {
+            Debug.LogWarning("Unit can't use ability");
+            return;
+        }
+
+        if (!abilitySO.IsValidTarget(gridPosition, targetPosition, this))
+        {
+            Debug.Log("Target is invlaid");
+            return;
+        }
+
+        abilitySO.Execute(this, targetPosition);
+        usedAbilitiesAmountPerTurn[abilitySO]++;
+        OnUnitMadeAction?.Invoke();
+    }
+
+    public void ResetUsedAbilities()
+    {
+        foreach (AbilityBaseSO ability in usedAbilitiesAmountPerTurn.Keys.ToList())
+        {
+            usedAbilitiesAmountPerTurn[ability] = 0;
+        }
+    }
+
+    public void CopyUsedAbilities(Dictionary<AbilityBaseSO, int> abilities)
+    {
+        usedAbilitiesAmountPerTurn.Clear();
+        foreach (var kvp in abilities)
+        {
+            usedAbilitiesAmountPerTurn[kvp.Key] = kvp.Value;
+        }
+    }
+
+    public void ResetUsedMovement()
+    {
+        movedPerTurn = 0;
+    }
+
+    public static void InvokeUnitEnteredTile(Unit unit, Vector3Int tilePosition)
+    {
+        OnUnitEnteredTile?.Invoke(unit, tilePosition);
+    }
+
+    public Transform GetHealthBarAttachPoint()
+    {
+        return healthBarAttachPoint;
+    }
+
+    public SpriteRenderer GetSpriteRenderer()
+    {
+        return spriteRenderer;
+    }
+}
+
+
+// ==================================================
+// FILE: UnitHealthUI.cs
+// ==================================================
+
+using UnityEngine;
+using UnityEngine.UI;
+public class UnitHealthUI : MonoBehaviour
+{
+    [SerializeField] private Slider healthSlider;
+    private Camera mainCamera;
+
+    private HealthComponent _healthComponent;
+
+    private void Awake()
+    {
+        mainCamera = Camera.main;
+    }
+
+    private void Update()
+    {
+        if (mainCamera != null)
+        {
+            transform.LookAt(transform.position + mainCamera.transform.rotation * Vector3.forward,
+                mainCamera.transform.rotation * Vector3.up);
+        }
+    }
+
+    public void Initialize(HealthComponent healthComponent)
+    {
+        _healthComponent = healthComponent;
+        healthComponent.OnHealthChanged += UpdateHealth;
+
+        UpdateHealth(healthComponent.CurrentHealth, healthComponent.MaxHealth);
+    }
+
+    private void UpdateHealth(int currentHealth, int maxHealth)
+    {
+        healthSlider.value = (float)currentHealth / maxHealth;
+    }
+
+    private void OnDestroy()
+    {
+        _healthComponent.OnHealthChanged -= UpdateHealth;    
+    }
+}
+
+
+// ==================================================
+// FILE: UnitRewindComponent.cs
+// ==================================================
+
+using System.Collections.Generic;
+using UnityEngine;
+using DG.Tweening;
+
+public class UnitRewindComponent
+{
+    private Unit rewindableUnit;
+
+    public void Initialize(Unit unit)
+    {
+        rewindableUnit = unit;
+    }
+    public object CaptureState()
+    {
+        Dictionary<AbilityBaseSO, int> abilitiesCopy = new();
+
+        foreach (var kvp in rewindableUnit.UsedAbilitiesAmountPerTurn)
+        {
+            abilitiesCopy[kvp.Key] = kvp.Value;
+        }
+
+        UnitSnapshotState state = new UnitSnapshotState
+        {
+            gridPosition = rewindableUnit.GridPosition,
+            hasTakenActionThisTurn = rewindableUnit.HasTakenActionThisTurn,
+            usedAbilitiesAmountPerTurn = abilitiesCopy,
+            movedPerTurn = rewindableUnit.MovedPerTurn,
+
+            currentHealth = rewindableUnit.CurrentHealth,
+            maxHealth = rewindableUnit.MaxHealth,
+
+            isMoving = rewindableUnit.IsMoving,
+
+            abilities = rewindableUnit.Abilities,
+
+            isAlive = rewindableUnit.IsAlive
+        };
+
+        return state;
+    }
+
+    public object CaptureDeactivatedState()
+    {
+        Dictionary<AbilityBaseSO, int> abilitiesCopy = new();
+
+        foreach (var kvp in rewindableUnit.UsedAbilitiesAmountPerTurn)
+        {
+            abilitiesCopy[kvp.Key] = kvp.Value;
+        }
+
+        UnitSnapshotState state = new UnitSnapshotState
+        {
+            gridPosition = rewindableUnit.GridPosition,
+            hasTakenActionThisTurn = rewindableUnit.HasTakenActionThisTurn,
+            usedAbilitiesAmountPerTurn = abilitiesCopy,
+            movedPerTurn = rewindableUnit.MovedPerTurn,
+
+            currentHealth = 0,
+            maxHealth = 0,
+
+            isMoving = false,
+
+            abilities = rewindableUnit.Abilities,
+
+            isAlive = false
+        };
+
+        return state;
+    }
+    public void RestoreState(object state)
+    {
+        var s = (UnitSnapshotState)state;
+
+        if (!s.isAlive && rewindableUnit.IsAlive)
+        {
+            rewindableUnit.SetUnitDead(false);
+            return;
+        }
+        else if (s.isAlive && !rewindableUnit.IsAlive)
+        {
+            rewindableUnit.RessurectUnit();
+        }
+
+        Debug.Log($"RESTORE STATE HAS BEEN CALLED IN UNIT. \nGridPositionToMove: {s.gridPosition}");
+
+        if (rewindableUnit.GridPosition != s.gridPosition)
+        {
+            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(s.gridPosition);
+            rewindableUnit.transform.DOMove(targetWorldPosition, 1f);
+
+            IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(s.gridPosition);
+            GridObjectRegistry.Instance.UnregisterObject(obj, s.gridPosition);
+            GridObjectRegistry.Instance.MoveObject(rewindableUnit, rewindableUnit.GridPosition, s.gridPosition);
+        }
+
+        rewindableUnit.GridPosition = s.gridPosition;
+        rewindableUnit.HasTakenActionThisTurn = s.hasTakenActionThisTurn;
+
+        rewindableUnit.SetHealth(s.currentHealth, s.maxHealth);
+        rewindableUnit.SetMovingState(s.isMoving);
+
+        rewindableUnit.CopyUsedAbilities(s.usedAbilitiesAmountPerTurn);
+
+        rewindableUnit.MovedPerTurn = s.movedPerTurn;
+    }
+}
+
+
+// ==================================================
+// FILE: UnitWorldUIManager.cs
+// ==================================================
+
+using DG.Tweening;
+using System.Collections.Generic;
+using UnityEditor.ShaderGraph.Internal;
+using UnityEngine;
+
+public class UnitWorldUIManager : MonoBehaviour
+{
+    [SerializeField] private GameObject healthBarPrefab;
+    [SerializeField] private GameObject damagePopupPrefab;
+    [SerializeField] private GameObject healthPopupPrefab;
+
+    private Dictionary<Unit, UnitHealthUI> activeHealthBars = new();
+
+
+    private void OnEnable()
+    {
+        Unit.OnAnyUnitSpawned += HandleUnitSpawned;
+        Unit.OnAnyUnitDied += HandleUnitDied;
+        Unit.OnAnyUnitTookDamage += HandleUnitTookDamage;
+        Unit.OnAnyUnitHealed += HandleUnitHealed;
+    }
+
+    private void OnDisable()
+    {
+        Unit.OnAnyUnitSpawned -= HandleUnitSpawned;
+        Unit.OnAnyUnitDied -= HandleUnitDied;
+        Unit.OnAnyUnitTookDamage -= HandleUnitTookDamage;
+        Unit.OnAnyUnitHealed -= HandleUnitHealed;   
+    }
+
+    private void HandleUnitSpawned(Unit unit)
+    {
+        Transform healthBarAttachPoint = unit.GetHealthBarAttachPoint();
+        GameObject barObj = Instantiate(healthBarPrefab, healthBarAttachPoint.position, Quaternion.identity, healthBarAttachPoint);
+
+        UnitHealthUI healthUI = barObj.GetComponent<UnitHealthUI>();
+        healthUI.Initialize(unit.Health);
+
+        activeHealthBars.Add(unit, healthUI);
+    }
+
+    private void HandleUnitDied(Unit unit)
+    {
+        if (activeHealthBars.TryGetValue(unit, out UnitHealthUI healthUI))
+        {
+            Destroy(healthUI.gameObject);
+            activeHealthBars.Remove(unit);
+        }
+    }
+
+    private void HandleUnitHealed(Unit unit, int amount, int currentHealth)
+    {
+        SpriteRenderer unitSpriteRenderer = unit.GetSpriteRenderer();
+        unitSpriteRenderer.DOColor(Color.green, 0.6f).OnComplete(() =>
+        {
+            unitSpriteRenderer.DOColor(Color.white, 0.3f);
+        });
+
+        float offsetX = UnityEngine.Random.Range(-1f, 1f);
+        float offsetY = -offsetX;
+
+        Vector3 spawnPosition = new Vector3(unit.transform.position.x + offsetX, unit.transform.position.y + offsetY, unit.transform.position.z);
+        GameObject textPopup = Instantiate(healthPopupPrefab, spawnPosition, Quaternion.identity);
+
+        textPopup.GetComponent<HpPopupText>().Setup(amount, Color.green);
+    }
+
+    private void HandleUnitTookDamage(Unit unit, int amount, int currentHealth)
+    {
+        unit.transform.DOShakePosition(0.3f, 0.3f, 10, 90, false, true);
+
+        SpriteRenderer unitSpriteRenderer = unit.GetSpriteRenderer();
+        unitSpriteRenderer.DOColor(Color.red, 0.1f).OnComplete(() =>
+        {
+            unitSpriteRenderer.DOColor(Color.white, 0.1f);
+        });
+
+        float offsetX = UnityEngine.Random.Range(-1f, 1f);
+        float offsetY = -offsetX;
+
+        Vector3 spawnPosition = new Vector3(unit.transform.position.x + offsetX, unit.transform.position.y + offsetY, unit.transform.position.z);
+        GameObject textPopup = Instantiate(damagePopupPrefab, spawnPosition, Quaternion.identity);
+
+        textPopup.GetComponent<HpPopupText>().Setup(amount, Color.red);
+    }
+}

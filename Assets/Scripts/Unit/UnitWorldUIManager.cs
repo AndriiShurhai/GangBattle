@@ -24,6 +24,8 @@ public class UnitWorldUIManager : MonoBehaviour
     {
         Unit.OnAnyUnitSpawned -= HandleUnitSpawned;
         Unit.OnAnyUnitDied -= HandleUnitDied;
+        Unit.OnAnyUnitTookDamage -= HandleUnitTookDamage;
+        Unit.OnAnyUnitHealed -= HandleUnitHealed;   
     }
 
     private void HandleUnitSpawned(Unit unit)

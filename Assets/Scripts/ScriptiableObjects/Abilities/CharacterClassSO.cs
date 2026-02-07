@@ -14,6 +14,9 @@ public class CharacterClassSO : ScriptableObject
     public int movementRange = 2;
     public int movementAmountPerTurn = 2;
 
+    [Header("Combat stats")]
+    public int damage = 10;
+
     [Header("Abilites")]
     public List<AbilityBaseSO> abilities;
 }
