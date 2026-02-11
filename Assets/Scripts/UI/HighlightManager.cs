@@ -20,7 +20,7 @@ public class HighlightManager
         Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
         GameObject highlight = Object.Instantiate(_highlightPrefab, worldPosition, Quaternion.identity, _container);
 
-        var renderer = highlight.GetComponent<SpriteRenderer>();
+        var renderer = highlight.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)
         {
             renderer.color = color;

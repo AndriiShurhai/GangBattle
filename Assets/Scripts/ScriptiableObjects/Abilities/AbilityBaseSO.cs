@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public abstract class AbilityBaseSO : ScriptableObject
 {
@@ -33,7 +34,7 @@ public abstract class AbilityBaseSO : ScriptableObject
         Ally,
         Self,
         EmptyTile,
-        Any
+        Any,
     }
 
     public virtual List<Vector3Int> GetTilesInRange(Vector3Int casterPosition)
@@ -119,7 +120,7 @@ public abstract class AbilityBaseSO : ScriptableObject
         return true;
     }
 
-    public abstract void Execute(Unit caster, Vector3Int targetPosition);
+    public abstract void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null);
 
     public virtual bool CanUse(Unit caster)
     {

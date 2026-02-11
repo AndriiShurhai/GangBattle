@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using DG;
 using DG.Tweening;
+using System;
 
 [CreateAssetMenu(menuName = "Abilities/Attack Ability")]
 public class AttackAbilitySO : AbilityBaseSO
@@ -20,7 +21,7 @@ public class AttackAbilitySO : AbilityBaseSO
             damageMultiplier = 1;
         }
     }
-    public override void Execute(Unit caster, Vector3Int targetPosition)
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
         IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
 
@@ -37,9 +38,10 @@ public class AttackAbilitySO : AbilityBaseSO
 
             Sequence attackSequence = DOTween.Sequence();
 
-            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 1f, 1, 0.5f).SetEase(Ease.OutQuad));
+            //attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 1f, 1, 0.5f).SetEase(Ease.OutQuad));
             attackSequence.AppendCallback(() =>
             {
+                onAbilityInvoke?.Invoke();
                 targetUnit.TakeDamage(damage, caster);
                 Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
 
@@ -52,7 +54,7 @@ public class AttackAbilitySO : AbilityBaseSO
                 }
             });
 
-            attackSequence.Append(caster.transform.DOMove(caster.transform.position, 0.4f).SetEase(Ease.InQuad));
+            //attackSequence.Append(caster.transform.DOMove(caster.transform.position, 0.4f).SetEase(Ease.InQuad));
         }
         else
         {

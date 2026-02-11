@@ -44,7 +44,8 @@ public class AttackActionSO : AIActionSO
             return;
         }
 
-        attackAbility.Execute(aiUnit, targetUnit.GridPosition);
+        aiUnit.UseAbility(attackAbility, targetUnit.GridPosition);
+        //attackAbility.Execute(aiUnit, targetUnit.GridPosition);
 
         onComplete?.Invoke();
         

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Heal Ability")]
@@ -7,13 +8,14 @@ public class HealAbilitySO : AbilityBaseSO
     public int healAmount = 20;
     public bool canHealSelf = true;
 
-    public override void Execute(Unit caster, Vector3Int targetPosition)
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
         IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
 
         if (targetObject is Unit targetUnit)
         {
             targetUnit.Heal(healAmount);
+            onAbilityInvoke.Invoke();
 
             Debug.Log($"{caster.name} healed {targetUnit.name} for {healAmount} HP!");
 

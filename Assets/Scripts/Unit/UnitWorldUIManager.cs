@@ -50,11 +50,6 @@ public class UnitWorldUIManager : MonoBehaviour
 
     private void HandleUnitHealed(Unit unit, int amount, int currentHealth)
     {
-        SpriteRenderer unitSpriteRenderer = unit.GetSpriteRenderer();
-        unitSpriteRenderer.DOColor(Color.green, 0.6f).OnComplete(() =>
-        {
-            unitSpriteRenderer.DOColor(Color.white, 0.3f);
-        });
 
         float offsetX = UnityEngine.Random.Range(-1f, 1f);
         float offsetY = -offsetX;
@@ -69,11 +64,6 @@ public class UnitWorldUIManager : MonoBehaviour
     {
         unit.transform.DOShakePosition(0.3f, 0.3f, 10, 90, false, true);
 
-        SpriteRenderer unitSpriteRenderer = unit.GetSpriteRenderer();
-        unitSpriteRenderer.DOColor(Color.red, 0.1f).OnComplete(() =>
-        {
-            unitSpriteRenderer.DOColor(Color.white, 0.1f);
-        });
 
         float offsetX = UnityEngine.Random.Range(-1f, 1f);
         float offsetY = -offsetX;

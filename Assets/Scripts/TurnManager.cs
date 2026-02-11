@@ -286,7 +286,9 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         foreach (Unit unit in enemyUnits)
         {
+            unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
+            unit.ResetUsedMovement();
         }
 
         StartCoroutine(EnemyTurnRoutine());

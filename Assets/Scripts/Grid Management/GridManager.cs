@@ -48,12 +48,16 @@ public class GridManager : MonoBehaviour
     public bool IsWalkable(Vector3Int gridPosition)
     {
         if (walkableTilemap.GetTile(gridPosition) == null) return false;
-        if (blockedTilemap.GetTile(gridPosition) != null) return false;
+        //if (blockedTilemap.GetTile(gridPosition) != null) return false;
         return true;
     }
     public bool IsValidPosition(Vector3Int gridPosition)
     {
-        if (!IsWalkable(gridPosition)) return false;
+        if (!IsWalkable(gridPosition))
+        {
+            Debug.LogWarning($"Tile is not walkable {gridPosition}");
+            return false;
+        }
 
         IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
         return obj == null || !obj.BlocksMovement; 

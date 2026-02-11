@@ -57,6 +57,10 @@ public class PathFinder : MonoBehaviour
                         reachableTiles.Add(neighbor);
                     }
                 }
+                else if (!IsValidPosition(neighbor))
+                {
+                    Debug.LogWarning("The position is invalid");
+                }
             }
         }
         return reachableTiles;

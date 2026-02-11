@@ -10,8 +10,8 @@ public class HpPopupText : MonoBehaviour
     {
         textMesh.text = amount.ToString();
         textMesh.color = color;
-        transform.DOMoveY(transform.position.y + 1f, 1f);
-        textMesh.DOFade(0, 1f).OnComplete(() => Destroy(gameObject));
+        transform.DOMoveY(transform.position.y + 1f, 1.5f);
+        textMesh.DOFade(0, 2f).OnComplete(() => Destroy(gameObject));
 
     }
 }

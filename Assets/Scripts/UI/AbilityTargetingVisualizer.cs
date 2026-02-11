@@ -76,6 +76,10 @@ public class AbilityTargetingVisualizer : MonoBehaviour
             CreateTargetHighlight(targetPosition, currentTargetColor);
 
         }
+        else
+        {
+            Debug.LogWarning("Wrong place for ability");
+        }
     }
 
     public void HideAbilityRange()
@@ -96,7 +100,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
         Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
         GameObject highlight = Instantiate(targetHighlightPrefab, worldPosition, Quaternion.identity, rangeHighlightsContainer);
 
-        var renderer = highlight.GetComponent<SpriteRenderer>();
+        var renderer = highlight.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)
         {
             renderer.color = color;

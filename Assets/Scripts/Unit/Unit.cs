@@ -37,6 +37,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public static event Action<Unit> OnAnyUnitDied;
     public static event Action<Unit, int, int> OnAnyUnitTookDamage;
     public static event Action<Unit, int, int> OnAnyUnitHealed;
+    public static event Action<Unit, Vector3> OnAnyUnitStartMoving;
+    public static event Action<Unit> OnAnyUnitFinishedMoving;
+    public static event Action<Unit, AbilityBaseSO> OnAnyUnitUsedAbility;
 
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
@@ -52,6 +55,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Transform healthBarAttachPoint;
+    [SerializeField] private UnitVisualBridge unitVisualBridge;
 
     private Vector3Int gridPosition;
     public List<AbilityBaseSO> Abilities {  get { return characterClassSO.abilities; } }
@@ -199,6 +203,15 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
     {
+        Vector3 worldTargetPosition = GridManager.Instance.GridToWorld(targetPosition);
+
+        OnAnyUnitStartMoving.Invoke(this, worldTargetPosition);
+
+        onComplete += () =>
+        {
+            OnAnyUnitFinishedMoving.Invoke(this);
+        };
+
         movementComponent.MoveTo(targetPosition, onComplete);
         movedPerTurn++;
     }
@@ -242,6 +255,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         if (triggerEvent)
         {
             OnUnitDied?.Invoke(this);
+            OnAnyUnitDied?.Invoke(this);
         }
     }
 
@@ -258,11 +272,13 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     {
         if (!characterClassSO.abilities.Contains(abilitySO))
         {
+            Debug.LogWarning("ABILITY IS NOT IN CHARACTER CLASS ABILITIES");
             return false;
         }
 
         if (abilitySO.howMuchCanBeUsed <= usedAbilitiesAmountPerTurn[abilitySO])
         {
+            Debug.Log("ABILITY CAN'T BE USED NO MORE THIS ROUND");
             return false;
         }
 
@@ -283,7 +299,12 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             return;
         }
 
-        abilitySO.Execute(this, targetPosition);
+        void InvokeAbilityUsage()
+        {
+            OnAnyUnitUsedAbility.Invoke(this, abilitySO);
+        }
+
+        abilitySO.Execute(this, targetPosition, InvokeAbilityUsage);
         usedAbilitiesAmountPerTurn[abilitySO]++;
         OnUnitMadeAction?.Invoke();
     }
@@ -323,5 +344,10 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public SpriteRenderer GetSpriteRenderer()
     {
         return spriteRenderer;
+    }
+
+    public UnitVisualBridge GetUnitVisualBridge()
+    {
+        return unitVisualBridge;
     }
 }

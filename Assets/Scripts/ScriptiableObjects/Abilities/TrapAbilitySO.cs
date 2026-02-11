@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Trap Ability")]
@@ -8,7 +9,7 @@ public class TrapAbilitySO : AbilityBaseSO
     public int trapDamage = 15;
     public int duration = 3;
 
-    public override void Execute(Unit caster, Vector3Int targetPosition)
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
         IGridObject gridObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);   
 
@@ -19,6 +20,7 @@ public class TrapAbilitySO : AbilityBaseSO
         }
 
         CreateTrap(targetPosition);
+        onAbilityInvoke?.Invoke();
 
         Debug.Log($"{caster.name} placed a trap at {targetPosition}");
 
