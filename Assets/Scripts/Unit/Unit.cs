@@ -63,7 +63,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public int MaxHealth { get { return healthComponent.MaxHealth; } }
     public HealthComponent Health { get { return healthComponent; } }
     
-    public int Damage { get; private set; }
+    public int Strength { get; private set; }
+    public int Intelligence { get; private set; }
+    public int Agility { get; private set; }
     public Vector3Int GridPosition
     {
         get => gridPosition;
@@ -145,7 +147,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         healthComponent.Initialize(characterClassSO);
         movementComponent.Initialize(characterClassSO);
 
-        this.Damage = characterClassSO.damage;
+        this.Strength = characterClassSO.strength;
+        this.Intelligence = characterClassSO.intelligence;
+        this.Agility = characterClassSO.agility;
     }
 
     private void Start()

@@ -7,19 +7,12 @@ using System;
 [CreateAssetMenu(menuName = "Abilities/Attack Ability")]
 public class AttackAbilitySO : AbilityBaseSO
 {
-    [Header("Scaling")]
-    [SerializeField] private int damageMultiplier = 1;
 
     [Header("Attack Settings")]
     public bool canAttackDiagonally = true;
 
-
-    private void OnValidate()
+    private void Awake()
     {
-        if (damageMultiplier == 0)
-        {
-            damageMultiplier = 1;
-        }
     }
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
@@ -34,7 +27,7 @@ public class AttackAbilitySO : AbilityBaseSO
             Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
             Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
 
-            int damage = Mathf.RoundToInt(caster.Damage * damageMultiplier);
+            int damage = GetPower(caster);
 
             Sequence attackSequence = DOTween.Sequence();
 

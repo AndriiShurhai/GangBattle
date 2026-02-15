@@ -5,8 +5,8 @@ using UnityEngine;
 public class HealAbilitySO : AbilityBaseSO
 {
     [Header("Heal Settings")]
-    public int healAmount = 20;
     public bool canHealSelf = true;
+    public float coefficent = 1.5f;
 
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
@@ -14,6 +14,7 @@ public class HealAbilitySO : AbilityBaseSO
 
         if (targetObject is Unit targetUnit)
         {
+            int healAmount = GetPower(caster);
             targetUnit.Heal(healAmount);
             onAbilityInvoke.Invoke();
 

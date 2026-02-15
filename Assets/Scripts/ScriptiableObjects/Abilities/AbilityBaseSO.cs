@@ -2,6 +2,14 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 
+
+public enum StatType
+{
+    Strength,
+    Intelligence,
+    Agility,
+    None
+}
 public abstract class AbilityBaseSO : ScriptableObject
 {
     [Header("Basic Information")]
@@ -19,6 +27,9 @@ public abstract class AbilityBaseSO : ScriptableObject
     public Color rangePreviewColor = new Color(1f, 0f, 0f, 0.3f);
     public GameObject abilityEffectPrefab;
 
+    [Header("Scaling")]
+    public float coefficient = 1f;
+    public StatType scalingType;
     public enum RangeType
     {
         Square, // all tiles within range
@@ -37,6 +48,22 @@ public abstract class AbilityBaseSO : ScriptableObject
         Any,
     }
 
+    protected int GetPower(Unit unit)
+    {
+        switch (scalingType)
+        {
+            case StatType.Strength:
+                return Mathf.RoundToInt(unit.Strength * coefficient);
+
+            case StatType.Intelligence:
+                return Mathf.RoundToInt(unit.Intelligence * coefficient);
+
+            case StatType.Agility:
+                return Mathf.RoundToInt(unit.Agility * coefficient);
+            default:
+                return 0;
+        }
+    }
     public virtual List<Vector3Int> GetTilesInRange(Vector3Int casterPosition)
     {
         List<Vector3Int> tiles = new List<Vector3Int>();
