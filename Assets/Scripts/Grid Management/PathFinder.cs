@@ -59,7 +59,6 @@ public class PathFinder : MonoBehaviour
                 }
                 else if (!IsValidPosition(neighbor))
                 {
-                    Debug.LogWarning("The position is invalid");
                 }
             }
         }

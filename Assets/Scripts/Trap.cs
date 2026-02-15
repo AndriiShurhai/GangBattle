@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class TrapSnapshotState
@@ -10,6 +11,9 @@ public class TrapSnapshotState
 }
 public class Trap : MonoBehaviour, IGridObject, IRewindable
 {
+    [SerializeField] private EffectStatusType effectStatusType = EffectStatusType.None;
+    [SerializeField] private int abilityDuration = 2;
+
     private Vector3Int gridPosition;
     private int damage;
     private int remainingDuration;
@@ -116,8 +120,19 @@ public class Trap : MonoBehaviour, IGridObject, IRewindable
         Debug.Log($"{steppingUnit} stepped on a trap, {damage}");
 
         steppingUnit.TakeDamage(damage, null);
+        GetComponentInChildren<Animator>().SetTrigger("TrapTrigger");
 
-        DestroyTrap();
+        if (effectStatusType != EffectStatusType.None)
+        {
+            switch (effectStatusType)
+            {
+                case EffectStatusType.Rooted:
+                    steppingUnit.ApplyEffect(effectStatusType, abilityDuration);
+                    break;
+            }
+        }
+
+        StartCoroutine(DestroyTrap());
     }
 
     public void DecreaseDuration()
@@ -131,12 +146,13 @@ public class Trap : MonoBehaviour, IGridObject, IRewindable
 
         if (remainingDuration <= 0)
         {
-            DestroyTrap();
+            StartCoroutine(DestroyTrap());
         }
     }
 
-    private void DestroyTrap()
+    private IEnumerator DestroyTrap()
     {
+        yield return new WaitForSeconds(0.8f);
         isActive = false; 
         gameObject.SetActive(false);
         TrapRegistry.Instance.UnregisterTrap(this);

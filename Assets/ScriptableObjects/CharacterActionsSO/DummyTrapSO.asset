@@ -16,11 +16,14 @@ MonoBehaviour:
   abilityIcon: {fileID: 21300134, guid: c3a40e1c46727b94e959990527f8e7fa, type: 3}
   abilityDescription: Trap works with some duration and gives damage to unit that
     steps on it.
+  howMuchCanBeUsed: 200
   range: 3
   rangeType: 0
   targetType: 3
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 1}
   abilityEffectPrefab: {fileID: 0}
+  coefficient: 1
+  scalingType: 0
   trapPrefab: {fileID: 3806955268432990606, guid: f8895feb428142a42befcc79f43e3862,
     type: 3}
   trapDamage: 15

@@ -78,7 +78,6 @@ public class AbilityTargetingVisualizer : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Wrong place for ability");
         }
     }
 

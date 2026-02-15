@@ -102,6 +102,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         set => movedPerTurn = value;
     }
 
+    private List<StatusEffect> activeEffects = new List<StatusEffect>();
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
     private int movedPerTurn = 0;
     private RewindableID id;
@@ -200,8 +201,53 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         rewindComponent.RestoreState(state);
     }
 
+    public void ApplyEffect(EffectStatusType effectType, int duration)
+    {
+        var existing = activeEffects.Find(e => e.type == effectType);
+
+        if (existing != null)
+        {
+            existing.duration = Mathf.Max(existing.duration, duration);
+        }
+        else
+        {
+            activeEffects.Add(new StatusEffect(effectType, duration));
+            Debug.Log($"{name} is {effectType} for {duration} moves");
+
+            if ((effectType == EffectStatusType.Stunned || effectType == EffectStatusType.Rooted) && IsMoving)
+            {
+                movementComponent.StopAllCoroutines();
+                SetMovingState(false);
+                movementComponent.MoveTo(GridManager.Instance.WorldToGrid(transform.position));
+                transform.position = GridManager.Instance.GridToWorld(GridPosition);
+            }
+        }
+    }
+
+    public bool HasStatus(EffectStatusType effectType)
+    {
+        return activeEffects.Exists(e => e.type == effectType);
+    }
+
+    public void UpdateEffectsStatus()
+    {
+        for (int i = activeEffects.Count-1; i >= 0; i--)
+        {
+            activeEffects[i].Tick(this);
+            if (activeEffects[i].duration < 0)
+            {
+                activeEffects.RemoveAt(i);
+            } 
+        }
+
+    }
     public bool CanMoveTo(Vector3Int position)
     {
+        if (HasStatus(EffectStatusType.Stunned) || HasStatus(EffectStatusType.Rooted))
+        {
+            return false;
+        }
+
         return !movementComponent.IsMoving && movedPerTurn < characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
     }
 
@@ -274,9 +320,14 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
     public bool CanUseAbility(AbilityBaseSO abilitySO)
     {
+        if (HasStatus(EffectStatusType.Stunned))
+        {
+            Debug.Log("ABILITY CAN'T BE USED BECAUSE OF STUN");
+            return false;
+        }
         if (!characterClassSO.abilities.Contains(abilitySO))
         {
-            Debug.LogWarning("ABILITY IS NOT IN CHARACTER CLASS ABILITIES");
+            Debug.Log("ABILITY IS NOT IN CHARACTER CLASS ABILITIES");
             return false;
         }
 
@@ -293,7 +344,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     {
         if (!CanUseAbility(abilitySO))
         {
-            Debug.LogWarning("Unit can't use ability");
+            Debug.Log("Unit can't use ability");
             return;
         }
 

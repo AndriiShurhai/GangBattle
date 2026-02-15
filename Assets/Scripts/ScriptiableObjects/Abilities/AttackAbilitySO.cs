@@ -31,7 +31,7 @@ public class AttackAbilitySO : AbilityBaseSO
 
             Sequence attackSequence = DOTween.Sequence();
 
-            //attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 1f, 1, 0.5f).SetEase(Ease.OutQuad));
+            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
             attackSequence.AppendCallback(() =>
             {
                 onAbilityInvoke?.Invoke();
@@ -47,7 +47,7 @@ public class AttackAbilitySO : AbilityBaseSO
                 }
             });
 
-            //attackSequence.Append(caster.transform.DOMove(caster.transform.position, 0.4f).SetEase(Ease.InQuad));
+            attackSequence.Append(caster.transform.DOJump(caster.transform.position, 0.5f, 1, 0.3f));
         }
         else
         {

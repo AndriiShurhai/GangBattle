@@ -269,6 +269,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
             unit.ResetUsedMovement();
+            unit.UpdateEffectsStatus();
         }
         SaveTurn();
     }
@@ -289,6 +290,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
             unit.ResetUsedMovement();
+            unit.UpdateEffectsStatus();
         }
 
         StartCoroutine(EnemyTurnRoutine());

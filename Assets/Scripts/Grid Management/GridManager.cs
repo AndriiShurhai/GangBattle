@@ -55,7 +55,6 @@ public class GridManager : MonoBehaviour
     {
         if (!IsWalkable(gridPosition))
         {
-            Debug.LogWarning($"Tile is not walkable {gridPosition}");
             return false;
         }
 
