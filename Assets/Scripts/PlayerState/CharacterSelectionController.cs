@@ -20,6 +20,11 @@ public class CharacterSelectionController : MonoBehaviour
     {
         ChangeState(noSelectionState);
     }
+
+    private void Update()
+    {
+        currentState?.Update();
+    }
     private void OnEnable()
     {
         GameInput.Instance.OnClickAction += GameInput_OnClickAction;

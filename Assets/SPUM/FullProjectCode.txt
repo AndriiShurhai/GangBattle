@@ -1,0 +1,1405 @@
+
+
+// ==================================================
+// FILE: PreviewMatchingElement.cs
+// ==================================================
+
+using UnityEngine;
+using System;
+using UnityEngine.UI;
+
+[Serializable]
+public class PreviewMatchingElement
+{
+    public string UnitType;
+    public string PartType;
+    public string PartSubType;
+    public int Index;
+    public string Dir;
+    public string Structure;
+    public string ItemPath;
+    public int MaskIndex;
+	public Image image;
+    public Color Color;
+}
+
+
+// ==================================================
+// FILE: SpritePos.cs
+// ==================================================
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[ExecuteInEditMode]
+public class SpritePos : MonoBehaviour
+{
+    #if UNITY_EDITOR
+    // Update is called once per frame
+    void Update()
+    {
+        float tX = transform.localPosition.x;
+        float tY = transform.localPosition.y;
+        tX = tX- (tX % 0.015625f);
+        tY = tY- (tY % 0.015625f);
+        transform.localPosition = new Vector3(tX,tY,0);
+    }
+    #endif
+}
+
+
+// ==================================================
+// FILE: SpumAnimationClip.cs
+// ==================================================
+
+using System;
+
+[Serializable]
+public class SpumAnimationClip : ICloneable
+{
+    public int index;
+    public string Name;
+    public string StateType;
+    public string ClipPath;
+    public bool HasData;
+    public string UnitType;
+    public string SubCategory;
+    public object Clone()
+    {
+        return new SpumAnimationClip
+        {
+            index = this.index,
+            Name = this.Name,
+            StateType = this.StateType,
+            ClipPath= this.ClipPath,
+            HasData = this.HasData,
+            UnitType = this.UnitType,
+            SubCategory= this.SubCategory
+        };
+    }
+}
+
+
+// ==================================================
+// FILE: SpumPackage.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+[System.Serializable]
+public class SpumPackage : ICloneable
+{
+    public string Name;
+    public string Path;
+    public string Version;
+    public string CreationDate;
+    public List<SpumAnimationClip> SpumAnimationData =  new List<SpumAnimationClip>();
+    public List<SpumTextureData> SpumTextureData = new List<SpumTextureData>();
+    public object Clone()
+    {
+        return new SpumPackage
+        {
+            Name = this.Name,
+            Path = this.Path,
+            Version = this.Version,
+            CreationDate = this.CreationDate,
+            SpumAnimationData = this.SpumAnimationData?.Select(a => (SpumAnimationClip)a.Clone()).ToList(),
+            SpumTextureData = this.SpumTextureData?.Select(t => (SpumTextureData)t.Clone()).ToList()
+        };
+    }
+}
+
+
+// ==================================================
+// FILE: SpumTextureData.cs
+// ==================================================
+
+using System;
+
+[Serializable]
+public class SpumTextureData: ICloneable
+{
+    public string Name; // 메인 텍스쳐 이름
+    public string UnitType; // 유닛 타입
+    public string PartType; // 장비 타입
+    public string SubType; // 스프라이트 멀티플
+    public string PartSubType;
+    public string Path;
+    public object Clone()
+    {
+        return new SpumTextureData
+        {
+            Name = this.Name,
+            UnitType = this.UnitType,
+            PartType = this.PartType,
+            SubType= this.SubType,
+            PartSubType = this.PartSubType,
+            Path = this.Path
+        };
+    }
+}
+
+
+// ==================================================
+// FILE: SPUM_AnimationData.cs
+// ==================================================
+
+using System;
+
+[Serializable]
+public class SPUM_AnimationData
+{
+    //       "type": "idle",      // enum 값으로...
+    //   "clipPath": "path/undead idle.anim"
+    //   "PackageName" : "Legacy" 
+    //   "Speed" : 0.75f
+    public string UnitType;
+    public string StateType;
+    public string Path;
+    public string PackageName;
+    public float SpeedParam;
+}
+
+
+// ==================================================
+// FILE: SPUM_CustomStyleData.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+[Serializable]
+public class SPUM_CustomStyleData
+{
+    [Serializable]
+    public class CustomStyle
+    {
+        public string id;
+        public string name;
+        public string description;
+        public List<string> elements = new List<string>();
+        public List<string> required_parts = new List<string>();
+        public List<string> negative = new List<string>();
+        
+        public CustomStyle()
+        {
+            elements = new List<string>();
+            required_parts = new List<string>();
+            negative = new List<string>();
+        }
+    }
+    
+    // JSON 직렬화용 List
+    public List<CustomStyle> custom_styles_list = new List<CustomStyle>();
+    
+    // 런타임용 Dictionary
+    [NonSerialized]
+    private Dictionary<string, CustomStyle> _styleDict;
+    
+    // 기존 코드 호환을 위한 Dictionary 프로퍼티
+    public Dictionary<string, CustomStyle> custom_styles
+    {
+        get
+        {
+            if (_styleDict == null)
+                RebuildDictionary();
+            return _styleDict;
+        }
+    }
+    
+    private void RebuildDictionary()
+    {
+        _styleDict = new Dictionary<string, CustomStyle>();
+        foreach (var style in custom_styles_list)
+        {
+            if (!string.IsNullOrEmpty(style.id))
+            {
+                _styleDict[style.id] = style;
+            }
+        }
+    }
+    
+    public string ToJson()
+    {
+        // Dictionary를 List로 동기화
+        SyncListFromDictionary();
+        return JsonUtility.ToJson(this, true);
+    }
+    
+    private void SyncListFromDictionary()
+    {
+        if (_styleDict != null)
+        {
+            custom_styles_list = _styleDict.Values.ToList();
+        }
+    }
+    
+    public static SPUM_CustomStyleData FromJson(string json)
+    {
+        var data = JsonUtility.FromJson<SPUM_CustomStyleData>(json);
+        data.RebuildDictionary();
+        return data;
+    }
+    
+    public CustomStyle GetCustomStyle(string styleName)
+    {
+        if (custom_styles.ContainsKey(styleName))
+        {
+            return custom_styles[styleName];
+        }
+        return null;
+    }
+    
+    public void UpdateCustomStyle(string styleName, CustomStyle customStyle)
+    {
+        customStyle.id = styleName;
+        custom_styles[styleName] = customStyle;
+        SyncListFromDictionary();
+    }
+    
+    public bool RemoveCustomStyle(string styleName)
+    {
+        bool result = custom_styles.Remove(styleName);
+        if (result)
+        {
+            SyncListFromDictionary();
+        }
+        return result;
+    }
+    
+    public List<string> GetAllCustomStyleNames()
+    {
+        return new List<string>(custom_styles.Keys);
+    }
+    
+    public List<string> GetStylesForPart(string partType)
+    {
+        var result = new List<string>();
+        
+        foreach (var kvp in custom_styles)
+        {
+            if (kvp.Value.required_parts.Count == 0 || kvp.Value.required_parts.Contains(partType))
+            {
+                result.Add(kvp.Key);
+            }
+        }
+        
+        return result;
+    }
+    
+    public List<string> GetConflictingCustomStyles(List<string> selectedElements)
+    {
+        var conflicts = new List<string>();
+        
+        foreach (var kvp in custom_styles)
+        {
+            foreach (var negative in kvp.Value.negative)
+            {
+                if (selectedElements.Contains(negative))
+                {
+                    conflicts.Add(kvp.Key);
+                    break;
+                }
+            }
+        }
+        
+        return conflicts;
+    }
+    
+    public List<string> GetCompatibleCustomStyles(List<string> selectedElements, List<string> availableParts)
+    {
+        var compatible = new List<string>();
+        
+        foreach (var kvp in custom_styles)
+        {
+            bool isCompatible = true;
+            
+            if (kvp.Value.required_parts.Count > 0)
+            {
+                foreach (var part in kvp.Value.required_parts)
+                {
+                    if (!availableParts.Contains(part))
+                    {
+                        isCompatible = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (isCompatible)
+            {
+                foreach (var negative in kvp.Value.negative)
+                {
+                    if (selectedElements.Contains(negative))
+                    {
+                        isCompatible = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (isCompatible)
+            {
+                compatible.Add(kvp.Key);
+            }
+        }
+        
+        return compatible;
+    }
+}
+
+
+// ==================================================
+// FILE: SPUM_ImprovedClassData.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+[Serializable]
+public class SPUM_ImprovedClassData
+{
+    [Serializable]
+    public class CombatClass
+    {
+        public string id;
+        public string description;
+        public List<string> type = new List<string>();
+        public List<string> class_tags = new List<string>();
+        public List<string> style = new List<string>();
+        public List<string> type_negative = new List<string>();
+        public List<string> class_negative = new List<string>();
+        public List<string> negative = new List<string>();
+        
+        public CombatClass()
+        {
+            type = new List<string>();
+            class_tags = new List<string>();
+            style = new List<string>();
+            type_negative = new List<string>();
+            class_negative = new List<string>();
+            negative = new List<string>();
+        }
+    }
+    
+    // JSON 직렬화용 List
+    public List<CombatClass> combat_classes_list = new List<CombatClass>();
+    
+    // 런타임용 Dictionary
+    [NonSerialized]
+    private Dictionary<string, CombatClass> _combatClassDict;
+    
+    // 기존 코드 호환을 위한 Dictionary 프로퍼티
+    public Dictionary<string, CombatClass> combat_classes
+    {
+        get
+        {
+            if (_combatClassDict == null)
+                RebuildDictionary();
+            return _combatClassDict;
+        }
+    }
+    
+    private void RebuildDictionary()
+    {
+        _combatClassDict = new Dictionary<string, CombatClass>();
+        foreach (var combatClass in combat_classes_list)
+        {
+            if (!string.IsNullOrEmpty(combatClass.id))
+            {
+                _combatClassDict[combatClass.id.ToLower()] = combatClass;
+            }
+        }
+    }
+    
+    public string ToJson()
+    {
+        // Dictionary를 List로 동기화
+        SyncListFromDictionary();
+        return JsonUtility.ToJson(this, true);
+    }
+    
+    private void SyncListFromDictionary()
+    {
+        if (_combatClassDict != null)
+        {
+            combat_classes_list = _combatClassDict.Values.ToList();
+        }
+    }
+    
+    public static SPUM_ImprovedClassData FromJson(string json)
+    {
+        var data = JsonUtility.FromJson<SPUM_ImprovedClassData>(json);
+        data.RebuildDictionary();
+        return data;
+    }
+    
+    public CombatClass GetClass(string className)
+    {
+        if (combat_classes.ContainsKey(className.ToLower()))
+        {
+            return combat_classes[className.ToLower()];
+        }
+        return null;
+    }
+    
+    public void UpdateClass(string className, CombatClass combatClass)
+    {
+        string key = className.ToLower();
+        combatClass.id = key;
+        combat_classes[key] = combatClass;
+        SyncListFromDictionary();
+    }
+    
+    public bool RemoveClass(string className)
+    {
+        bool result = combat_classes.Remove(className.ToLower());
+        if (result)
+        {
+            SyncListFromDictionary();
+        }
+        return result;
+    }
+    
+    public List<string> GetAllClassNames()
+    {
+        return new List<string>(combat_classes.Keys);
+    }
+    
+    public List<string> GetClassesByType(string type)
+    {
+        var result = new List<string>();
+        foreach (var kvp in combat_classes)
+        {
+            if (kvp.Value.type.Contains(type))
+            {
+                result.Add(kvp.Key);
+            }
+        }
+        return result;
+    }
+    
+    public List<string> GetClassesByClassTag(string classTag)
+    {
+        var result = new List<string>();
+        foreach (var kvp in combat_classes)
+        {
+            if (kvp.Value.class_tags.Contains(classTag))
+            {
+                result.Add(kvp.Key);
+            }
+        }
+        return result;
+    }
+}
+
+
+// ==================================================
+// FILE: SPUM_ImprovedStyleData.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+[Serializable]
+public class SPUM_ImprovedStyleData
+{
+    [Serializable]
+    public class StyleInfo
+    {
+        public string id;
+        public string description;
+    }
+    
+    [Serializable]
+    public class StyleCategory
+    {
+        public string id;
+        public string name;
+        public List<StyleInfo> styles = new List<StyleInfo>();
+        
+        public StyleCategory()
+        {
+            styles = new List<StyleInfo>();
+        }
+    }
+    
+    // JSON 직렬화용 List
+    public List<StyleCategory> categories_list = new List<StyleCategory>();
+    
+    // 런타임용 Dictionary
+    [NonSerialized]
+    private Dictionary<string, StyleCategory> _categoryDict;
+    [NonSerialized]
+    private Dictionary<string, StyleInfo> _flatStyles;
+    
+    // 기존 코드 호환을 위한 Dictionary 프로퍼티
+    public Dictionary<string, StyleCategory> categories
+    {
+        get
+        {
+            if (_categoryDict == null)
+                RebuildDictionary();
+            return _categoryDict;
+        }
+    }
+    
+    private void RebuildDictionary()
+    {
+        _categoryDict = new Dictionary<string, StyleCategory>();
+        _flatStyles = new Dictionary<string, StyleInfo>();
+        
+        foreach (var category in categories_list)
+        {
+            if (!string.IsNullOrEmpty(category.id))
+            {
+                _categoryDict[category.id] = category;
+                
+                foreach (var style in category.styles)
+                {
+                    if (!string.IsNullOrEmpty(style.id))
+                    {
+                        _flatStyles[style.id.ToLower()] = style;
+                    }
+                }
+            }
+        }
+    }
+    
+    private Dictionary<string, StyleInfo> GetFlatStyles()
+    {
+        if (_flatStyles == null)
+            RebuildDictionary();
+        return _flatStyles;
+    }
+    
+    public string ToJson()
+    {
+        // Dictionary를 List로 동기화
+        SyncListFromDictionary();
+        return JsonUtility.ToJson(this, true);
+    }
+    
+    private void SyncListFromDictionary()
+    {
+        if (_categoryDict != null)
+        {
+            categories_list = _categoryDict.Values.ToList();
+        }
+    }
+    
+    public static SPUM_ImprovedStyleData FromJson(string json)
+    {
+        var data = JsonUtility.FromJson<SPUM_ImprovedStyleData>(json);
+        data.RebuildDictionary();
+        return data;
+    }
+    
+    public StyleInfo GetStyle(string styleName)
+    {
+        var flatStyles = GetFlatStyles();
+        if (flatStyles.ContainsKey(styleName.ToLower()))
+        {
+            return flatStyles[styleName.ToLower()];
+        }
+        return null;
+    }
+    
+    public void UpdateStyle(string categoryKey, string styleName, StyleInfo styleInfo)
+    {
+        styleInfo.id = styleName.ToLower();
+        
+        if (categories.ContainsKey(categoryKey))
+        {
+            var category = categories[categoryKey];
+            var existing = category.styles.FirstOrDefault(s => s.id == styleInfo.id);
+            
+            if (existing != null)
+            {
+                int index = category.styles.IndexOf(existing);
+                category.styles[index] = styleInfo;
+            }
+            else
+            {
+                category.styles.Add(styleInfo);
+            }
+            
+            GetFlatStyles()[styleInfo.id] = styleInfo;
+            SyncListFromDictionary();
+        }
+    }
+    
+    public bool RemoveStyle(string styleName)
+    {
+        string key = styleName.ToLower();
+        
+        foreach (var category in categories.Values)
+        {
+            var toRemove = category.styles.FirstOrDefault(s => s.id == key);
+            if (toRemove != null)
+            {
+                category.styles.Remove(toRemove);
+                GetFlatStyles().Remove(key);
+                SyncListFromDictionary();
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public List<string> GetAllStyleNames()
+    {
+        return new List<string>(GetFlatStyles().Keys);
+    }
+    
+    public Dictionary<string, List<string>> GetStylesByCategory()
+    {
+        var result = new Dictionary<string, List<string>>();
+        
+        foreach (var kvp in categories)
+        {
+            result[kvp.Key] = kvp.Value.styles.Select(s => s.id).ToList();
+        }
+        
+        return result;
+    }
+    
+    public Dictionary<string, StyleCategory> GetCategorizedStyles()
+    {
+        return new Dictionary<string, StyleCategory>(categories);
+    }
+    
+    public List<string> GetConflictingStyles(List<string> selectedStyles)
+    {
+        return new List<string>();
+    }
+    
+    public List<string> GetCompatibleStyles(List<string> selectedStyles)
+    {
+        var allStyles = GetAllStyleNames();
+        var compatible = new List<string>();
+        
+        foreach (var styleName in allStyles)
+        {
+            if (!selectedStyles.Contains(styleName))
+            {
+                compatible.Add(styleName);
+            }
+        }
+        
+        return compatible;
+    }
+    
+    public List<string> GenerateRandomStyleCombination(int maxStyles = 3, List<string> requiredCategories = null)
+    {
+        var result = new List<string>();
+        
+        if (requiredCategories != null && requiredCategories.Count > 0)
+        {
+            foreach (var categoryKey in requiredCategories)
+            {
+                if (categories.ContainsKey(categoryKey))
+                {
+                    var category = categories[categoryKey];
+                    if (category.styles.Count > 0)
+                    {
+                        var selected = category.styles[UnityEngine.Random.Range(0, category.styles.Count)];
+                        result.Add(selected.id);
+                    }
+                }
+            }
+        }
+        
+        var allAvailable = GetCompatibleStyles(result);
+        while (result.Count < maxStyles && allAvailable.Count > 0)
+        {
+            var selected = allAvailable[UnityEngine.Random.Range(0, allAvailable.Count)];
+            result.Add(selected);
+            allAvailable = GetCompatibleStyles(result);
+        }
+        
+        return result;
+    }
+    
+    public void AddCategory(string key, string name)
+    {
+        if (!categories.ContainsKey(key))
+        {
+            var newCategory = new StyleCategory { id = key, name = name };
+            categories[key] = newCategory;
+            SyncListFromDictionary();
+        }
+    }
+    
+    public bool RemoveCategory(string key)
+    {
+        if (categories.Remove(key))
+        {
+            // Remove all styles from flat dictionary
+            var categoryToRemove = categories_list.FirstOrDefault(c => c.id == key);
+            if (categoryToRemove != null)
+            {
+                foreach (var style in categoryToRemove.styles)
+                {
+                    GetFlatStyles().Remove(style.id);
+                }
+            }
+            SyncListFromDictionary();
+            return true;
+        }
+        return false;
+    }
+}
+
+
+// ==================================================
+// FILE: SPUM_MatchingList.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+[Serializable]
+public class MatchingElement
+{
+    public string UnitType;
+    public string PartType;
+    public string PartSubType;
+    public int Index;
+    public string Dir;
+    public string Structure;
+    public string ItemPath;
+    public int MaskIndex;
+	public SpriteRenderer renderer;
+    public Color32 Color;
+}
+public class SPUM_MatchingList : MonoBehaviour
+{
+    public List<MatchingElement> matchingTables = new List<MatchingElement>();
+    public void LoadItems()
+    {
+        matchingTables = new List<MatchingElement>();
+        SpriteRenderer[] spriteRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+        string Text = "";
+        foreach (SpriteRenderer sr in spriteRenderers)
+        {
+            var item = new MatchingElement();
+            item.Structure = System.Text.RegularExpressions.Regex.Replace(sr.name,@"[^a-zA-Z가-힣\s]", "");
+            item.renderer = sr;
+            item.Color = Color.white;
+            Text +=item.Structure+"\n";
+            matchingTables.Add(item);
+        }
+        Debug.Log(Text);
+    }
+}
+
+
+// ==================================================
+// FILE: SPUM_Prefabs.cs
+// ==================================================
+
+using System.Collections;
+using System.Collections.Generic;
+using System;
+using UnityEngine;
+using UnityEngine.Events;
+using System.Linq;
+public enum PlayerState
+{
+    IDLE,
+    MOVE,
+    ATTACK,
+    DAMAGED,
+    DEBUFF,
+    DEATH,
+    OTHER,
+}
+public class SPUM_Prefabs : MonoBehaviour
+{
+    public float _version;
+    public bool EditChk;
+    public string _code;
+    public Animator _anim;
+    public AnimatorOverrideController OverrideController;
+
+    public string UnitType;
+    public List<SpumPackage> spumPackages = new List<SpumPackage>();
+    public List<PreviewMatchingElement> ImageElement = new();
+    public List<SPUM_AnimationData> SpumAnimationData = new();
+    public Dictionary<string, List<AnimationClip>> StateAnimationPairs = new();
+    public List<AnimationClip> IDLE_List = new();
+    public List<AnimationClip> MOVE_List = new();
+    public List<AnimationClip> ATTACK_List = new();
+    public List<AnimationClip> DAMAGED_List = new();
+    public List<AnimationClip> DEBUFF_List = new();
+    public List<AnimationClip> DEATH_List = new();
+    public List<AnimationClip> OTHER_List = new();
+    public void OverrideControllerInit()
+    {
+        Animator animator = _anim;
+        OverrideController = new AnimatorOverrideController();
+        OverrideController.runtimeAnimatorController= animator.runtimeAnimatorController;
+
+        // ?? ????? ??? ?????
+        AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+
+        foreach (AnimationClip clip in clips)
+        {
+            // ??? ???? ????????
+            OverrideController[clip.name] = clip;
+        }
+
+        animator.runtimeAnimatorController= OverrideController;
+        foreach (PlayerState state in Enum.GetValues(typeof(PlayerState)))
+        {
+            var stateText = state.ToString();
+            StateAnimationPairs[stateText] = new List<AnimationClip>();
+            switch (stateText)
+            {
+                case "IDLE":
+                    StateAnimationPairs[stateText] = IDLE_List;
+                    break;
+                case "MOVE":
+                    StateAnimationPairs[stateText] = MOVE_List;
+                    break;
+                case "ATTACK":
+                    StateAnimationPairs[stateText] = ATTACK_List;
+                    break;
+                case "DAMAGED":
+                    StateAnimationPairs[stateText] = DAMAGED_List;
+                    break;
+                case "DEBUFF":
+                    StateAnimationPairs[stateText] = DEBUFF_List;
+                    break;
+                case "DEATH":
+                    StateAnimationPairs[stateText] = DEATH_List;
+                    break;
+                case "OTHER":
+                    StateAnimationPairs[stateText] = OTHER_List;
+                    break;
+            }
+        }
+    }
+    public bool allListsHaveItemsExist(){
+        List<List<AnimationClip>> allLists = new List<List<AnimationClip>>()
+        {
+            IDLE_List, MOVE_List, ATTACK_List, DAMAGED_List, DEBUFF_List, DEATH_List, OTHER_List
+        };
+
+        return allLists.All(list => list.Count > 0);
+    }
+    [ContextMenu("PopulateAnimationLists")]
+    public void PopulateAnimationLists()
+    {
+        IDLE_List = new();
+        MOVE_List = new();
+        ATTACK_List = new();
+        DAMAGED_List = new();
+        DEBUFF_List = new();
+        DEATH_List = new();
+        OTHER_List = new();
+        
+        var groupedClips = spumPackages
+        .SelectMany(package => package.SpumAnimationData)
+        .Where(spumClip => spumClip.HasData && 
+                        spumClip.UnitType.Equals(UnitType) && 
+                        spumClip.index > -1 )
+        .GroupBy(spumClip => spumClip.StateType)
+        .ToDictionary(
+            group => group.Key, 
+            group => group.OrderBy(clip => clip.index).ToList()
+        );
+    // foreach (var item in groupedClips)
+    // {
+    //     foreach (var clip in item.Value)
+    //     {
+    //         Debug.Log(clip.ClipPath);
+    //     }
+    // }
+        foreach (var kvp in groupedClips)
+        {
+            var stateType = kvp.Key;
+            var orderedClips = kvp.Value;
+            switch (stateType)
+            {
+                case "IDLE":
+                    IDLE_List.AddRange(orderedClips.Select(clip => LoadAnimationClip(clip.ClipPath)));
+                    //StateAnimationPairs[stateType] = IDLE_List;
+                    break;
+                case "MOVE":
+                    MOVE_List.AddRange(orderedClips.Select(clip => LoadAnimationClip(clip.ClipPath)));
+                    //StateAnimationPairs[stateType] = MOVE_List;
+                    break;
+                case "ATTACK":
+                    ATTACK_List.AddRange(orderedClips.Select(clip => LoadAnimationClip(clip.ClipPath)));
+                    //StateAnimationPairs[stateType] = ATTACK_List;
+                    break;
+                case "DAMAGED":
+                    DAMAGED_List.AddRange(orderedClips.Select(clip => LoadAnimationClip(clip.ClipPath)));
+                    //StateAnimationPairs[stateType] = DAMAGED_List;
+                    break;
+                case "DEBUFF":
+                    DEBUFF_List.AddRange(orderedClips.Select(clip => LoadAnimationClip(clip.ClipPath)));
+                    //StateAnimationPairs[stateType] = DEBUFF_List;
+                    break;
+                case "DEATH":
+                    DEATH_List.AddRange(orderedClips.Select(clip => LoadAnimationClip(clip.ClipPath)));
+                    //StateAnimationPairs[stateType] = DEATH_List;
+                    break;
+                case "OTHER":
+                    OTHER_List.AddRange(orderedClips.Select(clip => LoadAnimationClip(clip.ClipPath)));
+                    //StateAnimationPairs[stateType] = OTHER_List;
+                    break;
+            }
+        }
+    
+    }
+    public void PlayAnimation(PlayerState PlayState, int index){
+        Animator animator = _anim;
+        //Debug.Log(PlayState.ToString());
+        var animations =  StateAnimationPairs[PlayState.ToString()];
+        //Debug.Log(OverrideController[PlayState.ToString()].name);
+        OverrideController[PlayState.ToString()] = animations[index];
+        //Debug.Log( OverrideController[PlayState.ToString()].name);
+        var StateStr = PlayState.ToString();
+   
+        bool isMove = StateStr.Contains("MOVE");
+        bool isDebuff = StateStr.Contains("DEBUFF");
+        bool isDeath = StateStr.Contains("DEATH");
+        animator.SetBool("1_Move", isMove);
+        animator.SetBool("5_Debuff", isDebuff);
+        animator.SetBool("isDeath", isDeath);
+        if(!isMove && !isDebuff)
+        {
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            foreach (AnimatorControllerParameter parameter in parameters)
+            {
+                // if(parameter.type == AnimatorControllerParameterType.Bool){
+                //     bool isBool = StateStr.ToUpper().Contains(parameter.name.ToUpper());
+                //     animator.SetBool(parameter.name, isBool);
+                // }
+                if(parameter.type == AnimatorControllerParameterType.Trigger)
+                {
+                    bool isTrigger = parameter.name.ToUpper().Contains(StateStr.ToUpper());
+                    if(isTrigger){
+                         Debug.Log($"Parameter: {parameter.name}, Type: {parameter.type}");
+                        animator.SetTrigger(parameter.name);
+                    }
+                }
+            }
+        }
+    }
+    AnimationClip LoadAnimationClip(string clipPath)
+    {
+        // "Animations" ???? ????? ?? ??
+        AnimationClip clip = Resources.Load<AnimationClip>(clipPath.Replace(".anim", ""));
+        
+        if (clip == null)
+        {
+            Debug.LogWarning($"Failed to load animation clip '{clipPath}'.");
+        }
+        
+        return clip;
+    }
+}
+
+
+// ==================================================
+// FILE: PlayerManager.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public class PlayerManager : MonoBehaviour
+{
+    public PlayerObj _prefabObj;
+    public List<SPUM_Prefabs> _savedUnitList = new List<SPUM_Prefabs>();
+    public Vector2 _startPos;
+    public Vector2 _addPos;
+    public int _columnNum;
+    public int UnitMaxCount = 20;
+    public Transform _playerPool;
+    public List<PlayerObj> _playerList = new List<PlayerObj>();
+    public PlayerObj _nowObj;
+    public Transform _playerObjCircle;
+    public Transform _goalObjCircle;
+    public Camera _camera;
+    Texture2D imageSave;
+    public GameObject _bg;
+    public RectTransform CommandPanel;
+    public Button AnimationButton;
+    public Transform AnimationPanelParent;
+    public GameObject AnimationPanel;
+    public enum ScreenShotSize
+    {
+        HD,
+        FHD,
+        UHD
+    }
+    public ScreenShotSize _screenShotSize = ScreenShotSize.HD;
+
+    void Start()
+    {
+        if(_savedUnitList.Count.Equals(0) || _playerList.Count.Equals(0))
+            GetPlayerList();
+    }
+    // Update is called once per frame
+    void Update()
+    {
+        if(EventSystem.current.IsPointerOverGameObject()) return;
+        if(Input.GetMouseButtonDown(0))
+        {
+            RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+            
+            if(hit.collider != null)
+            {
+                bool isHitPlayer = hit.collider.CompareTag("Player");
+                CommandPanel.gameObject.SetActive(isHitPlayer);
+               
+                if(isHitPlayer)
+                {
+                    _nowObj = hit.collider.GetComponent<PlayerObj>();
+                    CreateAnimationPanel(_nowObj);
+                }
+                else
+                {
+                    //Set move Player object to this point
+                    if(_nowObj!=null)
+                    {
+                        Vector2 goalPos = hit.point;
+                        _goalObjCircle.transform.position = hit.point;
+                        _nowObj.SetMovePos(goalPos);
+                    }
+                }
+            }
+        }
+
+        if(_nowObj!=null)
+        {
+            _playerObjCircle.transform.position = _nowObj.transform.position;
+        }
+    }
+    public void CreateAnimationPanel(PlayerObj Unit)
+    {
+        foreach (Transform item in AnimationPanelParent.transform)
+        {
+            Destroy(item.gameObject);
+        }
+        var Info = Unit._prefabs.StateAnimationPairs;
+        foreach (var StateName in Info.Keys)
+        {
+            var Panel = Instantiate(AnimationPanel, AnimationPanelParent);
+            string StateNameformat = $"{StateName} State";
+            Panel.GetComponentInChildren<Text>().text = StateNameformat;
+            var ParentTranform = Panel.GetComponentInChildren<ContentSizeFitter>().transform;
+            foreach (var clip in Info[StateName])
+            {
+                var Button = Instantiate(AnimationButton, ParentTranform);
+                Button.GetComponentInChildren<Text>().text = clip.name;
+                Button.onClick.AddListener(()=> {
+                    if(Enum.TryParse(StateName, true, out PlayerState State))
+                    {
+                        Unit.isAction = true;
+                        int index = Info[StateName].FindIndex(x => x == clip);
+                        Debug.Log(State + ":" + index);
+                        Unit._prefabs._anim.Rebind();
+                        Unit.SetStateAnimationIndex(State, index);
+                        Unit.PlayStateAnimation(State);
+                    }
+                });
+            }
+        }
+    }
+    public void ClearPlayerList()
+    {
+        List<GameObject> tList = new List<GameObject>();
+        for(var i =0; i < _playerPool.transform.childCount; i++)
+        {
+            GameObject tOBjj = _playerPool.transform.GetChild(i).gameObject;
+            tList.Add(tOBjj);
+        }
+        foreach(var obj in tList)
+        {
+            DestroyImmediate(obj);
+        }
+
+        //net Edited. 2022.01.18
+        _savedUnitList.Clear();
+        _playerList.Clear();
+    }
+    public void GetPlayerList()
+    {
+        ClearPlayerList();
+
+        var saveArray = Resources.LoadAll<SPUM_Prefabs>("");
+        foreach (var unit in saveArray)
+        {
+            if (unit.ImageElement.Count > 0)
+            {
+                _savedUnitList.Add(unit);
+                unit.PopulateAnimationLists();
+            }
+        }
+
+        
+        float numXStart = _startPos.x;
+        float numYStart = _startPos.y;
+
+        float numX = _addPos.x;
+        float numY = _addPos.y;
+        float ttV = 0;
+
+        int sColumnNum = _columnNum;
+
+        for(var i = 0 ; i < UnitMaxCount;i++)
+        {
+            if(i > _savedUnitList.Count-1) continue;
+            if(i > sColumnNum-1)
+            {
+                numYStart -= 1f;
+                numXStart -= numX * _columnNum;
+                sColumnNum += _columnNum;
+                ttV += numY;
+            }
+            
+            GameObject ttObj = Instantiate(_prefabObj.gameObject) as GameObject;
+            ttObj.transform.SetParent(_playerPool);
+            ttObj.transform.localScale = new Vector3(1,1,1);
+            
+
+            var tObj = Instantiate(_savedUnitList[i]);
+            tObj.transform.SetParent(ttObj.transform);
+            tObj.transform.localScale = new Vector3(1,1,1);
+            tObj.transform.localPosition = Vector3.zero;
+
+            ttObj.name = _savedUnitList[i].name;
+
+            PlayerObj tObjST = ttObj.GetComponent<PlayerObj>();
+
+            tObjST._prefabs = tObj;
+
+            ttObj.transform.localPosition = new Vector3(numXStart + numX * i,numYStart+ttV,0);
+            _playerList.Add(tObjST);
+        }
+    }
+    public void SetAlignUnits()
+    {
+        float numXStart = _startPos.x;
+        float numYStart = _startPos.y;
+
+        float numX = _addPos.x;
+        float numY = _addPos.y;
+        float ttV = 0;
+
+        int sColumnNum = _columnNum;
+        _playerList = _playerList.Where(s => s != null).ToList();
+        for(var i = 0 ; i < _playerList.Count-1;i++)
+        {
+            if(i > sColumnNum-1)
+            {
+                numYStart -= 1f;
+                numXStart -= numX * _columnNum;
+                sColumnNum += _columnNum;
+                ttV += numY;
+            }
+            
+            GameObject ttObj = _playerList[i].gameObject;
+
+            ttObj.transform.localPosition = new Vector3(numXStart + numX * i,numYStart+ttV,0);
+        }
+    }
+    //???? ??
+    public void SetScreenShot()
+    {
+        
+        _bg.SetActive(false);
+        Vector2 _nowSize = new Vector2(Screen.currentResolution.width,Screen.currentResolution.height);
+        switch(_screenShotSize)
+        {
+            case ScreenShotSize.HD:
+            Screen.SetResolution(1280, 720, false);
+            break;
+
+            case ScreenShotSize.FHD:
+            Screen.SetResolution(1920, 1080, false);
+            break;
+
+            case ScreenShotSize.UHD:
+            Screen.SetResolution(3840, 2160, false);
+            break;
+        }
+        int tX = _camera.scaledPixelWidth;
+		int tY = _camera.scaledPixelHeight;
+
+		RenderTexture tempRT = new RenderTexture(tX, tY, 24, RenderTextureFormat.ARGB32)
+		{
+			antiAliasing = 4
+		};
+	
+		_camera.targetTexture = tempRT;
+		RenderTexture.active = tempRT;
+		_camera.Render();
+
+		imageSave = new Texture2D(tX, tY, TextureFormat.ARGB32, false, true);
+		
+		float tXPos = tX*0.5f - imageSave.width*0.5f;
+		float tYPos = tY*0.5f - imageSave.height*0.5f;
+
+		imageSave.ReadPixels(new Rect(tXPos, tYPos, imageSave.width, imageSave.height), 0, 0);
+		imageSave.Apply();
+
+        byte[] bytes = imageSave.EncodeToPNG();
+        string tName = string.Format("{0:yyyy-MM-dd_HH-mm-ss-fff}", System.DateTime.Now);
+        string filename = string.Format("{0}/SPUM/ScreenShots/{1}.png",Application.dataPath,tName);
+        System.IO.File.WriteAllBytes(filename, bytes);
+
+		RenderTexture.active = null;
+		_camera.targetTexture = null;
+
+		DestroyImmediate(tempRT);
+        DestroyImmediate(imageSave);
+
+        Screen.SetResolution((int)_nowSize.x, (int)_nowSize.y, false);
+        Debug.Log("Screenshot Saved : " + filename);
+        _bg.SetActive(true);
+    }
+
+}
+
+
+// ==================================================
+// FILE: PlayerObj.cs
+// ==================================================
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Events;
+
+
+public class PlayerObj : MonoBehaviour
+{
+    public SPUM_Prefabs _prefabs;
+    public float _charMS;
+    private PlayerState _currentState;
+
+    public Vector3 _goalPos;
+    public bool isAction = false;
+    public Dictionary<PlayerState, int> IndexPair = new ();
+    void Start()
+    {
+        if(_prefabs == null )
+        {
+            _prefabs = transform.GetChild(0).GetComponent<SPUM_Prefabs>();
+            if(!_prefabs.allListsHaveItemsExist()){
+                _prefabs.PopulateAnimationLists();
+            }
+        }
+        _prefabs.OverrideControllerInit();
+        foreach (PlayerState state in Enum.GetValues(typeof(PlayerState)))
+        {
+            IndexPair[state] = 0;
+        }
+    }
+    public void SetStateAnimationIndex(PlayerState state, int index = 0){
+        IndexPair[state] = index;
+    }
+    public void PlayStateAnimation(PlayerState state){
+        _prefabs.PlayAnimation(state, IndexPair[state]);
+    }
+    void Update()
+    {
+        if(isAction) return;
+
+        transform.position = new Vector3(transform.position.x,transform.position.y,transform.localPosition.y * 0.01f);
+        switch(_currentState)
+        {
+            case PlayerState.IDLE:
+            
+            break;
+
+            case PlayerState.MOVE:
+            DoMove();
+            break;
+        }
+        PlayStateAnimation(_currentState);
+
+    }
+
+    void DoMove()
+    {
+        Vector3 _dirVec  = _goalPos - transform.position ;
+        Vector3 _disVec = (Vector2)_goalPos - (Vector2)transform.position ;
+        if( _disVec.sqrMagnitude < 0.1f )
+        {
+            _currentState = PlayerState.IDLE;
+            return;
+        }
+        Vector3 _dirMVec = _dirVec.normalized;
+        transform.position += _dirMVec * _charMS * Time.deltaTime;
+        
+
+        if(_dirMVec.x > 0 ) _prefabs.transform.localScale = new Vector3(-1,1,1);
+        else if (_dirMVec.x < 0) _prefabs.transform.localScale = new Vector3(1,1,1);
+    }
+
+    public void SetMovePos(Vector2 pos)
+    {
+        isAction = false;
+        _goalPos = pos;
+        _currentState = PlayerState.MOVE;
+    }
+}
+
+
+// ==================================================
+// FILE: PlayerManagerEditor.cs
+// ==================================================
+
+using UnityEngine;
+using UnityEditor;
+[CustomEditor(typeof(PlayerManager))]
+public class PlayerManagerEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+
+        PlayerManager manager = (PlayerManager)target;
+
+        if (GUILayout.Button("CREATE UNIT"))
+        {
+            manager.GetPlayerList();
+        }
+        if (GUILayout.Button("Align UNIT"))
+        {
+            manager.SetAlignUnits();
+        }
+        if (GUILayout.Button("CLEAR UNIT"))
+        {
+            manager.ClearPlayerList();
+        }
+        if (GUILayout.Button("CAPTURE UNITS"))
+        {
+            manager.SetScreenShot();
+            AssetDatabase.Refresh();
+        }
+    }
+}

@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-
+using DG.Tweening;
 public class HighlightManager
 {
     private readonly GameObject _highlightPrefab;
@@ -19,6 +18,11 @@ public class HighlightManager
 
         Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
         GameObject highlight = Object.Instantiate(_highlightPrefab, worldPosition, Quaternion.identity, _container);
+
+        Vector3 highlightScale = highlight.transform.localScale;
+
+        highlight.transform.localScale = new Vector3(0, 0, 0);
+        highlight.transform.DOScale(highlightScale, 0.3f);
 
         var renderer = highlight.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)

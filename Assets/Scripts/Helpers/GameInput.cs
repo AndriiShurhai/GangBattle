@@ -95,6 +95,11 @@ public class GameInput : MonoBehaviour
             .Start();
     }
 
+    public Vector3 GetMousePosition()
+    {
+        return GetPointerPosition();
+    }
+
     private void Click_performed(InputAction.CallbackContext obj)
     {
         OnClickAction?.Invoke(GetPointerPosition());

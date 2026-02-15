@@ -15,6 +15,11 @@ public class NoSelectionState : IPlayerState
         AbilityTargetingVisualizer.Instance.HideAbilityRange();
         Debug.Log("Entering no selection state");
     }
+
+    public void Update()
+    {
+
+    }
     public void Exit()
     {
 
