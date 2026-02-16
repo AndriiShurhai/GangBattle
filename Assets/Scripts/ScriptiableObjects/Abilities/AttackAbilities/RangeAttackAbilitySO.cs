@@ -1,15 +1,13 @@
-using System.Collections;
-using UnityEngine;
-using DG;
 using DG.Tweening;
+using UnityEngine;
 using System;
 
-[CreateAssetMenu(menuName = "Abilities/Attack Ability")]
-public class AttackAbilitySO : AbilityBaseSO
+[CreateAssetMenu(menuName ="Abilities/Range Attack")]
+public class RangeAttackAbilitySO : AbilityBaseSO
 {
-
     [Header("Attack Settings")]
     public bool canAttackDiagonally = true;
+    public GameObject projectile;
 
     private void Awake()
     {
@@ -25,17 +23,18 @@ public class AttackAbilitySO : AbilityBaseSO
             // TODO: Play sound effect
 
             Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
-            Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
-
             int damage = GetPower(caster);
 
             Sequence attackSequence = DOTween.Sequence();
 
-            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
+            GameObject projectileGameObject = Instantiate(projectile, caster.transform.position, Quaternion.identity);
+
+            attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
             attackSequence.AppendCallback(() =>
             {
                 onAbilityInvoke?.Invoke();
                 targetUnit.TakeDamage(damage, caster);
+                Destroy(projectileGameObject);
                 Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
 
                 // Spawn effect if available
@@ -46,8 +45,6 @@ public class AttackAbilitySO : AbilityBaseSO
                     Destroy(effect, 2f);
                 }
             });
-
-            attackSequence.Append(caster.transform.DOJump(caster.transform.position, 0.5f, 1, 0.3f));
         }
         else
         {
@@ -59,6 +56,12 @@ public class AttackAbilitySO : AbilityBaseSO
     {
         if (!base.IsValidTarget(casterPosition, targetPosition, caster))
             return false;
+
+        if (caster.HasStatus(EffectStatusType.Provoked) && caster.ForcedUnitGridPosition != targetPosition)
+        {
+            Debug.Log($"IT IS NOT PROVOKED UNIT. FORCED UNIT POSITION: {caster.ForcedUnitGridPosition} YOUR TARGET GRID POSITION: {targetPosition}");
+            return false;
+        }
 
         if (!canAttackDiagonally)
         {

@@ -6,6 +6,7 @@ using UnityEngine;
 public class AIBrain : MonoBehaviour
 {
     [SerializeField] private List<AIActionSO> aiActions;
+    [SerializeField] private List<AIActionSO> attackAIActions;
 
     private Unit aiUnit;
 
@@ -19,11 +20,25 @@ public class AIBrain : MonoBehaviour
         if (aiActions == null || aiActions.Count == 0) return;
 
         List<AIScoreData> allScoreData = new List<AIScoreData>();   
-        foreach(AIActionSO action in aiActions)
+
+        if (aiUnit.HasStatus(EffectStatusType.Provoked))
         {
-            AIScoreData scoreData = action.GetScoreAction(aiUnit);
-            scoreData.action = action;
-            allScoreData.Add(scoreData);
+            Debug.Log("FUCK, I AM PROVOKED");
+            foreach (AIActionSO action in attackAIActions)
+            {
+                AIScoreData scoreData = action.GetScoreAction(aiUnit);
+                scoreData.action = action;
+                allScoreData.Add(scoreData);
+            }
+        }
+        else
+        {
+            foreach (AIActionSO action in aiActions)
+            {
+                AIScoreData scoreData = action.GetScoreAction(aiUnit);
+                scoreData.action = action;
+                allScoreData.Add(scoreData);
+            }
         }
 
         AIScoreData bestScoreData = allScoreData

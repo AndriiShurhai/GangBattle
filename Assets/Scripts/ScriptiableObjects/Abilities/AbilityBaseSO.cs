@@ -154,4 +154,10 @@ public abstract class AbilityBaseSO : ScriptableObject
         // at the future might be cooldown checks or resources checks etc.
         return true;
     }
+
+    public virtual List<Vector3Int> GetAbilityRadiusTiles(Vector3Int targetPosition)
+    {
+        return new List<Vector3Int>() { targetPosition };
+    }
+
 }

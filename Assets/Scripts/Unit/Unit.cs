@@ -62,7 +62,14 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public int CurrentHealth { get { return healthComponent.CurrentHealth; } }
     public int MaxHealth { get { return healthComponent.MaxHealth; } }
     public HealthComponent Health { get { return healthComponent; } }
-    
+    public Vector3Int? ForcedUnitGridPosition
+    {
+        get
+        {
+            if (forcedTarget != null) return forcedTarget.GridPosition;
+            else return null;
+        }
+    }
     public int Strength { get; private set; }
     public int Intelligence { get; private set; }
     public int Agility { get; private set; }
@@ -106,6 +113,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
     private int movedPerTurn = 0;
     private RewindableID id;
+    private Unit forcedTarget = null;
 
     private bool isAlive = true;
 
@@ -201,6 +209,10 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         rewindComponent.RestoreState(state);
     }
 
+    public void ProvokeUnit(Unit forcedTarget)
+    {
+        this.forcedTarget = forcedTarget;
+    }
     public void ApplyEffect(EffectStatusType effectType, int duration)
     {
         var existing = activeEffects.Find(e => e.type == effectType);
@@ -325,6 +337,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             Debug.Log("ABILITY CAN'T BE USED BECAUSE OF STUN");
             return false;
         }
+
         if (!characterClassSO.abilities.Contains(abilitySO))
         {
             Debug.Log("ABILITY IS NOT IN CHARACTER CLASS ABILITIES");
@@ -351,6 +364,12 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         if (!abilitySO.IsValidTarget(gridPosition, targetPosition, this))
         {
             Debug.Log("Target is invlaid");
+            return;
+        }
+
+        if (HasStatus(EffectStatusType.Provoked) && forcedTarget != null && forcedTarget.GridPosition != targetPosition)
+        {
+            Debug.Log($"Unit is provoked to another target. TargetPosition {targetPosition}; ForcedUnitPosition {forcedTarget.GridPosition}");
             return;
         }
 

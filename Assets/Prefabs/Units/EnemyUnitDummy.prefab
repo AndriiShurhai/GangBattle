@@ -339,6 +339,8 @@ MonoBehaviour:
   aiActions:
   - {fileID: 11400000, guid: b80783d68ef0b524e91d43d5037c9bcb, type: 2}
   - {fileID: 11400000, guid: 0f67fcfcff148904b9fba1de40c1cab4, type: 2}
+  attackAIActions:
+  - {fileID: 11400000, guid: 0f67fcfcff148904b9fba1de40c1cab4, type: 2}
 --- !u!114 &8280551475693715954
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -6,7 +6,8 @@ public enum EffectStatusType
     None,
     Stunned,
     Rooted,
-    Burned
+    Burned,
+    Provoked
 }
 public class StatusEffect
 {

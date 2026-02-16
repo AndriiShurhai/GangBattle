@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68dda311629e59b49a8147e639b6b9db, type: 3}
+  m_Name: ArcherRangeAttackSO
+  m_EditorClassIdentifier: Assembly-CSharp::RangeAttackAbilitySO
+  abilityName: 
+  abilityIcon: {fileID: 0}
+  abilityDescription: 
+  howMuchCanBeUsed: 1
+  range: 8
+  rangeType: 0
+  targetType: 0
+  rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  abilityEffectPrefab: {fileID: 0}
+  coefficient: 1
+  scalingType: 2
+  canAttackDiagonally: 1
+  projectile: {fileID: 3806955268432990606, guid: f8895feb428142a42befcc79f43e3862,
+    type: 3}

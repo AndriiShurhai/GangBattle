@@ -15,11 +15,14 @@ public class AttackActionSO : AIActionSO
         List<Unit> targetsInRange = FindPlayerUnitsInRange(aiUnit);
         if (targetsInRange.Count == 0) return scoreData;
 
-        Unit bestTarget = targetsInRange[0];
+        Unit bestTarget = null;
+        int bestHealth = int.MaxValue;
         foreach (Unit targetUnit in targetsInRange)
         {
-            if (targetUnit.CurrentHealth < bestTarget.CurrentHealth)
+            if (attackAbility.IsValidTarget(aiUnit.GridPosition, targetUnit.GridPosition, aiUnit) && targetUnit.CurrentHealth < bestHealth)
             {
+                bestTarget = targetUnit;
+                bestHealth = targetUnit.CurrentHealth;
                 bestTarget = targetUnit;    
             }
         }

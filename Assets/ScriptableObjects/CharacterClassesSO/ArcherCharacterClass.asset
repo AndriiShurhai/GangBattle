@@ -18,5 +18,11 @@ MonoBehaviour:
     type: 3}
   maxHealth: 100
   movementRange: 2
+  movementAmountPerTurn: 2
+  strength: 10
+  intelligence: 10
+  agility: 10
   abilities:
-  - {fileID: 11400000, guid: d98e0cbd68fa3dd4398275bfd67fe031, type: 2}
+  - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
+  - {fileID: 11400000, guid: 9b64640e2f8dd3844a9b831414490ff5, type: 2}
+  - {fileID: 11400000, guid: b4385b562eafcb146b49848a75ea4a99, type: 2}

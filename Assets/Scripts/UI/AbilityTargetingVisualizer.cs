@@ -16,7 +16,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
     [SerializeField] private Transform rangeHighlightsContainer;
 
     private HighlightManager _rangeHighlightManager;
-    private GameObject _targetHighlight;
+    private List<GameObject> _targetHighlights = new();
 
     private void Awake()
     {
@@ -66,18 +66,28 @@ public class AbilityTargetingVisualizer : MonoBehaviour
 
     public void UpdateTargetPreview(Vector3Int targetPosition, AbilityBaseSO abilityBaseSO, Unit caster)
     {
-        if (_targetHighlight != null)
+        if (_targetHighlights?.Count != 0)
         {
-            Destroy(_targetHighlight);
+            foreach (GameObject obj in _targetHighlights)
+            {
+                Destroy(obj);
+            }
+
+            _targetHighlights.Clear();
         }
 
-        if (abilityBaseSO.IsValidTarget(caster.GridPosition, targetPosition, caster))
-        {
-            CreateTargetHighlight(targetPosition, currentTargetColor);
+        List<Vector3Int> positions = abilityBaseSO.GetAbilityRadiusTiles(targetPosition);
 
-        }
-        else
+        foreach (var position in positions)
         {
+            if (abilityBaseSO.IsValidTarget(caster.GridPosition, position, caster))
+            {
+                CreateTargetHighlight(position, currentTargetColor);
+
+            }
+            else
+            {
+            }
         }
     }
 
@@ -85,10 +95,14 @@ public class AbilityTargetingVisualizer : MonoBehaviour
     {
         _rangeHighlightManager.ClearAllHighlights();
 
-        if (_targetHighlight != null)
+        if (_targetHighlights?.Count != 0)
         {
-            Destroy(_targetHighlight);
-            _targetHighlight = null;
+            foreach (GameObject obj in _targetHighlights)
+            {
+                Destroy(obj);
+            }
+
+            _targetHighlights.Clear();
         }
     }
 
@@ -104,6 +118,6 @@ public class AbilityTargetingVisualizer : MonoBehaviour
         {
             renderer.color = color;
         }
-        _targetHighlight = highlight;
+        _targetHighlights.Add(highlight);
     }
 }
