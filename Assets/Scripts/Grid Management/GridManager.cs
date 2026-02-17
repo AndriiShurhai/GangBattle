@@ -48,7 +48,7 @@ public class GridManager : MonoBehaviour
     public bool IsWalkable(Vector3Int gridPosition)
     {
         if (walkableTilemap.GetTile(gridPosition) == null) return false;
-        //if (blockedTilemap.GetTile(gridPosition) != null) return false;
+        if (blockedTilemap.GetTile(gridPosition) != null) return false;
         return true;
     }
     public bool IsValidPosition(Vector3Int gridPosition)

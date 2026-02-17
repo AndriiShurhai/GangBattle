@@ -9,20 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68dda311629e59b49a8147e639b6b9db, type: 3}
-  m_Name: ArcherRangeAttackSO
-  m_EditorClassIdentifier: Assembly-CSharp::RangeAttackAbilitySO
+  m_Script: {fileID: 11500000, guid: c3c9416a75000e844b20728e84568c37, type: 3}
+  m_Name: TeleportAbilitySO
+  m_EditorClassIdentifier: Assembly-CSharp::TeleportAbilitySO
   abilityName: 
-  abilityIcon: {fileID: 21300000, guid: b8a3f9debf9a740ebba84d95c6700721, type: 3}
+  abilityIcon: {fileID: 21300148, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
   abilityDescription: 
   howMuchCanBeUsed: 1
-  range: 8
+  range: 7
   rangeType: 0
-  targetType: 0
+  targetType: 3
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   abilityEffectPrefab: {fileID: 0}
   coefficient: 1
-  scalingType: 2
-  canAttackDiagonally: 1
-  projectile: {fileID: 3806955268432990606, guid: f8895feb428142a42befcc79f43e3862,
-    type: 3}
+  scalingType: 1

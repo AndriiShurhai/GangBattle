@@ -16,6 +16,16 @@ public class HealAbilitySO : AbilityBaseSO
         {
             int healAmount = GetPower(caster);
             targetUnit.Heal(healAmount);
+
+            int teamHealAmount = healAmount / 2;
+
+            foreach (Unit unit in TurnManager.Instance.GetAlivePlayerUnits())
+            {
+                if (unit != targetUnit)
+                {
+                    unit.Heal(teamHealAmount);
+                }
+            }
             onAbilityInvoke.Invoke();
 
             Debug.Log($"{caster.name} healed {targetUnit.name} for {healAmount} HP!");

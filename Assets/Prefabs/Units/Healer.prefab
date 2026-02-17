@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1001 &4289141787776123075
+--- !u!1001 &1446708769572261632
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -11,7 +11,22 @@ PrefabInstance:
     - target: {fileID: 2799951583245248084, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
       propertyPath: m_Name
-      value: TrapperUnit
+      value: Healer
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885523993207595560, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885523993207595560, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885523993207595560, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.6
       objectReference: {fileID: 0}
     - target: {fileID: 5885523993207595560, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
@@ -63,12 +78,32 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5885523993207595560, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
       propertyPath: characterClassSO
       value: 
-      objectReference: {fileID: 11400000, guid: e8ae356902b262a40aa3385f82283a3c,
+      objectReference: {fileID: 11400000, guid: 005752cea88a56d4c99aa08e1613cfa5,
         type: 2}
+    - target: {fileID: 7826307670726676243, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7826307670726676243, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7826307670726676243, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

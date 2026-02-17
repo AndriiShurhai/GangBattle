@@ -9,16 +9,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55f13208ce988d24096057f5c4d65033, type: 3}
-  m_Name: DummyHealSO
-  m_EditorClassIdentifier: 
-  abilityName: Dummy heal
-  abilityIcon: {fileID: 21300000, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
-  abilityDescription: Heals user by 20 hp.
-  range: 10
+  m_Script: {fileID: 11500000, guid: 71ba88295095400418bba0fef5826792, type: 3}
+  m_Name: BoostUnitAbilitySO
+  m_EditorClassIdentifier: Assembly-CSharp::BoostUnitAbilitySO
+  abilityName: 
+  abilityIcon: {fileID: 21300144, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
+  abilityDescription: 
+  howMuchCanBeUsed: 1
+  range: 3
   rangeType: 0
   targetType: 1
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   abilityEffectPrefab: {fileID: 0}
-  healAmount: 20
-  canHealSelf: 0
+  coefficient: 1
+  scalingType: 1
+  duration: 2

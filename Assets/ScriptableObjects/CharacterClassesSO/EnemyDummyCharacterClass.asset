@@ -10,17 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86d37e4dafda5804e940ba04df1d9ca8, type: 3}
-  m_Name: DummyCharacterClass
-  m_EditorClassIdentifier: 
+  m_Name: EnemyDummyCharacterClass
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterClassSO
   className: 
   description: 
   classIcon: {fileID: 0}
   maxHealth: 100
   movementRange: 2
   movementAmountPerTurn: 2
-  damage: 10
+  strength: 10
+  intelligence: 10
+  agility: 10
   abilities:
-  - {fileID: 11400000, guid: 9b64640e2f8dd3844a9b831414490ff5, type: 2}
-  - {fileID: 11400000, guid: f885206980a1fab478f8474534704435, type: 2}
-  - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
-  - {fileID: 11400000, guid: d98e0cbd68fa3dd4398275bfd67fe031, type: 2}
+  - {fileID: 11400000, guid: b4385b562eafcb146b49848a75ea4a99, type: 2}
+  - {fileID: 11400000, guid: b69b033b53a32354b8d538fa5756cdaf, type: 2}
+  - {fileID: 11400000, guid: dbe3eca4b35355142af627291f64d1b3, type: 2}
+  - {fileID: 11400000, guid: 423141dde4247d44ba1c42b994bbd6d4, type: 2}

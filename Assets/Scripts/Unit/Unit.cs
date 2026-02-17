@@ -213,7 +213,21 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     {
         this.forcedTarget = forcedTarget;
     }
-    public void ApplyEffect(EffectStatusType effectType, int duration)
+
+    public void BoostUnit(int strengthBonus = 0, int intelligenceBonus = 0, int agilityBonus = 0)
+    {
+        this.Strength += strengthBonus;
+        this.Intelligence += intelligenceBonus;
+        this.Agility += agilityBonus;
+    }
+
+    public void UnboostUnit(bool strength = true, bool intelligence = true, bool agility = true)
+    {
+        if (strength) this.Strength = characterClassSO.strength;
+        if (intelligence) this.Intelligence = characterClassSO.intelligence;
+        if (agility) this.Agility = characterClassSO.agility;
+    }
+    public void ApplyEffect(EffectStatusType effectType, int duration, Action tickAction=null)
     {
         var existing = activeEffects.Find(e => e.type == effectType);
 
@@ -223,7 +237,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         }
         else
         {
-            activeEffects.Add(new StatusEffect(effectType, duration));
+            activeEffects.Add(new StatusEffect(effectType, duration, tickAction));
             Debug.Log($"{name} is {effectType} for {duration} moves");
 
             if ((effectType == EffectStatusType.Stunned || effectType == EffectStatusType.Rooted) && IsMoving)
@@ -248,6 +262,10 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             activeEffects[i].Tick(this);
             if (activeEffects[i].duration < 0)
             {
+                if (activeEffects[i].type == EffectStatusType.Boosted)
+                {
+                    UnboostUnit();
+                }
                 activeEffects.RemoveAt(i);
             } 
         }

@@ -10,12 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86d37e4dafda5804e940ba04df1d9ca8, type: 3}
-  m_Name: TrapperCharacterClass
+  m_Name: MageCharacterClass
   m_EditorClassIdentifier: 
   className: 
   description: 
   classIcon: {fileID: 0}
   maxHealth: 100
   movementRange: 2
+  movementAmountPerTurn: 2
+  strength: 10
+  intelligence: 10
+  agility: 10
   abilities:
-  - {fileID: 11400000, guid: 423a4f50ace83a64c943a1b88f5e4817, type: 2}
+  - {fileID: 11400000, guid: b69b033b53a32354b8d538fa5756cdaf, type: 2}
+  - {fileID: 11400000, guid: 51c60dfeba85b5d459ee3e1cba07e5f1, type: 2}
+  - {fileID: 11400000, guid: 5de96d71e8ca25b4db301ce356f52696, type: 2}

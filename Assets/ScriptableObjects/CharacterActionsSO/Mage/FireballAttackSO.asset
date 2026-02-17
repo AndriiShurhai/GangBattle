@@ -13,16 +13,17 @@ MonoBehaviour:
   m_Name: FireballAttackSO
   m_EditorClassIdentifier: Assembly-CSharp::FireballAttackAbilitySO
   abilityName: 
-  abilityIcon: {fileID: 0}
+  abilityIcon: {fileID: 21300146, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
   abilityDescription: 
   howMuchCanBeUsed: 1
-  range: 3
-  rangeType: 0
-  targetType: 0
+  range: 8
+  rangeType: 1
+  targetType: 4
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   abilityEffectPrefab: {fileID: 0}
   coefficient: 1
-  scalingType: 0
-  projectile: {fileID: 0}
+  scalingType: 1
+  projectile: {fileID: 3806955268432990606, guid: f8895feb428142a42befcc79f43e3862,
+    type: 3}
   explosionRadius: 1
   coefficent: 1

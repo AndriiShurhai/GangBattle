@@ -9,16 +9,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3b1836e61eb6b0479426dae1e86f189, type: 3}
-  m_Name: DummyAttackSO
-  m_EditorClassIdentifier: 
-  abilityName: Dummy attack
-  abilityIcon: {fileID: 21300104, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
-  abilityDescription: Attack unit and gives damage
+  m_Script: {fileID: 11500000, guid: 17314aef6270caf4fb7e7492726bee66, type: 3}
+  m_Name: BurnAttackAbilitySO
+  m_EditorClassIdentifier: Assembly-CSharp::BurnAttackAbilitySO
+  abilityName: 
+  abilityIcon: {fileID: 21300144, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
+  abilityDescription: 
+  howMuchCanBeUsed: 1
   range: 3
   rangeType: 0
   targetType: 0
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   abilityEffectPrefab: {fileID: 0}
-  damage: 100
-  canAttackDiagonally: 1
+  coefficient: 1
+  scalingType: 0
+  duration: 3

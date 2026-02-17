@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55f13208ce988d24096057f5c4d65033, type: 3}
+  m_Name: TeamHealSO
+  m_EditorClassIdentifier: 
+  abilityName: Dummy heal
+  abilityIcon: {fileID: -8662432971830130642, guid: 06c8d7c33ccef4cf39e374e33835e970,
+    type: 3}
+  abilityDescription: Heals user by 20 hp.
+  howMuchCanBeUsed: 1
+  range: 10
+  rangeType: 0
+  targetType: 1
+  rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  abilityEffectPrefab: {fileID: 0}
+  coefficient: 1
+  scalingType: 0
+  canHealSelf: 0
+  coefficent: 1.5

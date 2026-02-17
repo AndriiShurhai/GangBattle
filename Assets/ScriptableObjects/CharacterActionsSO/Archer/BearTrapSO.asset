@@ -10,10 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 902bdeb5673366b4399ee69f01a0f757, type: 3}
-  m_Name: DummyTrapSO
+  m_Name: BearTrapSO
   m_EditorClassIdentifier: 
   abilityName: Trap ability
-  abilityIcon: {fileID: 21300134, guid: c3a40e1c46727b94e959990527f8e7fa, type: 3}
+  abilityIcon: {fileID: 2435301500484193355, guid: a54360cef78f9154ba084ef810a13c54,
+    type: 3}
   abilityDescription: Trap works with some duration and gives damage to unit that
     steps on it.
   howMuchCanBeUsed: 200

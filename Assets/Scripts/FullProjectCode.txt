@@ -12,6 +12,7 @@ using UnityEngine;
 public class AIBrain : MonoBehaviour
 {
     [SerializeField] private List<AIActionSO> aiActions;
+    [SerializeField] private List<AIActionSO> attackAIActions;
 
     private Unit aiUnit;
 
@@ -25,11 +26,25 @@ public class AIBrain : MonoBehaviour
         if (aiActions == null || aiActions.Count == 0) return;
 
         List<AIScoreData> allScoreData = new List<AIScoreData>();   
-        foreach(AIActionSO action in aiActions)
+
+        if (aiUnit.HasStatus(EffectStatusType.Provoked))
         {
-            AIScoreData scoreData = action.GetScoreAction(aiUnit);
-            scoreData.action = action;
-            allScoreData.Add(scoreData);
+            Debug.Log("FUCK, I AM PROVOKED");
+            foreach (AIActionSO action in attackAIActions)
+            {
+                AIScoreData scoreData = action.GetScoreAction(aiUnit);
+                scoreData.action = action;
+                allScoreData.Add(scoreData);
+            }
+        }
+        else
+        {
+            foreach (AIActionSO action in aiActions)
+            {
+                AIScoreData scoreData = action.GetScoreAction(aiUnit);
+                scoreData.action = action;
+                allScoreData.Add(scoreData);
+            }
         }
 
         AIScoreData bestScoreData = allScoreData
@@ -39,6 +54,7 @@ public class AIBrain : MonoBehaviour
         if (bestScoreData.action != null && bestScoreData.score >= 0)
         {
             bestScoreData.action.Execute(aiUnit, bestScoreData.target, onComplete);
+            Debug.Log($"Action is executed yeaaaah, {bestScoreData.action.name}");
         }
 
         else
@@ -54,6 +70,7 @@ public class AIBrain : MonoBehaviour
 // FILE: Trap.cs
 // ==================================================
 
+using System.Collections;
 using UnityEngine;
 
 public class TrapSnapshotState
@@ -66,6 +83,9 @@ public class TrapSnapshotState
 }
 public class Trap : MonoBehaviour, IGridObject, IRewindable
 {
+    [SerializeField] private EffectStatusType effectStatusType = EffectStatusType.None;
+    [SerializeField] private int abilityDuration = 2;
+
     private Vector3Int gridPosition;
     private int damage;
     private int remainingDuration;
@@ -172,8 +192,19 @@ public class Trap : MonoBehaviour, IGridObject, IRewindable
         Debug.Log($"{steppingUnit} stepped on a trap, {damage}");
 
         steppingUnit.TakeDamage(damage, null);
+        GetComponentInChildren<Animator>().SetTrigger("TrapTrigger");
 
-        DestroyTrap();
+        if (effectStatusType != EffectStatusType.None)
+        {
+            switch (effectStatusType)
+            {
+                case EffectStatusType.Rooted:
+                    steppingUnit.ApplyEffect(effectStatusType, abilityDuration);
+                    break;
+            }
+        }
+
+        StartCoroutine(DestroyTrap());
     }
 
     public void DecreaseDuration()
@@ -187,12 +218,13 @@ public class Trap : MonoBehaviour, IGridObject, IRewindable
 
         if (remainingDuration <= 0)
         {
-            DestroyTrap();
+            StartCoroutine(DestroyTrap());
         }
     }
 
-    private void DestroyTrap()
+    private IEnumerator DestroyTrap()
     {
+        yield return new WaitForSeconds(0.8f);
         isActive = false; 
         gameObject.SetActive(false);
         TrapRegistry.Instance.UnregisterTrap(this);
@@ -523,6 +555,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
             unit.ResetUsedMovement();
+            unit.UpdateEffectsStatus();
         }
         SaveTurn();
     }
@@ -540,7 +573,9 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         foreach (Unit unit in enemyUnits)
         {
+            unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
+            unit.ResetUsedMovement();
         }
 
         StartCoroutine(EnemyTurnRoutine());
@@ -567,6 +602,12 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     private IEnumerator EnemyTurnRoutine()
     {
+        foreach (Unit unit in enemyUnits)
+        {
+            unit.UpdateEffectsStatus();
+        }
+        yield return new WaitForSeconds(0.3f);
+
         List<Unit> enemiesToTakeTurn = new List<Unit>(enemyUnits);
 
         foreach (Unit enemyUnit in enemiesToTakeTurn)
@@ -635,6 +676,57 @@ public class TurnManager : MonoBehaviour, IRewindable
 
 
 // ==================================================
+// FILE: StatusEffect.cs
+// ==================================================
+
+using UnityEngine;
+using System;
+using Unity.VisualScripting;
+public enum EffectStatusType
+{
+    None,
+    Stunned,
+    Rooted,
+    Burned,
+    Provoked,
+    Boosted
+}
+public class StatusEffect
+{
+    public EffectStatusType type;
+    public int duration;
+    public Action tickAction;
+
+    public StatusEffect(EffectStatusType type, int duration, Action tickAction = null)
+    {
+        this.type = type;
+        this.duration = duration;
+        this.tickAction = tickAction;
+    }
+
+    public void Tick(Unit unit)
+    {
+        switch (type)
+        {
+            case EffectStatusType.None:
+                break;
+            case EffectStatusType.Stunned:
+                break;
+            case EffectStatusType.Burned:
+                break;
+            case EffectStatusType.Provoked:
+                break;
+            default:
+                break;
+        }
+        tickAction?.Invoke();
+        duration--;
+        Debug.Log($"TICK HAS BEEN CALLED. DURATION: {duration}");
+    }
+}
+
+
+// ==================================================
 // FILE: GridManager.cs
 // ==================================================
 
@@ -693,7 +785,10 @@ public class GridManager : MonoBehaviour
     }
     public bool IsValidPosition(Vector3Int gridPosition)
     {
-        if (!IsWalkable(gridPosition)) return false;
+        if (!IsWalkable(gridPosition))
+        {
+            return false;
+        }
 
         IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(gridPosition);
         return obj == null || !obj.BlocksMovement; 
@@ -992,6 +1087,9 @@ public class PathFinder : MonoBehaviour
                         reachableTiles.Add(neighbor);
                     }
                 }
+                else if (!IsValidPosition(neighbor))
+                {
+                }
             }
         }
         return reachableTiles;
@@ -1202,6 +1300,11 @@ public class GameInput : MonoBehaviour
                 inputAction.Player.Enable();
             })
             .Start();
+    }
+
+    public Vector3 GetMousePosition()
+    {
+        return GetPointerPosition();
     }
 
     private void Click_performed(InputAction.CallbackContext obj)
@@ -1566,6 +1669,11 @@ public class CharacterSelectionController : MonoBehaviour
     {
         ChangeState(noSelectionState);
     }
+
+    private void Update()
+    {
+        currentState?.Update();
+    }
     private void OnEnable()
     {
         GameInput.Instance.OnClickAction += GameInput_OnClickAction;
@@ -1614,6 +1722,7 @@ using UnityEngine;
 public interface IPlayerState
 {
     void Enter();
+    void Update();
     void Exit();
     void OnClick(Vector3Int position);
 }
@@ -1639,6 +1748,11 @@ public class NoSelectionState : IPlayerState
         _controller.ClearSelection();
         AbilityTargetingVisualizer.Instance.HideAbilityRange();
         Debug.Log("Entering no selection state");
+    }
+
+    public void Update()
+    {
+
     }
     public void Exit()
     {
@@ -1690,6 +1804,16 @@ public class UnitSelectedState : IPlayerState
 
     }
 
+    public void Update()
+    {
+        Vector3 mousePosition = GameInput.Instance.GetMousePosition();
+
+        Vector3Int gridPositoin = GridManager.Instance.WorldToGrid(mousePosition);
+
+        if (_selectedUnit.CanMoveTo(gridPositoin) && _selectedUnit.UnitFaction == Faction.Player)
+        {
+        }
+    }
     public void Exit()
     {
 
@@ -1919,12 +2043,51 @@ public class TurnSnapshot
 
 
 // ==================================================
-// FILE: AbilityBaseSO.cs
+// FILE: CharacterClassSO.cs
 // ==================================================
 
 using UnityEngine;
 using System.Collections.Generic;
 
+[CreateAssetMenu(fileName = "New Character Class", menuName = "Classes/Character Class")]
+public class CharacterClassSO : ScriptableObject
+{
+    [Header("Class Information")]
+    public string className;
+    [TextArea] public string description;
+    public Sprite classIcon;
+
+    [Header("Base Stats")]
+    public int maxHealth = 100;
+    public int movementRange = 2;
+    public int movementAmountPerTurn = 2;
+
+    [Header("Combat stats")]
+    public int strength = 10;
+    public int intelligence = 10;
+    public int agility = 10;
+
+    [Header("Abilites")]
+    public List<AbilityBaseSO> abilities;
+}
+
+
+// ==================================================
+// FILE: AbilityBaseSO.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections.Generic;
+using System;
+
+
+public enum StatType
+{
+    Strength,
+    Intelligence,
+    Agility,
+    None
+}
 public abstract class AbilityBaseSO : ScriptableObject
 {
     [Header("Basic Information")]
@@ -1942,6 +2105,9 @@ public abstract class AbilityBaseSO : ScriptableObject
     public Color rangePreviewColor = new Color(1f, 0f, 0f, 0.3f);
     public GameObject abilityEffectPrefab;
 
+    [Header("Scaling")]
+    public float coefficient = 1f;
+    public StatType scalingType;
     public enum RangeType
     {
         Square, // all tiles within range
@@ -1957,9 +2123,25 @@ public abstract class AbilityBaseSO : ScriptableObject
         Ally,
         Self,
         EmptyTile,
-        Any
+        Any,
     }
 
+    protected int GetPower(Unit unit)
+    {
+        switch (scalingType)
+        {
+            case StatType.Strength:
+                return Mathf.RoundToInt(unit.Strength * coefficient);
+
+            case StatType.Intelligence:
+                return Mathf.RoundToInt(unit.Intelligence * coefficient);
+
+            case StatType.Agility:
+                return Mathf.RoundToInt(unit.Agility * coefficient);
+            default:
+                return 0;
+        }
+    }
     public virtual List<Vector3Int> GetTilesInRange(Vector3Int casterPosition)
     {
         List<Vector3Int> tiles = new List<Vector3Int>();
@@ -2043,112 +2225,69 @@ public abstract class AbilityBaseSO : ScriptableObject
         return true;
     }
 
-    public abstract void Execute(Unit caster, Vector3Int targetPosition);
+    public abstract void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null);
 
     public virtual bool CanUse(Unit caster)
     {
         // at the future might be cooldown checks or resources checks etc.
         return true;
     }
+
+    public virtual List<Vector3Int> GetAbilityRadiusTiles(Vector3Int targetPosition)
+    {
+        return new List<Vector3Int>() { targetPosition };
+    }
+
 }
 
 
 // ==================================================
-// FILE: AttackAbilitySO.cs
+// FILE: BoostUnitAbilitySO.cs
 // ==================================================
 
-using System.Collections;
+using System;
 using UnityEngine;
-using DG;
-using DG.Tweening;
 
-[CreateAssetMenu(menuName = "Abilities/Attack Ability")]
-public class AttackAbilitySO : AbilityBaseSO
+[CreateAssetMenu(menuName ="Abilities/Boost Unit Ability")]
+public class BoostUnitAbilitySO : AbilityBaseSO
 {
-    [Header("Attack Settings")]
-    public int damage = 10;
-    public bool canAttackDiagonally = true;
-
-    public override void Execute(Unit caster, Vector3Int targetPosition)
+    public int duration = 2;
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
     {
-        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+        IGridObject gridObj = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
 
-        if (targetObject is Unit targetUnit)
+        if (gridObj is Unit unit)
         {
-            // TODO: Play attack animation
-            // TODO: Show damage numbers
-            // TODO: Play sound effect
+            int strengthBosst = GetPower(unit);
+            int intelligenceBoost = GetPower(unit);
+            int agilityBoost = GetPower(unit);
 
-            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
-            Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
-
-            Sequence attackSequence = DOTween.Sequence();
-
-            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 1f, 1, 0.5f).SetEase(Ease.OutQuad));
-            attackSequence.AppendCallback(() =>
-            {
-                targetUnit.TakeDamage(damage, caster);
-                Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
-
-                // Spawn effect if available
-                if (abilityEffectPrefab != null)
-                {
-                    Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
-                    GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
-                    Destroy(effect, 2f);
-                }
-            });
-
-            attackSequence.Append(caster.transform.DOMove(caster.transform.position, 0.4f).SetEase(Ease.InQuad));
+            unit.BoostUnit(strengthBosst, intelligenceBoost, agilityBoost); 
+            unit.ApplyEffect(EffectStatusType.Boosted, duration);
         }
-        else
-        {
-            Debug.LogWarning($"No valid target at {targetPosition}");
-        }
-    }
-
-    public override bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)
-    {
-        if (!base.IsValidTarget(casterPosition, targetPosition, caster))
-            return false;
-
-        if (!canAttackDiagonally)
-        {
-            int dx = Mathf.Abs(targetPosition.x - casterPosition.x);
-            int dy = Mathf.Abs(targetPosition.y - casterPosition.y);
-
-            // Must be orthogonal (either dx or dy should be 0)
-            if (dx > 0 && dy > 0)
-                return false;
-        }
-
-        return true;
     }
 }
 
 
 // ==================================================
-// FILE: CharacterClassSO.cs
+// FILE: DefendAbilitySO.cs
 // ==================================================
 
 using UnityEngine;
-using System.Collections.Generic;
 
-[CreateAssetMenu(fileName = "New Character Class", menuName = "Classes/Character Class")]
-public class CharacterClassSO : ScriptableObject
+public class DefendAbilitySO : MonoBehaviour
 {
-    [Header("Class Information")]
-    public string className;
-    [TextArea] public string description;
-    public Sprite classIcon;
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Start()
+    {
+        
+    }
 
-    [Header("Base Stats")]
-    public int maxHealth = 100;
-    public int movementRange = 2;
-    public int movementAmountPerTurn = 2;
-
-    [Header("Abilites")]
-    public List<AbilityBaseSO> abilities;
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
 }
 
 
@@ -2156,22 +2295,35 @@ public class CharacterClassSO : ScriptableObject
 // FILE: HealAbilitySO.cs
 // ==================================================
 
+using System;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Heal Ability")]
 public class HealAbilitySO : AbilityBaseSO
 {
     [Header("Heal Settings")]
-    public int healAmount = 20;
     public bool canHealSelf = true;
+    public float coefficent = 1.5f;
 
-    public override void Execute(Unit caster, Vector3Int targetPosition)
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
         IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
 
         if (targetObject is Unit targetUnit)
         {
+            int healAmount = GetPower(caster);
             targetUnit.Heal(healAmount);
+
+            int teamHealAmount = healAmount / 2;
+
+            foreach (Unit unit in TurnManager.Instance.GetAlivePlayerUnits())
+            {
+                if (unit != targetUnit)
+                {
+                    unit.Heal(teamHealAmount);
+                }
+            }
+            onAbilityInvoke.Invoke();
 
             Debug.Log($"{caster.name} healed {targetUnit.name} for {healAmount} HP!");
 
@@ -2216,9 +2368,413 @@ public class HealAbilitySO : AbilityBaseSO
 
 
 // ==================================================
+// FILE: ProvokeAbilitySO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Abilities/Provoke Ability")]
+public class ProvokeAbilitySO : AbilityBaseSO
+{
+    public int provokeDuration = 2;
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
+    {
+        List<Vector3Int> reachableTiles = GetTilesInRange(targetPosition);
+
+        foreach (var position in reachableTiles)
+        {
+            var gridObject = GridObjectRegistry.Instance.GetObjectAt(position);
+
+            if (gridObject != null && gridObject is Unit unit && unit.UnitFaction != caster.UnitFaction)
+            {
+                unit.ProvokeUnit(caster);
+                unit.ApplyEffect(EffectStatusType.Provoked, provokeDuration);
+
+                Debug.Log($"Provoking Unit: {unit.name}");
+            }
+        }
+    }
+}
+
+
+
+// ==================================================
+// FILE: TeleportAbilitySO.cs
+// ==================================================
+
+using DG.Tweening;
+using System;
+using UnityEngine;
+
+[CreateAssetMenu(menuName ="Abilities/Teleport Ability")]
+public class TeleportAbilitySO : AbilityBaseSO
+{
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
+    {
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+
+        Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
+
+        Sequence attackSequence = DOTween.Sequence();
+
+        attackSequence.Append(caster.transform.DOScale(0, 0.4f));
+        attackSequence.AppendCallback(() =>
+        {
+            onAbilityInvoke?.Invoke();
+            caster.transform.position = targetWorldPosition;
+            GridObjectRegistry.Instance.MoveObject(caster, caster.GridPosition, targetPosition);
+            // Spawn effect if available
+            if (abilityEffectPrefab != null)
+            {
+                Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
+                GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                Destroy(effect, 2f);
+            }
+        });
+
+        attackSequence.Append(caster.transform.DOScale(caster.transform.localScale, 0.4f));
+    }
+
+    public override bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)
+    {
+        if (!GetTilesInRange(casterPosition).Contains(targetPosition))
+        {
+            return false;
+        }
+
+        if (GridObjectRegistry.Instance.GetObjectAt(targetPosition) != null) return false;
+
+        if (!GridManager.Instance.IsWalkable(targetPosition)) return false;
+
+        return true;
+    }
+}
+
+
+// ==================================================
+// FILE: AttackAbilitySO.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+using DG;
+using DG.Tweening;
+using System;
+
+[CreateAssetMenu(menuName = "Abilities/Attack Ability")]
+public class AttackAbilitySO : AbilityBaseSO
+{
+
+    [Header("Attack Settings")]
+    public bool canAttackDiagonally = true;
+
+    private void Awake()
+    {
+    }
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
+    {
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+
+        if (targetObject is Unit targetUnit)
+        {
+            // TODO: Play attack animation
+            // TODO: Show damage numbers
+            // TODO: Play sound effect
+
+            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
+            Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
+
+            int damage = GetPower(caster);
+
+            Sequence attackSequence = DOTween.Sequence();
+
+            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
+            attackSequence.AppendCallback(() =>
+            {
+                onAbilityInvoke?.Invoke();
+                targetUnit.TakeDamage(damage, caster);
+                Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
+
+                // Spawn effect if available
+                if (abilityEffectPrefab != null)
+                {
+                    Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
+                    GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                    Destroy(effect, 2f);
+                }
+            });
+
+            attackSequence.Append(caster.transform.DOJump(caster.transform.position, 0.5f, 1, 0.3f));
+        }
+        else
+        {
+            Debug.LogWarning($"No valid target at {targetPosition}");
+        }
+    }
+
+    public override bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)
+    {
+        if (!base.IsValidTarget(casterPosition, targetPosition, caster))
+            return false;
+
+        if (caster.HasStatus(EffectStatusType.Provoked) && caster.ForcedUnitGridPosition != targetPosition)
+        {
+            Debug.Log($"IT IS NOT PROVOKED UNIT. FORCED UNIT POSITION: {caster.ForcedUnitGridPosition} YOUR TARGET GRID POSITION: {targetPosition}");
+            return false;
+        }
+
+        if (!canAttackDiagonally)
+        {
+            int dx = Mathf.Abs(targetPosition.x - casterPosition.x);
+            int dy = Mathf.Abs(targetPosition.y - casterPosition.y);
+
+            // Must be orthogonal (either dx or dy should be 0)
+            if (dx > 0 && dy > 0)
+                return false;
+        }
+
+        return true;
+    }
+}
+
+
+// ==================================================
+// FILE: BurnAttackAbilitySO.cs
+// ==================================================
+
+using DG.Tweening;
+using System;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[CreateAssetMenu(menuName ="Abilities/Burn Attack")]
+public class BurnAttackAbilitySO : AbilityBaseSO
+{
+    public int duration = 3;
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
+    {
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+
+        if (targetObject is Unit targetUnit)
+        {
+            int damage = GetPower(caster);
+
+            targetUnit.TakeDamage(damage, caster);
+
+            targetUnit.ApplyEffect(EffectStatusType.Burned, duration, () =>
+            {
+                targetUnit.TakeDamage(damage / 2, caster);
+            });
+
+        }
+    }
+}
+
+
+
+// ==================================================
+// FILE: FireballAttackAbilitySO.cs
+// ==================================================
+
+using DG.Tweening;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "FireballAttackAbilitySO", menuName = "Abilities/Fireball Attack Ability")]
+public class FireballAttackAbilitySO : AbilityBaseSO
+{
+    public GameObject projectile;
+    public int explosionRadius = 1;
+    public float coefficent = 1f;
+
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
+    {
+        Vector3 startPosition = caster.transform.position;
+        Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
+
+        List<Unit> unitsInRange = new List<Unit>();
+
+        List<Vector3Int> area = RangeFinder.GetSquareRange(targetPosition, explosionRadius);
+        foreach (Vector3Int position in area)
+        {
+            if (!IsValidTarget(caster.GridPosition, position, caster)) continue;
+            IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(position);
+            if (obj is Unit unit) unitsInRange.Add(unit);
+        }
+
+        int damage = GetPower(caster);
+
+        Sequence attackSequence = DOTween.Sequence();
+
+        GameObject projectileGameObject = Instantiate(projectile, caster.transform.position, Quaternion.identity);
+
+        attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
+        attackSequence.AppendCallback(() =>
+        {
+            onAbilityInvoke?.Invoke();
+
+            foreach(Unit unit in unitsInRange)
+            {
+                unit.TakeDamage(damage, caster);
+            }
+            Destroy(projectileGameObject);
+
+            Camera.main.transform.DOShakePosition(0.5f, 0.5f);
+            // Spawn effect if available
+            if (abilityEffectPrefab != null)
+            {
+                Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
+                GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                Destroy(effect, 2f);
+            }
+        });
+    }
+
+    public override List<Vector3Int> GetAbilityRadiusTiles(Vector3Int targetPosition)
+    {
+        return RangeFinder.GetSquareRange(targetPosition, explosionRadius);
+    }
+  
+}
+
+
+// ==================================================
+// FILE: RangeAttackAbilitySO.cs
+// ==================================================
+
+using DG.Tweening;
+using UnityEngine;
+using System;
+
+[CreateAssetMenu(menuName ="Abilities/Range Attack")]
+public class RangeAttackAbilitySO : AbilityBaseSO
+{
+    [Header("Attack Settings")]
+    public bool canAttackDiagonally = true;
+    public GameObject projectile;
+
+    private void Awake()
+    {
+    }
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
+    {
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
+
+        if (targetObject is Unit targetUnit)
+        {
+            // TODO: Play attack animation
+            // TODO: Show damage numbers
+            // TODO: Play sound effect
+
+            Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
+            int damage = GetPower(caster);
+
+            Sequence attackSequence = DOTween.Sequence();
+
+            GameObject projectileGameObject = Instantiate(projectile, caster.transform.position, Quaternion.identity);
+
+            attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
+            attackSequence.AppendCallback(() =>
+            {
+                onAbilityInvoke?.Invoke();
+                targetUnit.TakeDamage(damage, caster);
+                Destroy(projectileGameObject);
+                Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
+
+                // Spawn effect if available
+                if (abilityEffectPrefab != null)
+                {
+                    Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
+                    GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                    Destroy(effect, 2f);
+                }
+            });
+        }
+        else
+        {
+            Debug.LogWarning($"No valid target at {targetPosition}");
+        }
+    }
+
+    public override bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)
+    {
+        if (!base.IsValidTarget(casterPosition, targetPosition, caster))
+            return false;
+
+        if (caster.HasStatus(EffectStatusType.Provoked) && caster.ForcedUnitGridPosition != targetPosition)
+        {
+            Debug.Log($"IT IS NOT PROVOKED UNIT. FORCED UNIT POSITION: {caster.ForcedUnitGridPosition} YOUR TARGET GRID POSITION: {targetPosition}");
+            return false;
+        }
+
+        if (!canAttackDiagonally)
+        {
+            int dx = Mathf.Abs(targetPosition.x - casterPosition.x);
+            int dy = Mathf.Abs(targetPosition.y - casterPosition.y);
+
+            // Must be orthogonal (either dx or dy should be 0)
+            if (dx > 0 && dy > 0)
+                return false;
+        }
+
+        return true;
+    }
+}
+
+
+// ==================================================
+// FILE: ShieldBashAbilitySO.cs
+// ==================================================
+
+using DG.Tweening;
+using System;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Abilities/Shield Bash Ability")]
+public class ShieldBashSO : AbilityBaseSO
+{
+    public int stunDuration = 2;
+    public float stunChance = 0.4f;
+    public override void Execute(Unit caster, Vector3Int position, Action onComplete = null)
+    {
+        IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(position);
+
+        if (targetObject is Unit targetUnit)
+        {
+            int damage = GetPower(caster);
+
+            caster.transform.DOJump(GridManager.Instance.GridToWorld(position), 0.5f, 1, 0.3f).OnComplete(() =>
+            {
+                targetUnit.TakeDamage(damage, caster);
+
+                if (IsAttackStunning())
+                {
+                    targetUnit.ApplyEffect(EffectStatusType.Stunned, stunDuration);
+                }
+
+                caster.transform.DOJump(GridManager.Instance.GridToWorld(caster.GridPosition), 0.5f, 1, 0.3f);
+            });
+        }
+    }
+
+    private bool IsAttackStunning()
+    {
+        float chance = UnityEngine.Random.value;
+
+        return stunChance < chance;
+    }
+}
+
+
+// ==================================================
 // FILE: TrapAbilitySO.cs
 // ==================================================
 
+using System;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Trap Ability")]
@@ -2229,7 +2785,7 @@ public class TrapAbilitySO : AbilityBaseSO
     public int trapDamage = 15;
     public int duration = 3;
 
-    public override void Execute(Unit caster, Vector3Int targetPosition)
+    public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
         IGridObject gridObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);   
 
@@ -2240,6 +2796,7 @@ public class TrapAbilitySO : AbilityBaseSO
         }
 
         CreateTrap(targetPosition);
+        onAbilityInvoke?.Invoke();
 
         Debug.Log($"{caster.name} placed a trap at {targetPosition}");
 
@@ -2310,15 +2867,29 @@ public class AttackActionSO : AIActionSO
         List<Unit> targetsInRange = FindPlayerUnitsInRange(aiUnit);
         if (targetsInRange.Count == 0) return scoreData;
 
-        Unit bestTarget = targetsInRange[0];
+        Unit bestTarget = null;
+        int bestHealth = int.MaxValue;
         foreach (Unit targetUnit in targetsInRange)
         {
-            if (targetUnit.CurrentHealth < bestTarget.CurrentHealth)
+            if (targetUnit == null)
             {
+                Debug.Log("YOU ARE FUCKING NOBODY");
+                continue;
+            }
+            if (attackAbility.IsValidTarget(aiUnit.GridPosition, targetUnit.GridPosition, aiUnit) && targetUnit.CurrentHealth < bestHealth)
+            {
+                bestTarget = targetUnit;
+                bestHealth = targetUnit.CurrentHealth;
                 bestTarget = targetUnit;    
             }
         }
 
+        if (bestTarget == null)
+        {
+            scoreData.score = 0f;
+            scoreData.target = null;
+            return scoreData;
+        };
         if (attackAbility.IsValidTarget(aiUnit.GridPosition, bestTarget.GridPosition, aiUnit))
         {
             float healthPercentage = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
@@ -2339,7 +2910,8 @@ public class AttackActionSO : AIActionSO
             return;
         }
 
-        attackAbility.Execute(aiUnit, targetUnit.GridPosition);
+        aiUnit.UseAbility(attackAbility, targetUnit.GridPosition);
+        //attackAbility.Execute(aiUnit, targetUnit.GridPosition);
 
         onComplete?.Invoke();
         
@@ -2572,7 +3144,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
     [SerializeField] private Transform rangeHighlightsContainer;
 
     private HighlightManager _rangeHighlightManager;
-    private GameObject _targetHighlight;
+    private List<GameObject> _targetHighlights = new();
 
     private void Awake()
     {
@@ -2622,15 +3194,28 @@ public class AbilityTargetingVisualizer : MonoBehaviour
 
     public void UpdateTargetPreview(Vector3Int targetPosition, AbilityBaseSO abilityBaseSO, Unit caster)
     {
-        if (_targetHighlight != null)
+        if (_targetHighlights?.Count != 0)
         {
-            Destroy(_targetHighlight);
+            foreach (GameObject obj in _targetHighlights)
+            {
+                Destroy(obj);
+            }
+
+            _targetHighlights.Clear();
         }
 
-        if (abilityBaseSO.IsValidTarget(caster.GridPosition, targetPosition, caster))
-        {
-            CreateTargetHighlight(targetPosition, currentTargetColor);
+        List<Vector3Int> positions = abilityBaseSO.GetAbilityRadiusTiles(targetPosition);
 
+        foreach (var position in positions)
+        {
+            if (abilityBaseSO.IsValidTarget(caster.GridPosition, position, caster))
+            {
+                CreateTargetHighlight(position, currentTargetColor);
+
+            }
+            else
+            {
+            }
         }
     }
 
@@ -2638,10 +3223,14 @@ public class AbilityTargetingVisualizer : MonoBehaviour
     {
         _rangeHighlightManager.ClearAllHighlights();
 
-        if (_targetHighlight != null)
+        if (_targetHighlights?.Count != 0)
         {
-            Destroy(_targetHighlight);
-            _targetHighlight = null;
+            foreach (GameObject obj in _targetHighlights)
+            {
+                Destroy(obj);
+            }
+
+            _targetHighlights.Clear();
         }
     }
 
@@ -2652,12 +3241,12 @@ public class AbilityTargetingVisualizer : MonoBehaviour
         Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
         GameObject highlight = Instantiate(targetHighlightPrefab, worldPosition, Quaternion.identity, rangeHighlightsContainer);
 
-        var renderer = highlight.GetComponent<SpriteRenderer>();
+        var renderer = highlight.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)
         {
             renderer.color = color;
         }
-        _targetHighlight = highlight;
+        _targetHighlights.Add(highlight);
     }
 }
 
@@ -2743,8 +3332,7 @@ public class CharacterActionPanelUI : MonoBehaviour
 
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-
+using DG.Tweening;
 public class HighlightManager
 {
     private readonly GameObject _highlightPrefab;
@@ -2763,7 +3351,12 @@ public class HighlightManager
         Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
         GameObject highlight = Object.Instantiate(_highlightPrefab, worldPosition, Quaternion.identity, _container);
 
-        var renderer = highlight.GetComponent<SpriteRenderer>();
+        Vector3 highlightScale = highlight.transform.localScale;
+
+        highlight.transform.localScale = new Vector3(0, 0, 0);
+        highlight.transform.DOScale(highlightScale, 0.3f);
+
+        var renderer = highlight.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)
         {
             renderer.color = color;
@@ -2807,8 +3400,8 @@ public class HpPopupText : MonoBehaviour
     {
         textMesh.text = amount.ToString();
         textMesh.color = color;
-        transform.DOMoveY(transform.position.y + 1f, 1f);
-        textMesh.DOFade(0, 1f).OnComplete(() => Destroy(gameObject));
+        transform.DOMoveY(transform.position.y + 1f, 1.5f);
+        textMesh.DOFade(0, 2f).OnComplete(() => Destroy(gameObject));
 
     }
 }
@@ -3021,6 +3614,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public static event Action<Unit> OnAnyUnitDied;
     public static event Action<Unit, int, int> OnAnyUnitTookDamage;
     public static event Action<Unit, int, int> OnAnyUnitHealed;
+    public static event Action<Unit, Vector3> OnAnyUnitStartMoving;
+    public static event Action<Unit> OnAnyUnitFinishedMoving;
+    public static event Action<Unit, AbilityBaseSO> OnAnyUnitUsedAbility;
 
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
@@ -3036,13 +3632,24 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Transform healthBarAttachPoint;
+    [SerializeField] private UnitVisualBridge unitVisualBridge;
 
     private Vector3Int gridPosition;
     public List<AbilityBaseSO> Abilities {  get { return characterClassSO.abilities; } }
     public int CurrentHealth { get { return healthComponent.CurrentHealth; } }
     public int MaxHealth { get { return healthComponent.MaxHealth; } }
     public HealthComponent Health { get { return healthComponent; } }
-    
+    public Vector3Int? ForcedUnitGridPosition
+    {
+        get
+        {
+            if (forcedTarget != null) return forcedTarget.GridPosition;
+            else return null;
+        }
+    }
+    public int Strength { get; private set; }
+    public int Intelligence { get; private set; }
+    public int Agility { get; private set; }
     public Vector3Int GridPosition
     {
         get => gridPosition;
@@ -3079,9 +3686,11 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         set => movedPerTurn = value;
     }
 
+    private List<StatusEffect> activeEffects = new List<StatusEffect>();
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
     private int movedPerTurn = 0;
     private RewindableID id;
+    private Unit forcedTarget = null;
 
     private bool isAlive = true;
 
@@ -3123,6 +3732,10 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
         healthComponent.Initialize(characterClassSO);
         movementComponent.Initialize(characterClassSO);
+
+        this.Strength = characterClassSO.strength;
+        this.Intelligence = characterClassSO.intelligence;
+        this.Agility = characterClassSO.agility;
     }
 
     private void Start()
@@ -3173,13 +3786,89 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         rewindComponent.RestoreState(state);
     }
 
+    public void ProvokeUnit(Unit forcedTarget)
+    {
+        this.forcedTarget = forcedTarget;
+    }
+
+    public void BoostUnit(int strengthBonus = 0, int intelligenceBonus = 0, int agilityBonus = 0)
+    {
+        this.Strength += strengthBonus;
+        this.Intelligence += intelligenceBonus;
+        this.Agility += agilityBonus;
+    }
+
+    public void UnboostUnit(bool strength = true, bool intelligence = true, bool agility = true)
+    {
+        if (strength) this.Strength = characterClassSO.strength;
+        if (intelligence) this.Intelligence = characterClassSO.intelligence;
+        if (agility) this.Agility = characterClassSO.agility;
+    }
+    public void ApplyEffect(EffectStatusType effectType, int duration, Action tickAction=null)
+    {
+        var existing = activeEffects.Find(e => e.type == effectType);
+
+        if (existing != null)
+        {
+            existing.duration = Mathf.Max(existing.duration, duration);
+        }
+        else
+        {
+            activeEffects.Add(new StatusEffect(effectType, duration, tickAction));
+            Debug.Log($"{name} is {effectType} for {duration} moves");
+
+            if ((effectType == EffectStatusType.Stunned || effectType == EffectStatusType.Rooted) && IsMoving)
+            {
+                movementComponent.StopAllCoroutines();
+                SetMovingState(false);
+                movementComponent.MoveTo(GridManager.Instance.WorldToGrid(transform.position));
+                transform.position = GridManager.Instance.GridToWorld(GridPosition);
+            }
+        }
+    }
+
+    public bool HasStatus(EffectStatusType effectType)
+    {
+        return activeEffects.Exists(e => e.type == effectType);
+    }
+
+    public void UpdateEffectsStatus()
+    {
+        for (int i = activeEffects.Count-1; i >= 0; i--)
+        {
+            activeEffects[i].Tick(this);
+            if (activeEffects[i].duration < 0)
+            {
+                if (activeEffects[i].type == EffectStatusType.Boosted)
+                {
+                    UnboostUnit();
+                }
+                activeEffects.RemoveAt(i);
+            } 
+        }
+
+    }
     public bool CanMoveTo(Vector3Int position)
     {
+        if (HasStatus(EffectStatusType.Stunned) || HasStatus(EffectStatusType.Rooted))
+        {
+            return false;
+        }
+
         return !movementComponent.IsMoving && movedPerTurn < characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
     {
+        Vector3 worldTargetPosition = GridManager.Instance.GridToWorld(targetPosition);
+
+        OnAnyUnitStartMoving.Invoke(this, worldTargetPosition);
+
+        onComplete += () =>
+        {
+            OnAnyUnitFinishedMoving.Invoke(this);
+        };
+
         movementComponent.MoveTo(targetPosition, onComplete);
         movedPerTurn++;
     }
@@ -3223,6 +3912,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         if (triggerEvent)
         {
             OnUnitDied?.Invoke(this);
+            OnAnyUnitDied?.Invoke(this);
         }
     }
 
@@ -3237,13 +3927,21 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
     public bool CanUseAbility(AbilityBaseSO abilitySO)
     {
+        if (HasStatus(EffectStatusType.Stunned))
+        {
+            Debug.Log("ABILITY CAN'T BE USED BECAUSE OF STUN");
+            return false;
+        }
+
         if (!characterClassSO.abilities.Contains(abilitySO))
         {
+            Debug.Log("ABILITY IS NOT IN CHARACTER CLASS ABILITIES");
             return false;
         }
 
         if (abilitySO.howMuchCanBeUsed <= usedAbilitiesAmountPerTurn[abilitySO])
         {
+            Debug.Log("ABILITY CAN'T BE USED NO MORE THIS ROUND");
             return false;
         }
 
@@ -3254,7 +3952,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     {
         if (!CanUseAbility(abilitySO))
         {
-            Debug.LogWarning("Unit can't use ability");
+            Debug.Log("Unit can't use ability");
             return;
         }
 
@@ -3264,7 +3962,18 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             return;
         }
 
-        abilitySO.Execute(this, targetPosition);
+        if (HasStatus(EffectStatusType.Provoked) && forcedTarget != null && forcedTarget.GridPosition != targetPosition)
+        {
+            Debug.Log($"Unit is provoked to another target. TargetPosition {targetPosition}; ForcedUnitPosition {forcedTarget.GridPosition}");
+            return;
+        }
+
+        void InvokeAbilityUsage()
+        {
+            OnAnyUnitUsedAbility.Invoke(this, abilitySO);
+        }
+
+        abilitySO.Execute(this, targetPosition, InvokeAbilityUsage);
         usedAbilitiesAmountPerTurn[abilitySO]++;
         OnUnitMadeAction?.Invoke();
     }
@@ -3304,6 +4013,68 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public SpriteRenderer GetSpriteRenderer()
     {
         return spriteRenderer;
+    }
+
+    public UnitVisualBridge GetUnitVisualBridge()
+    {
+        return unitVisualBridge;
+    }
+}
+
+
+// ==================================================
+// FILE: UnitAnimationController.cs
+// ==================================================
+
+using UnityEngine;
+
+public class UnitAnimationController : MonoBehaviour
+{
+    private void Start()
+    {
+        Unit.OnAnyUnitDied += Unit_OnAnyUnitDied;
+        Unit.OnAnyUnitTookDamage += Unit_OnAnyUnitTookDamage;
+        Unit.OnAnyUnitStartMoving += Unit_OnAnyUnitStartMoving;
+        Unit.OnAnyUnitFinishedMoving += Unit_OnAnyUnitFinishedMoving;
+        Unit.OnAnyUnitUsedAbility += Unit_OnAnyUnitUsedAbility;
+    }
+
+    private void OnDestroy()
+    {
+        Unit.OnAnyUnitDied -= Unit_OnAnyUnitDied;
+        Unit.OnAnyUnitTookDamage -= Unit_OnAnyUnitTookDamage;
+        Unit.OnAnyUnitStartMoving -= Unit_OnAnyUnitStartMoving;
+        Unit.OnAnyUnitFinishedMoving -= Unit_OnAnyUnitFinishedMoving;
+        Unit.OnAnyUnitUsedAbility -= Unit_OnAnyUnitUsedAbility;
+    }
+    private void Unit_OnAnyUnitUsedAbility(Unit unit, AbilityBaseSO ability)
+    {
+        Debug.Log("UNIT USAGE ABILITY HAS BEEN CALLED");
+        if (ability is AttackAbilitySO attackSO)
+        {
+            Debug.Log("UNIT ATTACK ABILITY HAS BEEN CALLED");
+            unit.GetUnitVisualBridge().AttackAnimation();
+        }
+    }
+
+    private void Unit_OnAnyUnitFinishedMoving(Unit unit)
+    {
+        unit.GetUnitVisualBridge().StopRunningAnimation();
+    }
+
+    private void Unit_OnAnyUnitStartMoving(Unit unit, Vector3 destination)
+    {
+        unit.GetUnitVisualBridge().StartRunningAnimation(destination);
+    }
+
+    private void Unit_OnAnyUnitTookDamage(Unit unit, int arg2, int arg3)
+    {
+        unit.GetUnitVisualBridge().TakeDamageAnimation();
+    }
+
+    private void Unit_OnAnyUnitDied(Unit unit)
+    {
+        //unit.GetUnitVisualBridge().DeathAnimation();
     }
 }
 
@@ -3468,6 +4239,67 @@ public class UnitRewindComponent
 
 
 // ==================================================
+// FILE: UnitVisualBridge.cs
+// ==================================================
+
+using System;
+using UnityEngine;
+
+public class UnitVisualBridge : MonoBehaviour
+{
+    [Header("References")]
+    [SerializeField] private SPUM_Prefabs _spumPrefabs;
+
+
+
+    private void Start()
+    {
+
+    }
+
+    public void StartRunningAnimation(Vector3 destination)
+    {
+        FaceCorrectDirection(destination);
+        _spumPrefabs.PlayAnimation(PlayerState.MOVE, 0);
+    }
+
+    public void StopRunningAnimation()
+    {
+        _spumPrefabs.PlayAnimation(PlayerState.IDLE, 0);
+    }
+    
+    public void TakeDamageAnimation()
+    {
+        _spumPrefabs.PlayAnimation(PlayerState.DAMAGED, 0);
+    }
+
+    public void AttackAnimation()
+    {
+        _spumPrefabs.PlayAnimation(PlayerState.ATTACK, 0);
+    }
+
+    public void DeathAnimation(Action onComplete = null)
+    {
+        _spumPrefabs.PlayAnimation(PlayerState.DEATH, 0);
+    }
+
+    private void FaceCorrectDirection(Vector3 targetPosition)
+    {
+        Vector3 direction = targetPosition - transform.position;
+
+        if (direction.x > 0)
+        {
+            _spumPrefabs.transform.localScale = new Vector3(-1, 1, 1);
+        }
+        else if (direction.x < 0)
+        {
+            _spumPrefabs.transform.localScale = new Vector3(1, 1, 1);
+        }
+    }
+}
+
+
+// ==================================================
 // FILE: UnitWorldUIManager.cs
 // ==================================================
 
@@ -3523,11 +4355,6 @@ public class UnitWorldUIManager : MonoBehaviour
 
     private void HandleUnitHealed(Unit unit, int amount, int currentHealth)
     {
-        SpriteRenderer unitSpriteRenderer = unit.GetSpriteRenderer();
-        unitSpriteRenderer.DOColor(Color.green, 0.6f).OnComplete(() =>
-        {
-            unitSpriteRenderer.DOColor(Color.white, 0.3f);
-        });
 
         float offsetX = UnityEngine.Random.Range(-1f, 1f);
         float offsetY = -offsetX;
@@ -3542,11 +4369,6 @@ public class UnitWorldUIManager : MonoBehaviour
     {
         unit.transform.DOShakePosition(0.3f, 0.3f, 10, 90, false, true);
 
-        SpriteRenderer unitSpriteRenderer = unit.GetSpriteRenderer();
-        unitSpriteRenderer.DOColor(Color.red, 0.1f).OnComplete(() =>
-        {
-            unitSpriteRenderer.DOColor(Color.white, 0.1f);
-        });
 
         float offsetX = UnityEngine.Random.Range(-1f, 1f);
         float offsetY = -offsetX;

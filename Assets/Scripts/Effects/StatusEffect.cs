@@ -1,23 +1,26 @@
-using Unity.VisualScripting;
 using UnityEngine;
-
+using System;
+using Unity.VisualScripting;
 public enum EffectStatusType
 {
     None,
     Stunned,
     Rooted,
     Burned,
-    Provoked
+    Provoked,
+    Boosted
 }
 public class StatusEffect
 {
     public EffectStatusType type;
     public int duration;
+    public Action tickAction;
 
-    public StatusEffect(EffectStatusType type, int duration)
+    public StatusEffect(EffectStatusType type, int duration, Action tickAction = null)
     {
         this.type = type;
         this.duration = duration;
+        this.tickAction = tickAction;
     }
 
     public void Tick(Unit unit)
@@ -29,11 +32,13 @@ public class StatusEffect
             case EffectStatusType.Stunned:
                 break;
             case EffectStatusType.Burned:
-                unit.TakeDamage(5, null);
+                break;
+            case EffectStatusType.Provoked:
                 break;
             default:
                 break;
         }
+        tickAction?.Invoke();
         duration--;
         Debug.Log($"TICK HAS BEEN CALLED. DURATION: {duration}");
     }

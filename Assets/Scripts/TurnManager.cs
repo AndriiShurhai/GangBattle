@@ -290,7 +290,6 @@ public class TurnManager : MonoBehaviour, IRewindable
             unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
             unit.ResetUsedMovement();
-            unit.UpdateEffectsStatus();
         }
 
         StartCoroutine(EnemyTurnRoutine());
@@ -317,6 +316,12 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     private IEnumerator EnemyTurnRoutine()
     {
+        foreach (Unit unit in enemyUnits)
+        {
+            unit.UpdateEffectsStatus();
+        }
+        yield return new WaitForSeconds(0.3f);
+
         List<Unit> enemiesToTakeTurn = new List<Unit>(enemyUnits);
 
         foreach (Unit enemyUnit in enemiesToTakeTurn)

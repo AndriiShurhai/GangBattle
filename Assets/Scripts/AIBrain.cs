@@ -48,6 +48,7 @@ public class AIBrain : MonoBehaviour
         if (bestScoreData.action != null && bestScoreData.score >= 0)
         {
             bestScoreData.action.Execute(aiUnit, bestScoreData.target, onComplete);
+            Debug.Log($"Action is executed yeaaaah, {bestScoreData.action.name}");
         }
 
         else

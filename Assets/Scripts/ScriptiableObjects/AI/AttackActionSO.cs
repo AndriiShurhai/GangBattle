@@ -19,6 +19,11 @@ public class AttackActionSO : AIActionSO
         int bestHealth = int.MaxValue;
         foreach (Unit targetUnit in targetsInRange)
         {
+            if (targetUnit == null)
+            {
+                Debug.Log("YOU ARE FUCKING NOBODY");
+                continue;
+            }
             if (attackAbility.IsValidTarget(aiUnit.GridPosition, targetUnit.GridPosition, aiUnit) && targetUnit.CurrentHealth < bestHealth)
             {
                 bestTarget = targetUnit;
@@ -27,6 +32,12 @@ public class AttackActionSO : AIActionSO
             }
         }
 
+        if (bestTarget == null)
+        {
+            scoreData.score = 0f;
+            scoreData.target = null;
+            return scoreData;
+        };
         if (attackAbility.IsValidTarget(aiUnit.GridPosition, bestTarget.GridPosition, aiUnit))
         {
             float healthPercentage = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;

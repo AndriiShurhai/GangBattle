@@ -33,6 +33,6 @@ public class ShieldBashSO : AbilityBaseSO
     {
         float chance = UnityEngine.Random.value;
 
-        return stunChance < chance;
+        return chance < stunChance;
     }
 }
