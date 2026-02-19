@@ -208,7 +208,7 @@ PrefabInstance:
         type: 3}
       propertyPath: _spumPrefabs
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 7442701274365459956}
     - target: {fileID: 5885523993207595560, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
       propertyPath: m_LocalScale.x
@@ -295,7 +295,8 @@ PrefabInstance:
       propertyPath: unitVisualBridge
       value: 
       objectReference: {fileID: -2040729001439632973}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4330967019706475394, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
     m_RemovedGameObjects:
     - {fileID: 8498542111770854543, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
     - {fileID: 350821985727654844, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}

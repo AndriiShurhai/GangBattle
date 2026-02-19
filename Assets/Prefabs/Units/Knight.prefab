@@ -11,13 +11,13 @@ PrefabInstance:
     - target: {fileID: 2799951583245248084, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
       propertyPath: m_Name
-      value: AssasinUnit
+      value: Knight
       objectReference: {fileID: 0}
     - target: {fileID: 4330967019706475394, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
       propertyPath: _spumPrefabs
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 3173677471028688556}
     - target: {fileID: 5885523993207595560, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
       propertyPath: m_LocalScale.x
@@ -104,7 +104,8 @@ PrefabInstance:
       propertyPath: unitVisualBridge
       value: 
       objectReference: {fileID: 345552132474790607}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4330967019706475394, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
     m_RemovedGameObjects:
     - {fileID: 8498542111770854543, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
     - {fileID: 350821985727654844, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
