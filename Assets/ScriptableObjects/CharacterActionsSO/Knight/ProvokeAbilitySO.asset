@@ -13,14 +13,15 @@ MonoBehaviour:
   m_Name: ProvokeAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::ProvokeAbilitySO
   abilityName: 
-  abilityIcon: {fileID: 21300174, guid: c3a40e1c46727b94e959990527f8e7fa, type: 3}
+  abilityIcon: {fileID: 21300000, guid: 45483fed0e4221d4c8f7bd6b92baf04e, type: 3}
   abilityDescription: 
   howMuchCanBeUsed: 1
   range: 3
   rangeType: 4
   targetType: 2
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 0}
+  abilityEffectPrefab: {fileID: 2676093798817039456, guid: bbda5de8c3a42e54781f71d85f647c75,
+    type: 3}
   coefficient: 1
   scalingType: 0
   provokeDuration: 2

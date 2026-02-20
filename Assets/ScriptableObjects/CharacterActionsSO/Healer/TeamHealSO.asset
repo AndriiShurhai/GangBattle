@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: TeamHealSO
   m_EditorClassIdentifier: 
   abilityName: Dummy heal
-  abilityIcon: {fileID: -8662432971830130642, guid: 06c8d7c33ccef4cf39e374e33835e970,
-    type: 3}
+  abilityIcon: {fileID: 21300000, guid: 02f8aa0bb2ec18f4eac367806275fb25, type: 3}
   abilityDescription: Heals user by 20 hp.
   howMuchCanBeUsed: 1
   range: 10

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BoostUnitAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::BoostUnitAbilitySO
   abilityName: 
-  abilityIcon: {fileID: 21300144, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
+  abilityIcon: {fileID: 21300000, guid: 3488b33dd528c2c44953de75a09d3ee4, type: 3}
   abilityDescription: 
   howMuchCanBeUsed: 1
   range: 3

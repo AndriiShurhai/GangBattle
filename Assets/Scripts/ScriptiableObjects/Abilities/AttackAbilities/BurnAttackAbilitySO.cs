@@ -1,5 +1,7 @@
+using Assets.Scripts.UI.Abilities_Visual_Effects;
 using DG.Tweening;
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -13,6 +15,12 @@ public class BurnAttackAbilitySO : AbilityBaseSO
 
         if (targetObject is Unit targetUnit)
         {
+
+            GameObject fireVisual = Instantiate(abilityEffectPrefab, GridManager.Instance.GridToWorld(targetPosition), Quaternion.identity);
+
+
+            fireVisual.transform.localScale = Vector3.zero;
+            fireVisual.transform.DOScale(Vector3.one, 0.5f);
             int damage = GetPower(caster);
 
             targetUnit.TakeDamage(damage, caster);
@@ -22,6 +30,7 @@ public class BurnAttackAbilitySO : AbilityBaseSO
                 targetUnit.TakeDamage(damage / 2, caster);
             });
 
+            fireVisual.GetComponent<FireBurnVisualEffect>().ExtinctFire();
         }
     }
 }

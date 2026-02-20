@@ -316,7 +316,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     private IEnumerator EnemyTurnRoutine()
     {
-        foreach (Unit unit in enemyUnits)
+        foreach (Unit unit in GetAliveEnemyUnits())
         {
             unit.UpdateEffectsStatus();
         }

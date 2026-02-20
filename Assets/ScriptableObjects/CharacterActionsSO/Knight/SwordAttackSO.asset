@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SwordAttackSO
   m_EditorClassIdentifier: 
   abilityName: Dummy attack
-  abilityIcon: {fileID: 21300000, guid: df96032537d4c482e9b20c674c73dc45, type: 3}
+  abilityIcon: {fileID: 21300000, guid: c24620eafefbca84791c90c58ec5dae5, type: 3}
   abilityDescription: Attack unit and gives damage
   howMuchCanBeUsed: 1
   range: 3

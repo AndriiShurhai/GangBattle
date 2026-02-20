@@ -13,14 +13,15 @@ MonoBehaviour:
   m_Name: BurnAttackAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::BurnAttackAbilitySO
   abilityName: 
-  abilityIcon: {fileID: 21300144, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
+  abilityIcon: {fileID: 21300000, guid: 85f6db0efa996b342ac40bb7aa6eb2f9, type: 3}
   abilityDescription: 
   howMuchCanBeUsed: 1
   range: 3
   rangeType: 0
   targetType: 0
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 0}
+  abilityEffectPrefab: {fileID: 6848231062210849456, guid: 705230edaa39f5e439879395ec45a0ae,
+    type: 3}
   coefficient: 1
   scalingType: 0
   duration: 3

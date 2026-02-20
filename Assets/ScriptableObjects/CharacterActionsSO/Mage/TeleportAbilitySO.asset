@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: TeleportAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::TeleportAbilitySO
   abilityName: 
-  abilityIcon: {fileID: 21300148, guid: 29c9cded5e558164aaf8c9bf08aa1510, type: 3}
+  abilityIcon: {fileID: 21300000, guid: 0bff7be837e8d024e8b90a84cc395a46, type: 3}
   abilityDescription: 
   howMuchCanBeUsed: 1
   range: 7

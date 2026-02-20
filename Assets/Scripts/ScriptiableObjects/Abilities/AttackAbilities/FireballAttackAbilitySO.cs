@@ -49,7 +49,14 @@ public class FireballAttackAbilitySO : AbilityBaseSO
             {
                 Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
                 GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
-                Destroy(effect, 2f);
+                effect.GetComponentInChildren<Animator>().SetTrigger("collide");
+
+                effect.transform.DOScale(1.8f, 0.5f).SetEase(Ease.OutBack);
+
+                effect.GetComponentInChildren<SpriteRenderer>().DOFade(0, 1.5f).SetDelay(0.5f).OnComplete(() =>
+                {
+                    Destroy(effect);
+                });
             }
         });
     }

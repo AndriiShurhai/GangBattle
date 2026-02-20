@@ -1,6 +1,7 @@
 using DG.Tweening;
-using UnityEngine;
 using System;
+using UnityEngine;
+using static UnityEngine.RuleTile.TilingRuleOutput;
 
 [CreateAssetMenu(menuName ="Abilities/Range Attack")]
 public class RangeAttackAbilitySO : AbilityBaseSO
@@ -28,6 +29,17 @@ public class RangeAttackAbilitySO : AbilityBaseSO
             Sequence attackSequence = DOTween.Sequence();
 
             GameObject projectileGameObject = Instantiate(projectile, caster.transform.position, Quaternion.identity);
+
+            Vector3 direction = caster.transform.position - targetWorldPosition;
+
+            if (direction.x > 0)
+            {
+                projectileGameObject.transform.localScale = new Vector3(-1, 1, 1);
+            }
+            else if (direction.x < 0)
+            {
+                projectileGameObject.transform.localScale = new Vector3(1, 1, 1);
+            }
 
             attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
             attackSequence.AppendCallback(() =>
