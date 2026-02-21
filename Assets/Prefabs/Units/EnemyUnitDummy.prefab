@@ -342,6 +342,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0f67fcfcff148904b9fba1de40c1cab4, type: 2}
   attackAIActions:
   - {fileID: 11400000, guid: 0f67fcfcff148904b9fba1de40c1cab4, type: 2}
+  personality: {fileID: 0}
 --- !u!114 &8280551475693715954
 MonoBehaviour:
   m_ObjectHideFlags: 0

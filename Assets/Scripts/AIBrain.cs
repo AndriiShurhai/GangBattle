@@ -6,8 +6,8 @@ using UnityEngine;
 public class AIBrain : MonoBehaviour
 {
     [SerializeField] private List<AIActionSO> aiActions;
-    [SerializeField] private List<AIActionSO> attackAIActions;
 
+    [Tooltip("Optional. Defines this enemy's archetype via per-category score multipliers.")]
     [SerializeField] private AIPersonalitySO personality;
 
     private Unit aiUnit;
