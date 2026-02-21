@@ -1,7 +1,17 @@
 using System;
 using UnityEngine;
 
-
+public enum AIActionCategory
+{
+    Attack,
+    Move,
+    Flee,
+    Support,
+    AoE,
+    Teleport,
+    GroupUp,
+    Utility
+}
 public struct AIScoreData
 {
     public float score;
@@ -10,6 +20,7 @@ public struct AIScoreData
 }
 public abstract class AIActionSO : ScriptableObject
 {
+    public abstract AIActionCategory Category { get; }
     public abstract AIScoreData GetScoreAction(Unit aiUnit);
 
     public abstract void Execute(Unit aiUnit, object target, Action onComplete);  

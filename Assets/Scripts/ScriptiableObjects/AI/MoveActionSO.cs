@@ -8,11 +8,12 @@ using UnityEngine.Rendering;
 [CreateAssetMenu(fileName = "Move Action SO", menuName = "AI/Actions/Move Action")]
 public class MoveActionSO : AIActionSO
 {
+    public override AIActionCategory Category => AIActionCategory.Move;
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
         AIScoreData scoreData = new AIScoreData() { score = 0f, target = null };
 
-        Unit closestUnit = FindClosestPlayerUnit(aiUnit);
+        Unit closestUnit = GetMoveTarget(aiUnit);
 
         if (closestUnit == null) return scoreData;
 
@@ -45,31 +46,20 @@ public class MoveActionSO : AIActionSO
         aiUnit.MoveTo(bestTile, onComplete);
     }
 
-    private List<Unit> FindPlayerUnits(Unit aiUnit)
+    private Unit GetMoveTarget(Unit aiUnit)
     {
-        List<Unit> units = TurnManager.Instance.GetPlayerUnits();
+        if(aiUnit.HasStatus(EffectStatusType.Provoked) && aiUnit.ForcedUnitGridPosition != null)
+        {
+            if (GridObjectRegistry.Instance.GetObjectAt((Vector3Int)aiUnit.ForcedUnitGridPosition) is Unit forcedUnit)
+                return forcedUnit;
+        }
 
-        return units;
-    }
-
-    private Unit FindClosestPlayerUnit(Unit aiUnit)
-    {
-        List<Unit> playerUnits = TurnManager.Instance.GetPlayerUnits();
+        List<Unit> playerUnits = TurnManager.Instance.GetAlivePlayerUnits();
         if (playerUnits.Count == 0) return null;
 
-        Unit closest = null;
-        float minDistance = float.MaxValue;
-
-        foreach (Unit playerUnit in playerUnits)
-        {
-            float distance = Vector3.Distance(aiUnit.transform.position, playerUnit.transform.position);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closest = playerUnit;
-            }
-        }
-        return closest;
+        return playerUnits
+            .OrderBy(u => Vector3.Distance(aiUnit.transform.position, u.transform.position))
+            .FirstOrDefault();
     }
 
 }
