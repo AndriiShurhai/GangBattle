@@ -8,6 +8,8 @@ public class AIBrain : MonoBehaviour
     [SerializeField] private List<AIActionSO> aiActions;
     [SerializeField] private List<AIActionSO> attackAIActions;
 
+    [SerializeField] private AIPersonalitySO personality;
+
     private Unit aiUnit;
 
     private void Awake()
@@ -21,24 +23,22 @@ public class AIBrain : MonoBehaviour
 
         List<AIScoreData> allScoreData = new List<AIScoreData>();   
 
-        if (aiUnit.HasStatus(EffectStatusType.Provoked))
+        foreach (AIActionSO action in aiActions)
         {
-            Debug.Log("FUCK, I AM PROVOKED");
-            foreach (AIActionSO action in attackAIActions)
+            AIScoreData scoreData = action.GetScoreAction(aiUnit);
+            scoreData.action = action;
+
+            if (personality != null)
             {
-                AIScoreData scoreData = action.GetScoreAction(aiUnit);
-                scoreData.action = action;
-                allScoreData.Add(scoreData);
+                scoreData.score *= personality.GetCategoryWeight(action.Category);
             }
-        }
-        else
-        {
-            foreach (AIActionSO action in aiActions)
+
+            if (aiUnit.HasStatus(EffectStatusType.Provoked))
             {
-                AIScoreData scoreData = action.GetScoreAction(aiUnit);
-                scoreData.action = action;
-                allScoreData.Add(scoreData);
+                scoreData = ApplyProvokeModifier(scoreData);    
             }
+
+            allScoreData.Add(scoreData);
         }
 
         AIScoreData bestScoreData = allScoreData
@@ -56,5 +56,34 @@ public class AIBrain : MonoBehaviour
             onComplete?.Invoke();
             Debug.Log($"{aiUnit.name} has no valid actions to take");
         }
+    }
+
+    private AIScoreData ApplyProvokeModifier(AIScoreData scoreData)
+    {
+        if (aiUnit.ForcedUnitGridPosition == null) return scoreData;
+
+        switch(scoreData.action.Category)
+        {
+            case AIActionCategory.Attack:
+                if (scoreData.target is Unit targetUnit &&
+                    targetUnit.GridPosition == aiUnit.ForcedUnitGridPosition)
+                {
+                    scoreData.score *= 2f; // Example: Double the score for attack actions against the provoking unit  
+                }
+                else
+                {
+                    scoreData.score *= 0.1f; // Example: Halve the score for actions that do not target the provoking unit
+                }
+                break;
+
+            case AIActionCategory.Move:
+                break;
+
+            default:
+                scoreData.score *= 0.5f; // Example: Reduce the score for all other actions
+                break;
+        }
+       
+        return scoreData;
     }
 }

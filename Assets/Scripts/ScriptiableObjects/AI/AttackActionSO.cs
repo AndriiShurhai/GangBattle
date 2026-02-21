@@ -6,6 +6,8 @@ using UnityEngine.Tilemaps;
 [CreateAssetMenu(fileName = "AttackActionSO", menuName = "AI/Actions/Attack Action")]
 public class AttackActionSO : AIActionSO
 {
+    public override AIActionCategory Category => AIActionCategory.Attack;   
+
     [SerializeField] private AbilityBaseSO attackAbility;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
@@ -38,6 +40,7 @@ public class AttackActionSO : AIActionSO
             scoreData.target = null;
             return scoreData;
         };
+
         if (attackAbility.IsValidTarget(aiUnit.GridPosition, bestTarget.GridPosition, aiUnit))
         {
             float healthPercentage = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
