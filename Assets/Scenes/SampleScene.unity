@@ -12208,9 +12208,9 @@ MonoBehaviour:
   - {fileID: 5973092872303197908, guid: c55b7949263819d4185b14e7483de79f, type: 3}
   - {fileID: 9190046012850446207, guid: b9e0a82a819e9214680dec443bc05fe1, type: 3}
   enemyUnits:
-  - {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c, type: 3}
-  - {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c, type: 3}
-  - {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c, type: 3}
+  - {fileID: 5316020959198715949, guid: 119866e4cc6cfe143bbee4ffb49ad3cd, type: 3}
+  - {fileID: 5316020959198715949, guid: 119866e4cc6cfe143bbee4ffb49ad3cd, type: 3}
+  - {fileID: 5316020959198715949, guid: 119866e4cc6cfe143bbee4ffb49ad3cd, type: 3}
   characterSelectionController: {fileID: 1655297848}
   endPlayerTurnButton: {fileID: 2019507490}
 --- !u!4 &1432973249

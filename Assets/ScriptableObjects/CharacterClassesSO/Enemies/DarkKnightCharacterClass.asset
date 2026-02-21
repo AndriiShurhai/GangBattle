@@ -21,4 +21,7 @@ MonoBehaviour:
   strength: 10
   intelligence: 10
   agility: 10
-  abilities: []
+  abilities:
+  - {fileID: 11400000, guid: 9b64640e2f8dd3844a9b831414490ff5, type: 2}
+  - {fileID: 11400000, guid: dbe3eca4b35355142af627291f64d1b3, type: 2}
+  - {fileID: 11400000, guid: c4ddfec96b45aaa45a1a621f26d2d165, type: 2}

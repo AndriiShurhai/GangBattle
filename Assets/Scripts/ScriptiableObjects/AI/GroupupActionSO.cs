@@ -20,8 +20,12 @@ public class GroupUpActionSO : AIActionSO
 {
     public override AIActionCategory Category => AIActionCategory.GroupUp;
 
+    [Tooltip("Distance in grid tiles below which the unit considers itself 'grouped'. " +
+             "If any ally is within this range, the action scores 0.")]
     public float allyProximityThreshold = 3f;
 
+    [Tooltip("Base score when isolated. Should be higher than Move (25) so this takes " +
+             "priority over chasing enemies when the unit is alone.")]
     public float baseScore = 45f;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
