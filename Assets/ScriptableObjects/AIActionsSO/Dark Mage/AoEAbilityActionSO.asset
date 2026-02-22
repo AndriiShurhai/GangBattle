@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65ac283016117154caba885f9c716835, type: 3}
   m_Name: AoEAbilityActionSO
   m_EditorClassIdentifier: Assembly-CSharp::AoEAbilityActionSO
-  aoeAbility: {fileID: 0}
+  aoeAbility: {fileID: 11400000, guid: b69b033b53a32354b8d538fa5756cdaf, type: 2}
   baseScore: 80
   perTargetBonus: 50
   minTargetsToUse: 2

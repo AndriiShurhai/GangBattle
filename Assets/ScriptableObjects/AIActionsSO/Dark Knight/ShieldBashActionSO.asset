@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6f6f46d086d1c5459fe292a2eb6e752, type: 3}
   m_Name: ShieldBashActionSO
   m_EditorClassIdentifier: Assembly-CSharp::ShieldBashActionSO
-  shieldBashAbility: {fileID: 0}
+  shieldBashAbility: {fileID: 11400000, guid: dbe3eca4b35355142af627291f64d1b3, type: 2}
   baseScore: 80
   highHpThreshold: 0.6
   highHpBonus: 60

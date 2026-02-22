@@ -10,6 +10,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c527b4f516bae98489616cfa59a08db2, type: 3}
-  m_Name: SwordAttackAIAction
-  m_EditorClassIdentifier: Assembly-CSharp::AttackActionSO
-  attackAbility: {fileID: 11400000, guid: 9b64640e2f8dd3844a9b831414490ff5, type: 2}
+  m_Name: ArcherRangedAttackActionSO
+  m_EditorClassIdentifier: 
+  attackAbility: {fileID: 11400000, guid: b4385b562eafcb146b49848a75ea4a99, type: 2}
