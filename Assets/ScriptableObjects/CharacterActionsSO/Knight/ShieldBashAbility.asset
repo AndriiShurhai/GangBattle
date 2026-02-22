@@ -20,7 +20,8 @@ MonoBehaviour:
   rangeType: 0
   targetType: 0
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 0}
+  abilityEffectPrefab: {fileID: 4847202291454845301, guid: c107c5c006a56564aac466ac9d663166,
+    type: 3}
   coefficient: 1
   scalingType: 0
   stunDuration: 2

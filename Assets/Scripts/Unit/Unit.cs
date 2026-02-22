@@ -40,6 +40,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public static event Action<Unit, Vector3> OnAnyUnitStartMoving;
     public static event Action<Unit> OnAnyUnitFinishedMoving;
     public static event Action<Unit, AbilityBaseSO> OnAnyUnitUsedAbility;
+    public static event Action<Unit, EffectStatusType> OnAnyUnitGainedStatusEffect;
+    public static event Action<Unit, EffectStatusType> OnAnyUnitLostStatusEffect;
 
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
@@ -227,7 +229,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         if (intelligence) this.Intelligence = characterClassSO.intelligence;
         if (agility) this.Agility = characterClassSO.agility;
     }
-    public void ApplyEffect(EffectStatusType effectType, int duration, Action tickAction=null)
+    public void ApplyEffect(EffectStatusType effectType, int duration, Action tickAction = null, GameObject visualEffectPrefab = null)
     {
         var existing = activeEffects.Find(e => e.type == effectType);
 
@@ -237,7 +239,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         }
         else
         {
-            activeEffects.Add(new StatusEffect(effectType, duration, tickAction));
+            StatusEffect newEffect = new StatusEffect(effectType, duration, tickAction, visualEffectPrefab);
+            activeEffects.Add(newEffect);
             Debug.Log($"{name} is {effectType} for {duration} moves");
 
             if ((effectType == EffectStatusType.Stunned || effectType == EffectStatusType.Rooted) && IsMoving)
@@ -247,6 +250,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
                 movementComponent.MoveTo(GridManager.Instance.WorldToGrid(transform.position));
                 transform.position = GridManager.Instance.GridToWorld(GridPosition);
             }
+
+            OnAnyUnitGainedStatusEffect?.Invoke(this, effectType);
+            newEffect.InstantiateVisualEffect(this);
         }
     }
 
@@ -259,6 +265,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     {
         for (int i = activeEffects.Count-1; i >= 0; i--)
         {
+            StatusEffect currentEffect = activeEffects[i];
             activeEffects[i].Tick(this);
             if (activeEffects[i].duration < 0)
             {
@@ -266,7 +273,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
                 {
                     UnboostUnit();
                 }
+                activeEffects[i].RemoveVisualEffect(this);
                 activeEffects.RemoveAt(i);
+                OnAnyUnitLostStatusEffect?.Invoke(this, currentEffect.type);
             } 
         }
 

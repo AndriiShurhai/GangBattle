@@ -21,7 +21,8 @@ public class ShieldBashSO : AbilityBaseSO
 
                 if (IsAttackStunning())
                 {
-                    targetUnit.ApplyEffect(EffectStatusType.Stunned, stunDuration);
+                    
+                    targetUnit.ApplyEffect(EffectStatusType.Stunned, stunDuration, null, abilityEffectPrefab);
                 }
 
                 caster.transform.DOJump(GridManager.Instance.GridToWorld(caster.GridPosition), 0.5f, 1, 0.3f);

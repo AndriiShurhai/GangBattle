@@ -15,12 +15,40 @@ public class StatusEffect
     public EffectStatusType type;
     public int duration;
     public Action tickAction;
+    public GameObject visualEffectPrefab;
 
-    public StatusEffect(EffectStatusType type, int duration, Action tickAction = null)
+    public StatusEffect(EffectStatusType type, int duration, Action tickAction = null, GameObject visualEffectPrefab = null)
     {
         this.type = type;
         this.duration = duration;
         this.tickAction = tickAction;
+        if (visualEffectPrefab != null)
+        {
+            this.visualEffectPrefab = visualEffectPrefab;
+        }
+    }
+
+    public void InstantiateVisualEffect(Unit unit)
+    {
+        if (visualEffectPrefab != null)
+        {
+            GameObject effectInstance = GameObject.Instantiate(visualEffectPrefab, unit.transform);
+            effectInstance.transform.localPosition = Vector3.zero; 
+        }
+    }
+
+    public void RemoveVisualEffect(Unit unit)
+    {
+        if (visualEffectPrefab != null)
+        {
+            foreach (Transform child in unit.transform)
+            {
+                if (child.gameObject.name.Contains(visualEffectPrefab.name))
+                {
+                    GameObject.Destroy(child.gameObject);
+                }
+            }
+        }
     }
 
     public void Tick(Unit unit)
