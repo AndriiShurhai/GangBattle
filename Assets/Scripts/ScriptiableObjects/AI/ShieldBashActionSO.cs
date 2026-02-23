@@ -24,9 +24,10 @@ using UnityEngine;
 /// 
 
 [CreateAssetMenu(fileName = "ShieldBashActionSO", menuName = "AI/Actions/Shield Bash Action")]
-public class ShieldBashActionSO : AIActionSO
+public class ShieldBashActionSO : AbilityActionBase
 {
     public override AIActionCategory Category => AIActionCategory.Attack;
+    protected override AbilityBaseSO GetAbility() => shieldBashAbility;
 
     [SerializeField] private AbilityBaseSO shieldBashAbility;
 

@@ -14,9 +14,10 @@ using UnityEngine;
 /// </summary>
 /// 
 [CreateAssetMenu(fileName = "ProvokeAbilityActionSO", menuName = "AI/Actions/Provoke Ability Action")]
-public class ProvokeAbilityActionSO : AIActionSO
+public class ProvokeAbilityActionSO : AbilityActionBase
 {
     public override AIActionCategory Category => AIActionCategory.Utility;
+    protected override AbilityBaseSO GetAbility() => provokeAbility;
 
     [SerializeField] private AbilityBaseSO provokeAbility;
 

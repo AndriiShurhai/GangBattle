@@ -41,7 +41,8 @@ public class MoveActionSO : AIActionSO
         bestTile = reachableTiles
             .OrderBy(t => Vector3.Distance(t, targetUnit.GridPosition))
             .First();
-        
+       
+        if (!aiUnit.CanMoveTo(bestTile)) { onComplete?.Invoke(); return;  }
 
         aiUnit.MoveTo(bestTile, onComplete);
     }
@@ -60,6 +61,11 @@ public class MoveActionSO : AIActionSO
         return playerUnits
             .OrderBy(u => Vector3.Distance(aiUnit.transform.position, u.transform.position))
             .FirstOrDefault();
+    }
+
+    public override bool CanExecute(Unit aiUnit)
+    {
+        return aiUnit.MovedPerTurn < aiUnit.MoveAllowedPerTurn;
     }
 
 }

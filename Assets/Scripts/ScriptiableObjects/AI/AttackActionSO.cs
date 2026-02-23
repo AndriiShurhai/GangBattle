@@ -4,9 +4,10 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 [CreateAssetMenu(fileName = "AttackActionSO", menuName = "AI/Actions/Attack Action")]
-public class AttackActionSO : AIActionSO
+public class AttackActionSO : AbilityActionBase
 {
     public override AIActionCategory Category => AIActionCategory.Attack;   
+    protected override AbilityBaseSO GetAbility() => attackAbility;
 
     [SerializeField] private AbilityBaseSO attackAbility;
 

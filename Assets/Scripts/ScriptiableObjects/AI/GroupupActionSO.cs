@@ -87,4 +87,9 @@ public class GroupUpActionSO : AIActionSO
             .OrderBy(u => Vector3.Distance(u.transform.position, aiUnit.transform.position))
             .FirstOrDefault();
     }
+
+    public override bool CanExecute(Unit aiUnit)
+    {
+        return aiUnit.MovedPerTurn < aiUnit.MoveAllowedPerTurn;
+    }
 }

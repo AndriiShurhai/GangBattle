@@ -77,4 +77,9 @@ public class FleeActionSO : AIActionSO
             .First();
         return bestTile;
     }
+
+    public override bool CanExecute(Unit aiUnit)
+    {
+        return aiUnit.MovedPerTurn < aiUnit.MoveAllowedPerTurn;
+    }
 }

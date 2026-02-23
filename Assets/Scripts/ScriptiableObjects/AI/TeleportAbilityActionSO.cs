@@ -16,9 +16,10 @@ using UnityEngine;
 /// 
 
 [CreateAssetMenu(fileName = "TeleportAbilityActionSO", menuName = "AI/Actions/Teleport Ability Action")]
-public class TeleportAbilityActionSO : AIActionSO
+public class TeleportAbilityActionSO : AbilityActionBase
 {
     public override AIActionCategory Category => AIActionCategory.Teleport;
+    protected override AbilityBaseSO GetAbility() => teleportAbility;
 
     [SerializeField] private AbilityBaseSO teleportAbility;
 

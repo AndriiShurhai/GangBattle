@@ -13,9 +13,10 @@ using UnityEngine;
 /// 
 
 [CreateAssetMenu(fileName = "HealAllyActionSO", menuName = "AI/Actions/Heal Ally Action")]
-public class HealAllyActionSO : AIActionSO
+public class HealAllyActionSO : AbilityActionBase
 {
     public override AIActionCategory Category => AIActionCategory.Support;
+    protected override AbilityBaseSO GetAbility() => healAbility;
 
     [SerializeField] private AbilityBaseSO healAbility;
 

@@ -17,9 +17,10 @@ using UnityEngine;
 /// </summary>
 /// 
 [CreateAssetMenu(fileName = "AoEAbilityActionSO", menuName = "AI/Actions/AoE Ability Action")]
-public class AoEAbilityActionSO : AIActionSO
+public class AoEAbilityActionSO : AbilityActionBase
 {
     public override AIActionCategory Category => AIActionCategory.AoE;
+    protected override AbilityBaseSO GetAbility() => aoeAbility;
 
     [SerializeField] private AbilityBaseSO aoeAbility;
 

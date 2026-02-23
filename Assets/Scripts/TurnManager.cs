@@ -264,7 +264,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             characterSelectionController.gameObject.SetActive(true);
         }
 
-        foreach (Unit unit in playerUnits)
+        foreach (Unit unit in GetAlivePlayerUnits())
         {
             unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;

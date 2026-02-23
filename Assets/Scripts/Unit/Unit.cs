@@ -111,6 +111,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         set => movedPerTurn = value;
     }
 
+    public int MoveAllowedPerTurn => characterClassSO.movementAmountPerTurn;    
+
     private List<StatusEffect> activeEffects = new List<StatusEffect>();
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
     private int movedPerTurn = 0;

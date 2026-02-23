@@ -27,9 +27,10 @@ using UnityEngine;
 /// 
 
 [CreateAssetMenu(fileName = "BurnAttackActionSO", menuName = "AI/Actions/Burn Attack Action")]
-public class BurnAttackActionSO : AIActionSO
+public class BurnAttackActionSO : AbilityActionBase
 {
     public override AIActionCategory Category => AIActionCategory.Attack;
+    protected override AbilityBaseSO GetAbility() => burnAttackAbility;
 
     [SerializeField] private AbilityBaseSO burnAttackAbility;
 
