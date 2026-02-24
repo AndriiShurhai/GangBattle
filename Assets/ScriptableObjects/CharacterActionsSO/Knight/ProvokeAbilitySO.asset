@@ -20,7 +20,7 @@ MonoBehaviour:
   rangeType: 4
   targetType: 2
   rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 2676093798817039456, guid: bbda5de8c3a42e54781f71d85f647c75,
+  abilityEffectPrefab: {fileID: 3288473931565564141, guid: cf1bf399daff1384eb94326ccd182117,
     type: 3}
   coefficient: 1
   scalingType: 0

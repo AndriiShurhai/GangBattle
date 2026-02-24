@@ -49,6 +49,17 @@ public class UnitVisualBridge : MonoBehaviour
         _spumPrefabs.PlayAnimation(PlayerState.DEATH, 0);
     }
 
+    public void PlayAnimation(PlayerState playerState)
+    {
+        try
+        {
+            _spumPrefabs.PlayAnimation(playerState, 0);
+        }
+        catch (Exception e)
+        {
+            _spumPrefabs.PlayAnimation(PlayerState.IDLE, 0);
+        }
+    }
     private void FaceCorrectDirection(Vector3 targetPosition)
     {
         Vector3 direction = targetPosition - transform.position;

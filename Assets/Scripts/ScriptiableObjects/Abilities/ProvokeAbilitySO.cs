@@ -14,7 +14,7 @@ public class ProvokeAbilitySO : AbilityBaseSO
 
         ProvokeVisualEffect highlight = Instantiate(abilityEffectPrefab, caster.transform.position, Quaternion.identity).GetComponent<ProvokeVisualEffect>();
 
-        highlight.Execute(range);
+        highlight.Execute(caster.GridPosition, reachableTiles);
 
         foreach (var position in reachableTiles)
         {

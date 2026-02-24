@@ -146,7 +146,7 @@ public class AIBrain : MonoBehaviour
                 break;
 
             default:
-                scoreData.score *= 0.5f; // Example: Reduce the score for all other actions
+                scoreData.score *= 0.1f; // Example: Reduce the score for all other actions
                 break;
         }
        

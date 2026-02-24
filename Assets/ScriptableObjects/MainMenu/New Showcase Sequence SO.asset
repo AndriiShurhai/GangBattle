@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a169e2ddf778dfe4eaf1f845f9efa04c, type: 3}
+  m_Name: New Showcase Sequence SO
+  m_EditorClassIdentifier: Assembly-CSharp::ShowcaseSequenceSO
+  commands:
+  - {fileID: 11400000, guid: 9e38d872ccd70794bbf34fd07b4ed6c9, type: 2}
+  - {fileID: 11400000, guid: 5b4e6e6f865ac9c4f8fd351faf221a7a, type: 2}
+  - {fileID: 11400000, guid: 7885ae49d99298b40887c6c1ac170c43, type: 2}
+  - {fileID: 11400000, guid: 77822aa9bf7757741900f117233d9145, type: 2}
+  - {fileID: 11400000, guid: e1b670666d7df464785944733ddac3b5, type: 2}
+  - {fileID: 11400000, guid: c7c780e20aa62974691bcf17d8e1be8d, type: 2}
+  - {fileID: 11400000, guid: cf52c01a292b1d544840f8026f8f227f, type: 2}
+  - {fileID: 11400000, guid: af5d3bd19d3265f408c8bd1bebe8d311, type: 2}
+  - {fileID: 11400000, guid: ca81391df0d28bd41a277ec30cfe36ab, type: 2}
+  - {fileID: 11400000, guid: 0160f6fb7a324144e8174a823c01bebf, type: 2}
+  - {fileID: 11400000, guid: b1462206ccca0b847bbc5cac6b1ffa0f, type: 2}
+  - {fileID: 11400000, guid: 1dfc2a38eeac99840bda89d6cad5768c, type: 2}
+  - {fileID: 11400000, guid: 0160f6fb7a324144e8174a823c01bebf, type: 2}
+  - {fileID: 11400000, guid: e4108c019c29f464ebd5d5f1903dac49, type: 2}
+  - {fileID: 11400000, guid: 8e03d50c5447cba4996e961c15f2e563, type: 2}
+  - {fileID: 11400000, guid: 5feda24c832131e4981265db49fcc840, type: 2}
+  - {fileID: 11400000, guid: 8e80522f0c5f2304bbe7b3db8aed7f2c, type: 2}

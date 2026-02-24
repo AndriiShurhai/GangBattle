@@ -111,6 +111,7 @@ public abstract class AbilityBaseSO : ScriptableObject
         switch (targetType)
         {
             case TargetType.Enemy:
+                if (caster.ForcedUnitGridPosition != null && targetPosition != caster.ForcedUnitGridPosition) return false;
                 return targetObject is Unit enemy && enemy.UnitFaction != caster.UnitFaction;
 
             case TargetType.Ally:
