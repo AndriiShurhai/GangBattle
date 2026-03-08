@@ -24,7 +24,6 @@ public class AttackActionSO : AbilityActionBase
         {
             if (targetUnit == null)
             {
-                Debug.Log("YOU ARE FUCKING NOBODY");
                 continue;
             }
             if (attackAbility.IsValidTarget(aiUnit.GridPosition, targetUnit.GridPosition, aiUnit) && targetUnit.CurrentHealth < bestHealth)

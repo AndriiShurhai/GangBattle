@@ -128,28 +128,50 @@ public class AIBrain : MonoBehaviour
     {
         if (aiUnit.ForcedUnitGridPosition == null) return scoreData;
 
-        switch(scoreData.action.Category)
+
+        Unit target = null;
+
+        if (scoreData.target is Unit)
+        {
+            target = (Unit)scoreData.target;
+        }
+
+        switch (scoreData.action.Category)
         {
             case AIActionCategory.Attack:
-                if (scoreData.target is Unit targetUnit &&
-                    targetUnit.GridPosition == aiUnit.ForcedUnitGridPosition)
+                if (target != null && target.GridPosition.Equals(aiUnit.ForcedUnitGridPosition))
                 {
-                    scoreData.score *= 2f; // Example: Double the score for attack actions against the provoking unit  
+                    scoreData.score *= 2f; // Double the score for attacks against the provoking unit
                 }
                 else
                 {
-                    scoreData.score *= 0.1f; // Example: Halve the score for actions that do not target the provoking unit
+                    scoreData.score *= 0.1f; // Halve the score for attacks against other unit
+                }
+                break;
+
+            case AIActionCategory.Flee:
+                scoreData.score *= 1.2f;
+                break;
+
+            case AIActionCategory.AoE:
+                if (target != null && target.GridPosition.Equals(aiUnit.ForcedUnitGridPosition))
+                {
+                    scoreData.score *= 2f; // Double the score for attacks against the provoking unit
+                }
+                else
+                {
+                    scoreData.score *= 0.1f; // Halve the score for attacks against other unit
                 }
                 break;
 
             case AIActionCategory.Move:
+                scoreData.score *= 1.5f;
                 break;
 
             default:
-                scoreData.score *= 0.1f; // Example: Reduce the score for all other actions
+                scoreData.score *= 0.1f;
                 break;
         }
-       
         return scoreData;
     }
 }
