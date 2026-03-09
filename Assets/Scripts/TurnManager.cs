@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine.UI;
 using System;
 using System.Linq;
@@ -30,6 +29,8 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     [SerializeField] private CharacterSelectionController characterSelectionController;
     [SerializeField] private Button endPlayerTurnButton;
+    [SerializeField] private float enemyPreTurnDelay = 0.3f;
+    [SerializeField] private float enemyPostTurnDelay = 0.5f;
     public enum TurnState { PlayerTurn, EnemyTurn }
     private TurnState currentState;
 
@@ -320,7 +321,7 @@ public class TurnManager : MonoBehaviour, IRewindable
         {
             unit.UpdateEffectsStatus();
         }
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(enemyPreTurnDelay);
 
         List<Unit> enemiesToTakeTurn = new List<Unit>(enemyUnits);
 
@@ -336,7 +337,7 @@ public class TurnManager : MonoBehaviour, IRewindable
                 });
 
                 yield return new WaitUntil(() => isTurnComplete);
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(enemyPostTurnDelay);
 
                 if (enemyUnit != null) enemyUnit.HasTakenActionThisTurn = true;
             }

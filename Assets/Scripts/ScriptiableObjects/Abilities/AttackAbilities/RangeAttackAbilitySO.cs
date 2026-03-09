@@ -1,7 +1,6 @@
 using DG.Tweening;
 using System;
 using UnityEngine;
-using static UnityEngine.RuleTile.TilingRuleOutput;
 
 [CreateAssetMenu(menuName ="Abilities/Range Attack")]
 public class RangeAttackAbilitySO : AbilityBaseSO
@@ -9,6 +8,8 @@ public class RangeAttackAbilitySO : AbilityBaseSO
     [Header("Attack Settings")]
     public bool canAttackDiagonally = true;
     public GameObject projectile;
+    public float projectileJumpHeight = 0.5f;
+    public float projectileJumpDuration = 0.3f;
 
     private void Awake()
     {
@@ -41,7 +42,7 @@ public class RangeAttackAbilitySO : AbilityBaseSO
                 projectileGameObject.transform.localScale = new Vector3(1, 1, 1);
             }
 
-            attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
+            attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, projectileJumpHeight, 1, projectileJumpDuration));
             attackSequence.AppendCallback(() =>
             {
                 onAbilityInvoke?.Invoke();

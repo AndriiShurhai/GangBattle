@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 public class HighlightManager
 {
+    [SerializeField] private float highlightAnimDuration = 0.3f;
     private readonly GameObject _highlightPrefab;
     private readonly Transform _container;
     private readonly List<GameObject> _activeHighlights = new List<GameObject>();
@@ -22,7 +23,7 @@ public class HighlightManager
         Vector3 highlightScale = highlight.transform.localScale;
 
         highlight.transform.localScale = new Vector3(0, 0, 0);
-        highlight.transform.DOScale(highlightScale, 0.3f);
+        highlight.transform.DOScale(highlightScale, highlightAnimDuration);
 
         var renderer = highlight.GetComponentInChildren<SpriteRenderer>();
         if (renderer != null)

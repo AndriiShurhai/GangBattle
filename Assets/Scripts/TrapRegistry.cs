@@ -4,7 +4,7 @@ public class TrapRegistry : MonoBehaviour
 {
     public static TrapRegistry Instance { get; private set; }
 
-    [SerializeField] private List<Trap> registeredTraps;
+    private List<Trap> registeredTraps = new List<Trap>();
 
     private void Awake()
     {

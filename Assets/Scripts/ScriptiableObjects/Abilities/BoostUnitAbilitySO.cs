@@ -17,6 +17,7 @@ public class BoostUnitAbilitySO : AbilityBaseSO
 
             unit.BoostUnit(strengthBosst, intelligenceBoost, agilityBoost); 
             unit.ApplyEffect(EffectStatusType.Boosted, duration);
+            onAbilityInvoke?.Invoke();
         }
     }
 }

@@ -12,7 +12,6 @@ public class GridVisualizer : MonoBehaviour
     [SerializeField] private Transform highlightsContainer;
 
     private HighlightManager _highlightManager;
-    private List<GameObject> highlightObjects = new List<GameObject>();
 
     private void Awake()
     {
@@ -53,17 +52,4 @@ public class GridVisualizer : MonoBehaviour
     {
         _highlightManager.SetHighlightsActive(true);
     }
-
-    //public void CreateHighlight(Vector3Int gridPosition, Color color)
-    //{
-    //    if (movementHighlightPrefab == null) return;
-
-    //    Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
-    //    GameObject highlight = Instantiate(movementHighlightPrefab, worldPosition, Quaternion.identity, highlightsContainer);
-
-    //    var renderer = highlight.GetComponent<SpriteRenderer>();
-    //    if (renderer != null) renderer.color = color;
-
-    //    highlightObjects.Add(highlight);
-    //}
 }

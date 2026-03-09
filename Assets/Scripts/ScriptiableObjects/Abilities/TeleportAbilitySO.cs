@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName ="Abilities/Teleport Ability")]
 public class TeleportAbilitySO : AbilityBaseSO
 {
+    public float teleportingDuration = 0.4f;
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
     {
         IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
@@ -13,7 +14,7 @@ public class TeleportAbilitySO : AbilityBaseSO
 
         Sequence attackSequence = DOTween.Sequence();
 
-        attackSequence.Append(caster.transform.DOScale(0, 0.4f));
+        attackSequence.Append(caster.transform.DOScale(0, teleportingDuration));
         attackSequence.AppendCallback(() =>
         {
             onAbilityInvoke?.Invoke();
@@ -28,7 +29,7 @@ public class TeleportAbilitySO : AbilityBaseSO
             }
         });
 
-        attackSequence.Append(caster.transform.DOScale(caster.transform.localScale, 0.4f));
+        attackSequence.Append(caster.transform.DOScale(caster.transform.localScale, teleportingDuration));
     }
 
     public override bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)

@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 [CreateAssetMenu(menuName = "Abilities/Provoke Ability")]
 public class ProvokeAbilitySO : AbilityBaseSO
@@ -28,6 +27,7 @@ public class ProvokeAbilitySO : AbilityBaseSO
                 Debug.Log($"Provoking Unit: {unit.name}");
             }
         }
+        onAbilityInvoke?.Invoke();
     }
 }
 

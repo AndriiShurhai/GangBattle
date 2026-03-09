@@ -26,7 +26,7 @@ public class HealAbilitySO : AbilityBaseSO
                     unit.Heal(teamHealAmount);
                 }
             }
-            onAbilityInvoke.Invoke();
+            onAbilityInvoke?.Invoke();
 
             Debug.Log($"{caster.name} healed {targetUnit.name} for {healAmount} HP!");
 

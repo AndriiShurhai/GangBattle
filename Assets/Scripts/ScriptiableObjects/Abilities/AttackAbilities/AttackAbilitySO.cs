@@ -10,6 +10,8 @@ public class AttackAbilitySO : AbilityBaseSO
 
     [Header("Attack Settings")]
     public bool canAttackDiagonally = true;
+    public float jumpHeight = 0.5f;
+    public float jumpDuration = 0.3f;
 
     private void Awake()
     {
@@ -20,10 +22,6 @@ public class AttackAbilitySO : AbilityBaseSO
 
         if (targetObject is Unit targetUnit)
         {
-            // TODO: Play attack animation
-            // TODO: Show damage numbers
-            // TODO: Play sound effect
-
             Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
             Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
 
@@ -31,7 +29,7 @@ public class AttackAbilitySO : AbilityBaseSO
 
             Sequence attackSequence = DOTween.Sequence();
 
-            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
+            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, jumpHeight, 1, jumpDuration));
             attackSequence.AppendCallback(() =>
             {
                 onAbilityInvoke?.Invoke();
@@ -47,7 +45,7 @@ public class AttackAbilitySO : AbilityBaseSO
                 }
             });
 
-            attackSequence.Append(caster.transform.DOJump(caster.transform.position, 0.5f, 1, 0.3f));
+            attackSequence.Append(caster.transform.DOJump(caster.transform.position, jumpHeight, 1, jumpDuration));
         }
         else
         {

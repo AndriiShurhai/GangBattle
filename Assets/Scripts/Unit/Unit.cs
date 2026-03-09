@@ -187,7 +187,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             healthComponent.OnDeath -= HandleDeath; 
         }
 
-        OnAnyUnitDied?.Invoke(this);
+        //OnAnyUnitDied?.Invoke(this);
     }
 
     public void RegisterSelf()
@@ -396,7 +396,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             return;
         }
 
-        if (HasStatus(EffectStatusType.Provoked) && forcedTarget != null && forcedTarget.GridPosition != targetPosition)
+        if (HasStatus(EffectStatusType.Provoked) && forcedTarget != null && forcedTarget.IsAlive && forcedTarget.GridPosition != targetPosition)
         {
             Debug.Log($"Unit is provoked to another target. TargetPosition {targetPosition}; ForcedUnitPosition {forcedTarget.GridPosition}");
             return;

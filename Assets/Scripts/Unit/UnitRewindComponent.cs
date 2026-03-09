@@ -93,7 +93,7 @@ public class UnitRewindComponent
             GridObjectRegistry.Instance.MoveObject(rewindableUnit, rewindableUnit.GridPosition, s.gridPosition);
         }
 
-        rewindableUnit.GridPosition = s.gridPosition;
+        //rewindableUnit.GridPosition = s.gridPosition;
         rewindableUnit.HasTakenActionThisTurn = s.hasTakenActionThisTurn;
 
         rewindableUnit.SetHealth(s.currentHealth, s.maxHealth);

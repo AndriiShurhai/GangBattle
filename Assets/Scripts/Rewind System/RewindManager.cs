@@ -4,7 +4,7 @@ using System.Linq;
 
 public class RewindManager : MonoBehaviour
 {
-    public static RewindManager Instance;
+    public static RewindManager Instance { get; private set; }
 
     [SerializeField] private int maxHistorySize = 100;
 

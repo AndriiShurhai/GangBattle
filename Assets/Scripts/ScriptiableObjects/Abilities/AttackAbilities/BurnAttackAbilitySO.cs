@@ -30,6 +30,7 @@ public class BurnAttackAbilitySO : AbilityBaseSO
                 targetUnit.TakeDamage(damage / 2, caster);
             });
 
+            onAbilityInvoke?.Invoke();
             fireVisual.GetComponent<FireBurnVisualEffect>().ExtinctFire();
         }
     }

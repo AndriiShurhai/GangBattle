@@ -5,14 +5,13 @@ namespace Assets.Scripts.UI.Abilities_Visual_Effects
 {
 	public class FireBurnVisualEffect: MonoBehaviour
 	{
-
+        [SerializeField] private float duration = 0.5f;
         public void ExtinctFire()
         {
             StartCoroutine(ExtintBurnVisual());
         }
         private IEnumerator ExtintBurnVisual()
         {
-            float duration = 0.5f;
             float t = 0f;
 
             yield return new WaitForSeconds(duration);
