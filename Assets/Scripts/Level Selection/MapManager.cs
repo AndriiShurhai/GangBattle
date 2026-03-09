@@ -3,6 +3,7 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MapManager : MonoBehaviour
 {
@@ -30,6 +31,10 @@ public class MapManager : MonoBehaviour
     [Tooltip("Duration of the biome fade animation in seconds")]
     public float fadeDuration = 0.5f;
 
+    [Header("UI")]
+    [Tooltip("Button to return from biome view to world view")]
+    public GameObject returnFromRegionButton;
+
     public enum ZoomState { World, Transitioning, Biome }
     public ZoomState CurrentState { get; private set; } = ZoomState.World;
 
@@ -51,6 +56,9 @@ public class MapManager : MonoBehaviour
 
         worldCameraPosition = mainCamera.transform.position;
         worldOrthographicSize = mainCamera.orthographicSize;
+
+        returnFromRegionButton.GetComponent<Button>().onClick.AddListener(() => ZoomOut());
+        returnFromRegionButton.GetComponent<Button>().interactable = false;
     }
 
     public void RequestZoomToBiome(BiomeController biome)
@@ -97,6 +105,10 @@ public class MapManager : MonoBehaviour
             FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 0f, fadeDuration)
         );
 
+        returnFromRegionButton.GetComponent<Button>().interactable = true;    
+        Coroutine fadeReturnButton = StartCoroutine(
+            FadeImage(returnFromRegionButton.GetComponent<Image>(), 1f, fadeDuration)
+        );
 
         yield return regionZoom;    
 
@@ -107,10 +119,42 @@ public class MapManager : MonoBehaviour
     {
         CurrentState = ZoomState.Transitioning;
 
-        yield return FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, fadeDuration);
-        yield return FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration);
+        Coroutine camZoom = StartCoroutine(LerpCamera(
+           new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y, mainCamera.transform.position.z),
+           CalculateOrthographicSize(activeBiome.worldBounds),
+           zoomDuration
+       ));
 
-        yield return LerpCamera(worldCameraPosition, worldOrthographicSize, zoomDuration);
+        yield return camZoom;
+
+
+        Coroutine fadeRegion = StartCoroutine(
+            FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, 0.3f)
+        );
+
+        returnFromRegionButton.GetComponent<Button>().interactable = false;
+
+        Coroutine fadeReturnButton = StartCoroutine(
+            FadeImage(returnFromRegionButton.GetComponent<Image>(), 0f, fadeDuration)
+        );
+
+        Coroutine biomeZoom = StartCoroutine(LerpCamera(
+            worldCameraPosition,
+            worldOrthographicSize,
+            zoomDuration
+        ));
+
+        yield return fadeRegion;
+
+        Coroutine fadeBiome = StartCoroutine(
+            FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration)
+        );
+
+
+        //yield return FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, fadeDuration);
+        //yield return FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration);
+
+        //yield return LerpCamera(worldCameraPosition, worldOrthographicSize, zoomDuration);
 
         activeBiome = null;
         CurrentState = ZoomState.World;
@@ -150,6 +194,23 @@ public class MapManager : MonoBehaviour
         }
 
         spriteRenderer.color = targetColor;
+    }
+
+    private IEnumerator FadeImage(Image image, float targetAlpha, float duration)
+    {
+        Color startColor = image.color;
+        Color targetColor = new Color(startColor.r, startColor.g, startColor.b, targetAlpha);
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            image.color = Color.Lerp(startColor, targetColor, Mathf.Clamp01(elapsed / duration));
+            yield return null;
+        }
+
+        image.color = targetColor;
     }
 
     private float CalculateOrthographicSize(Bounds bounds)
