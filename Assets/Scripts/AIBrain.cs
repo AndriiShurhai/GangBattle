@@ -55,9 +55,15 @@ public class AIBrain : MonoBehaviour
             Debug.Log($"{aiUnit.name} executes {bestScoreData.action.name} with score {bestScoreData.score}");
             bestScoreData.action.Execute(aiUnit, bestScoreData.target, () => StartCoroutine(ExecuteNextAction(onComplete, actionsTaken + 1)));
         }
-        else
+        else if (bestScoreData.action == null && bestScoreData.score >= minimumScoreToAct)
         {
-            Debug.Log($"{aiUnit.name} has no valid actions to take or all scores are below the threshold.");
+            Debug.Log($"{aiUnit.name} has no validActions to take");
+            onComplete?.Invoke();
+        }
+
+        else if (bestScoreData.action != null && bestScoreData.score < minimumScoreToAct)
+        {
+            Debug.Log($"{aiUnit.name} has all actions score below the threshold");
             onComplete?.Invoke();
         }
     }

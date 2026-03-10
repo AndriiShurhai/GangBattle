@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -14,25 +13,21 @@ public class UnitSnapshotState
     public int maxHealth;
 
     public bool isMoving;
-
     public bool hasTakenActionThisTurn;
     public Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn;
     public int movedPerTurn;
 
     public bool isAlive;
+
+    public List<StatusEffect> activeEffects;
 }
-public enum Faction
-{
-    Player, 
-    Enemy
-}
+
+public enum Faction { Player, Enemy }
+
 public class Unit : MonoBehaviour, IMoveable, IRewindable
 {
+    // ── Static / global events ──────────────────────────────────────────────
     public static event Action<Unit, Vector3Int> OnUnitEnteredTile;
-
-    public event Action<Unit> OnUnitDied;
-    public event Action OnUnitMadeAction;
-
     public static event Action<Unit> OnAnyUnitSpawned;
     public static event Action<Unit> OnAnyUnitDied;
     public static event Action<Unit, int, int> OnAnyUnitTookDamage;
@@ -43,15 +38,20 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public static event Action<Unit, EffectStatusType> OnAnyUnitGainedStatusEffect;
     public static event Action<Unit, EffectStatusType> OnAnyUnitLostStatusEffect;
 
+    // ── Instance events ──────────────────────────────────────────────────────
+    public event Action<Unit> OnUnitDied;
+    public event Action OnUnitMadeAction;
+
+    // ── Inspector ────────────────────────────────────────────────────────────
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
     [SerializeField] private MovementComponent movementComponent;
-    private UnitRewindComponent rewindComponent = new UnitRewindComponent();
+    [SerializeField] private UnitStatusEffectComponent statusEffectComponent;
 
     [Header("Unit Settings")]
     [SerializeField] private Faction faction;
 
-    [Header("Class Defenition")]
+    [Header("Class Definition")]
     [SerializeField] private CharacterClassSO characterClassSO;
 
     [Header("Visual")]
@@ -59,51 +59,32 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     [SerializeField] private Transform healthBarAttachPoint;
     [SerializeField] private UnitVisualBridge unitVisualBridge;
 
+    // ── Private state ────────────────────────────────────────────────────────
     private Vector3Int gridPosition;
-    public List<AbilityBaseSO> Abilities {  get { return characterClassSO.abilities; } }
-    public int CurrentHealth { get { return healthComponent.CurrentHealth; } }
-    public int MaxHealth { get { return healthComponent.MaxHealth; } }
-    public HealthComponent Health { get { return healthComponent; } }
-    public Vector3Int? ForcedUnitGridPosition
-    {
-        get
-        {
-            if (forcedTarget != null) return forcedTarget.GridPosition;
-            else return null;
-        }
-    }
+    private bool isAlive = true;
+    private Unit forcedTarget;
+    private int movedPerTurn;
+    private RewindableID id;
+    private readonly UnitRewindComponent rewindComponent = new();
+    private readonly Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new();
+
+    // ── Public accessors ─────────────────────────────────────────────────────
+    public List<AbilityBaseSO> Abilities => characterClassSO.abilities;
+    public int CurrentHealth => healthComponent.CurrentHealth;
+    public int MaxHealth => healthComponent.MaxHealth;
+    public HealthComponent Health => healthComponent;
+    public UnitStatusEffectComponent StatusEffects => statusEffectComponent;
     public int Strength { get; private set; }
     public int Intelligence { get; private set; }
     public int Agility { get; private set; }
-    public Vector3Int GridPosition
-    {
-        get => gridPosition;
-        set => gridPosition = value;
-    }
-
-    public bool BlocksMovement
-    {
-        get => true;
-    }
-
-    public string RewindID
-    {
-        get => id.ID;
-    }
-
-    public bool IsAlive
-    {
-        get => isAlive;
-    }
-
+    public bool HasTakenActionThisTurn { get; set; }
+    public Faction UnitFaction => faction;
     public int MovementRange => movementComponent.MovementRange;
     public bool IsMoving => movementComponent.IsMoving;
-
-    public bool HasTakenActionThisTurn { get; set; }
-    public Faction UnitFaction { get => faction; }
-
-    public Dictionary<AbilityBaseSO, int> UsedAbilitiesAmountPerTurn
-        => new Dictionary<AbilityBaseSO, int>(usedAbilitiesAmountPerTurn);
+    public bool IsAlive => isAlive;
+    public string RewindID => id.ID;
+    public bool BlocksMovement => true;
+    public int MoveAllowedPerTurn => characterClassSO.movementAmountPerTurn;
 
     public int MovedPerTurn
     {
@@ -111,36 +92,35 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         set => movedPerTurn = value;
     }
 
-    public int MoveAllowedPerTurn => characterClassSO.movementAmountPerTurn;    
+    public Vector3Int GridPosition
+    {
+        get => gridPosition;
+        set => gridPosition = value;
+    }
 
-    private List<StatusEffect> activeEffects = new List<StatusEffect>();
-    private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
-    private int movedPerTurn = 0;
-    private RewindableID id;
-    private Unit forcedTarget = null;
+    /// <summary>Returns a snapshot copy — safe to pass around, not live state.</summary>
+    public Dictionary<AbilityBaseSO, int> UsedAbilitiesAmountPerTurn
+        => new(usedAbilitiesAmountPerTurn);
 
-    private bool isAlive = true;
+    public Vector3Int? ForcedUnitGridPosition => forcedTarget?.GridPosition;
 
+    // ── Lifecycle ────────────────────────────────────────────────────────────
     public void Initialize()
     {
-        if (healthComponent == null)
-        {
-            healthComponent = GetComponent<HealthComponent>();
-        }
-
-        if (movementComponent == null)
-        {
-            movementComponent = GetComponent<MovementComponent>();
-        }
+        if (healthComponent == null) healthComponent = GetComponent<HealthComponent>();
+        if (movementComponent == null) movementComponent = GetComponent<MovementComponent>();
+        if (statusEffectComponent == null) statusEffectComponent = GetComponent<UnitStatusEffectComponent>();
 
         healthComponent.OnDeath += HandleDeath;
 
+        statusEffectComponent.Initialize(this);
+        statusEffectComponent.OnEffectGained += type => OnAnyUnitGainedStatusEffect?.Invoke(this, type);
+        statusEffectComponent.OnEffectLost += type => OnAnyUnitLostStatusEffect?.Invoke(this, type);
+
         InitializeFromClass();
 
-        foreach (AbilityBaseSO ability in Abilities)
-        {
+        foreach (var ability in Abilities)
             usedAbilitiesAmountPerTurn[ability] = 0;
-        }
 
         id = gameObject.AddComponent<RewindableID>();
         rewindComponent.Initialize(this);
@@ -153,6 +133,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         GridObjectRegistry.Instance.RegisterObject(this);
         transform.position = GridManager.Instance.GridToWorld(gridPosition);
     }
+
     private void InitializeFromClass()
     {
         if (characterClassSO == null) return;
@@ -160,9 +141,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         healthComponent.Initialize(characterClassSO);
         movementComponent.Initialize(characterClassSO);
 
-        this.Strength = characterClassSO.strength;
-        this.Intelligence = characterClassSO.intelligence;
-        this.Agility = characterClassSO.agility;
+        Strength = characterClassSO.strength;
+        Intelligence = characterClassSO.intelligence;
+        Agility = characterClassSO.agility;
     }
 
     private void Start()
@@ -173,38 +154,25 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     private void OnDestroy()
     {
         if (GridObjectRegistry.Instance != null)
-        {
             GridObjectRegistry.Instance.UnregisterObject(this, gridPosition);
-        }
 
         if (RewindManager.Instance != null)
-        {
             RewindManager.Instance.UnregisterRewindable(this);
-        }
 
         if (healthComponent != null)
-        {
-            healthComponent.OnDeath -= HandleDeath; 
-        }
-
-        //OnAnyUnitDied?.Invoke(this);
+            healthComponent.OnDeath -= HandleDeath;
     }
 
-    public void RegisterSelf()
-    {
-        RewindManager.Instance.RegisterRewindable(this);
-    }
-    
+    // ── Rewind ───────────────────────────────────────────────────────────────
+    public void RegisterSelf() => RewindManager.Instance.RegisterRewindable(this);
+
     public object CaptureState()
     {
-        Debug.Log($"Capture State has been called.\nGridPosition: {gridPosition}");
+        Debug.Log($"CaptureState called. GridPosition: {gridPosition}");
         return rewindComponent.CaptureState();
     }
 
-    public object CaptureDeactivatedState()
-    {
-        return rewindComponent.CaptureDeactivatedState();
-    }
+    public object CaptureDeactivatedState() => rewindComponent.CaptureDeactivatedState();
 
     public void RestoreState(object state)
     {
@@ -213,110 +181,85 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         rewindComponent.RestoreState(state);
     }
 
-    public void ProvokeUnit(Unit forcedTarget)
-    {
-        this.forcedTarget = forcedTarget;
-    }
-
+    // ── Stats / Buffs ─────────────────────────────────────────────────────────
     public void BoostUnit(int strengthBonus = 0, int intelligenceBonus = 0, int agilityBonus = 0)
     {
-        this.Strength += strengthBonus;
-        this.Intelligence += intelligenceBonus;
-        this.Agility += agilityBonus;
+        Strength += strengthBonus;
+        Intelligence += intelligenceBonus;
+        Agility += agilityBonus;
     }
 
     public void UnboostUnit(bool strength = true, bool intelligence = true, bool agility = true)
     {
-        if (strength) this.Strength = characterClassSO.strength;
-        if (intelligence) this.Intelligence = characterClassSO.intelligence;
-        if (agility) this.Agility = characterClassSO.agility;
+        if (strength) Strength = characterClassSO.strength;
+        if (intelligence) Intelligence = characterClassSO.intelligence;
+        if (agility) Agility = characterClassSO.agility;
     }
+
+    // ── Status Effects ────────────────────────────────────────────────────────
     public void ApplyEffect(EffectStatusType effectType, int duration, Action tickAction = null, GameObject visualEffectPrefab = null)
+        => statusEffectComponent.Apply(effectType, duration, tickAction, visualEffectPrefab);
+
+    public bool HasStatus(EffectStatusType effectType) => statusEffectComponent.Has(effectType);
+
+    public void UpdateEffectsStatus() => statusEffectComponent.UpdateAll();
+
+    public void ProvokeUnit(Unit target) => forcedTarget = target;
+
+    /// <summary>Called by UnitStatusEffectComponent when hard-CC is applied mid-move.</summary>
+    public void InterruptMovement()
     {
-        var existing = activeEffects.Find(e => e.type == effectType);
-
-        if (existing != null)
-        {
-            existing.duration = Mathf.Max(existing.duration, duration);
-        }
-        else
-        {
-            StatusEffect newEffect = new StatusEffect(effectType, duration, tickAction, visualEffectPrefab);
-            activeEffects.Add(newEffect);
-            Debug.Log($"{name} is {effectType} for {duration} moves");
-
-            if ((effectType == EffectStatusType.Stunned || effectType == EffectStatusType.Rooted) && IsMoving)
-            {
-                movementComponent.StopAllCoroutines();
-                SetMovingState(false);
-                movementComponent.MoveTo(GridManager.Instance.WorldToGrid(transform.position));
-                transform.position = GridManager.Instance.GridToWorld(GridPosition);
-            }
-
-            OnAnyUnitGainedStatusEffect?.Invoke(this, effectType);
-            newEffect.InstantiateVisualEffect(this);
-        }
+        movementComponent.StopAllCoroutines();
+        SetMovingState(false);
+        movementComponent.MoveTo(GridManager.Instance.WorldToGrid(transform.position));
+        transform.position = GridManager.Instance.GridToWorld(gridPosition);
     }
 
-    public bool HasStatus(EffectStatusType effectType)
-    {
-        return activeEffects.Exists(e => e.type == effectType);
-    }
-
-    public void UpdateEffectsStatus()
-    {
-        for (int i = activeEffects.Count-1; i >= 0; i--)
-        {
-            StatusEffect currentEffect = activeEffects[i];
-            activeEffects[i].Tick(this);
-            if (activeEffects[i].duration < 0)
-            {
-                if (activeEffects[i].type == EffectStatusType.Boosted)
-                {
-                    UnboostUnit();
-                }
-                activeEffects[i].RemoveVisualEffect(this);
-                activeEffects.RemoveAt(i);
-                OnAnyUnitLostStatusEffect?.Invoke(this, currentEffect.type);
-            } 
-        }
-
-    }
+    // ── Movement ──────────────────────────────────────────────────────────────
     public bool CanMoveTo(Vector3Int position)
     {
         if (HasStatus(EffectStatusType.Stunned) || HasStatus(EffectStatusType.Rooted))
-        {
             return false;
-        }
 
-        return !movementComponent.IsMoving && movedPerTurn < characterClassSO.movementAmountPerTurn && movementComponent.CanMoveTo(position);
+        return !movementComponent.IsMoving
+            && movedPerTurn < characterClassSO.movementAmountPerTurn
+            && movementComponent.CanMoveTo(position);
     }
 
     public void MoveTo(Vector3Int targetPosition, Action onComplete = null)
     {
-        Vector3 worldTargetPosition = GridManager.Instance.GridToWorld(targetPosition);
-
-        OnAnyUnitStartMoving.Invoke(this, worldTargetPosition);
-
-        onComplete += () =>
+        if (!CanMoveTo(targetPosition))
         {
-            OnAnyUnitFinishedMoving.Invoke(this);
-        };
+            onComplete?.Invoke();
+            return;
+        }
 
-        movementComponent.MoveTo(targetPosition, onComplete);
-        movedPerTurn++;
+        Vector3 worldTargetPosition = GridManager.Instance.GridToWorld(targetPosition);
+        OnAnyUnitStartMoving?.Invoke(this, worldTargetPosition);
+
+        movementComponent.MoveTo(
+            targetPosition,
+            onComplete: () =>
+            {
+                movedPerTurn++;                          // Only increments on successful completion
+                OnAnyUnitFinishedMoving?.Invoke(this);
+                onComplete?.Invoke();
+            },
+            onFailed: () =>
+            {
+                onComplete?.Invoke();                    // Caller still gets notified on failure
+            });
     }
 
-    public void SetMovingState(bool isMoving)
-    {
-        movementComponent.SetMovingState(isMoving);
-    }
+    public void SetMovingState(bool isMoving) => movementComponent.SetMovingState(isMoving);
+
     public void OnGridPositionChanged(Vector3Int newGridPosition)
     {
         OnUnitMadeAction?.Invoke();
-        Debug.Log($"Unit moved to a new position: {newGridPosition}");
+        Debug.Log($"Unit moved to: {newGridPosition}");
     }
 
+    // ── Health ────────────────────────────────────────────────────────────────
     public void TakeDamage(int damage, Unit attacker)
     {
         healthComponent.TakeDamage(damage);
@@ -328,14 +271,11 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         healthComponent.Heal(amount);
         OnAnyUnitHealed?.Invoke(this, amount, CurrentHealth);
     }
+
     public void SetHealth(int currentHealth, int maxHealth)
-    {
-        healthComponent.SetHealth(currentHealth, maxHealth);
-    }
-    private void HandleDeath()
-    {
-        SetUnitDead(true);
-    }
+        => healthComponent.SetHealth(currentHealth, maxHealth);
+
+    private void HandleDeath() => SetUnitDead(true);
 
     public void SetUnitDead(bool triggerEvent = true)
     {
@@ -355,27 +295,27 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         isAlive = true;
         gameObject.SetActive(true);
         GridObjectRegistry.Instance.RegisterObject(this);
-
-        Debug.Log($"{gameObject.name} has been resurrected");
+        Debug.Log($"{gameObject.name} has been resurrected.");
     }
 
+    // ── Abilities ─────────────────────────────────────────────────────────────
     public bool CanUseAbility(AbilityBaseSO abilitySO)
     {
         if (HasStatus(EffectStatusType.Stunned))
         {
-            Debug.Log("ABILITY CAN'T BE USED BECAUSE OF STUN");
+            Debug.Log($"Ability blocked: unit is Stunned. [{abilitySO.name}]");
             return false;
         }
 
         if (!characterClassSO.abilities.Contains(abilitySO))
         {
-            Debug.Log("ABILITY IS NOT IN CHARACTER CLASS ABILITIES");
+            Debug.Log($"Ability not found in class abilities. [{abilitySO.name}]");
             return false;
         }
 
         if (abilitySO.howMuchCanBeUsed <= usedAbilitiesAmountPerTurn[abilitySO])
         {
-            Debug.Log("ABILITY CAN'T BE USED NO MORE THIS ROUND");
+            Debug.Log($"Ability usage limit reached this round. $[{abilitySO.name}]");
             return false;
         }
 
@@ -386,71 +326,48 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     {
         if (!CanUseAbility(abilitySO))
         {
-            Debug.Log("Unit can't use ability");
+            Debug.Log("Unit can't use ability.");
             return;
         }
 
         if (!abilitySO.IsValidTarget(gridPosition, targetPosition, this))
         {
-            Debug.Log("Target is invlaid");
+            Debug.Log("Target is invalid.");
             return;
         }
 
-        if (HasStatus(EffectStatusType.Provoked) && forcedTarget != null && forcedTarget.IsAlive && forcedTarget.GridPosition != targetPosition)
+        if (HasStatus(EffectStatusType.Provoked) && forcedTarget != null
+            && forcedTarget.IsAlive && forcedTarget.GridPosition != targetPosition)
         {
-            Debug.Log($"Unit is provoked to another target. TargetPosition {targetPosition}; ForcedUnitPosition {forcedTarget.GridPosition}");
+            Debug.Log($"Unit is provoked. ForcedTarget: {forcedTarget.GridPosition}, Attempted: {targetPosition}");
             return;
         }
 
-        void InvokeAbilityUsage()
-        {
-            OnAnyUnitUsedAbility.Invoke(this, abilitySO);
-        }
-
-        abilitySO.Execute(this, targetPosition, InvokeAbilityUsage);
+        abilitySO.Execute(this, targetPosition, () => OnAnyUnitUsedAbility?.Invoke(this, abilitySO));
         usedAbilitiesAmountPerTurn[abilitySO]++;
         OnUnitMadeAction?.Invoke();
     }
 
     public void ResetUsedAbilities()
     {
-        foreach (AbilityBaseSO ability in usedAbilitiesAmountPerTurn.Keys.ToList())
-        {
+        foreach (var ability in usedAbilitiesAmountPerTurn.Keys.ToList())
             usedAbilitiesAmountPerTurn[ability] = 0;
-        }
     }
 
     public void CopyUsedAbilities(Dictionary<AbilityBaseSO, int> abilities)
     {
         usedAbilitiesAmountPerTurn.Clear();
         foreach (var kvp in abilities)
-        {
             usedAbilitiesAmountPerTurn[kvp.Key] = kvp.Value;
-        }
     }
 
-    public void ResetUsedMovement()
-    {
-        movedPerTurn = 0;
-    }
+    public void ResetUsedMovement() => movedPerTurn = 0;
 
+    // ── Helpers / Pass-throughs ───────────────────────────────────────────────
     public static void InvokeUnitEnteredTile(Unit unit, Vector3Int tilePosition)
-    {
-        OnUnitEnteredTile?.Invoke(unit, tilePosition);
-    }
+        => OnUnitEnteredTile?.Invoke(unit, tilePosition);
 
-    public Transform GetHealthBarAttachPoint()
-    {
-        return healthBarAttachPoint;
-    }
-
-    public SpriteRenderer GetSpriteRenderer()
-    {
-        return spriteRenderer;
-    }
-
-    public UnitVisualBridge GetUnitVisualBridge()
-    {
-        return unitVisualBridge;
-    }
+    public Transform GetHealthBarAttachPoint() => healthBarAttachPoint;
+    public SpriteRenderer GetSpriteRenderer() => spriteRenderer;
+    public UnitVisualBridge GetUnitVisualBridge() => unitVisualBridge;
 }

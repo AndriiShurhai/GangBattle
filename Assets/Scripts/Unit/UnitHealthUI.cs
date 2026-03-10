@@ -31,7 +31,7 @@ public class UnitHealthUI : MonoBehaviour
 
     private void UpdateHealth(int currentHealth, int maxHealth)
     {
-        healthSlider.value = (float)currentHealth / maxHealth;
+        healthSlider.value = maxHealth > 0 ? (float)currentHealth / maxHealth : 0f;
     }
 
     private void OnDestroy()

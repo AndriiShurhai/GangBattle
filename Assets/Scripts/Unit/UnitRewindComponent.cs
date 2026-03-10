@@ -10,97 +10,89 @@ public class UnitRewindComponent
     {
         rewindableUnit = unit;
     }
+
     public object CaptureState()
     {
-        Dictionary<AbilityBaseSO, int> abilitiesCopy = new();
+        Debug.Log($"CaptureState called. GridPosition: {rewindableUnit.GridPosition}");
 
-        foreach (var kvp in rewindableUnit.UsedAbilitiesAmountPerTurn)
-        {
-            abilitiesCopy[kvp.Key] = kvp.Value;
-        }
-
-        UnitSnapshotState state = new UnitSnapshotState
+        return new UnitSnapshotState
         {
             gridPosition = rewindableUnit.GridPosition,
             hasTakenActionThisTurn = rewindableUnit.HasTakenActionThisTurn,
-            usedAbilitiesAmountPerTurn = abilitiesCopy,
+            usedAbilitiesAmountPerTurn = CopyAbilities(rewindableUnit.UsedAbilitiesAmountPerTurn),
             movedPerTurn = rewindableUnit.MovedPerTurn,
-
             currentHealth = rewindableUnit.CurrentHealth,
             maxHealth = rewindableUnit.MaxHealth,
-
             isMoving = rewindableUnit.IsMoving,
-
             abilities = rewindableUnit.Abilities,
-
-            isAlive = rewindableUnit.IsAlive
+            isAlive = rewindableUnit.IsAlive,
+            activeEffects = rewindableUnit.StatusEffects.CaptureEffects()
         };
-
-        return state;
     }
 
     public object CaptureDeactivatedState()
     {
-        Dictionary<AbilityBaseSO, int> abilitiesCopy = new();
-
-        foreach (var kvp in rewindableUnit.UsedAbilitiesAmountPerTurn)
-        {
-            abilitiesCopy[kvp.Key] = kvp.Value;
-        }
-
-        UnitSnapshotState state = new UnitSnapshotState
+        return new UnitSnapshotState
         {
             gridPosition = rewindableUnit.GridPosition,
             hasTakenActionThisTurn = rewindableUnit.HasTakenActionThisTurn,
-            usedAbilitiesAmountPerTurn = abilitiesCopy,
+            usedAbilitiesAmountPerTurn = CopyAbilities(rewindableUnit.UsedAbilitiesAmountPerTurn),
             movedPerTurn = rewindableUnit.MovedPerTurn,
-
             currentHealth = 0,
             maxHealth = 0,
-
             isMoving = false,
-
             abilities = rewindableUnit.Abilities,
-
             isAlive = false
         };
-
-        return state;
     }
+
     public void RestoreState(object state)
     {
         var s = (UnitSnapshotState)state;
 
+        // ── Alive/dead transitions ────────────────────────────────────────────
         if (!s.isAlive && rewindableUnit.IsAlive)
         {
-            rewindableUnit.SetUnitDead(false);
+            rewindableUnit.SetUnitDead(triggerEvent: false);
             return;
         }
-        else if (s.isAlive && !rewindableUnit.IsAlive)
+
+        if (s.isAlive && !rewindableUnit.IsAlive)
         {
             rewindableUnit.RessurectUnit();
         }
 
-        Debug.Log($"RESTORE STATE HAS BEEN CALLED IN UNIT. \nGridPositionToMove: {s.gridPosition}");
+        Debug.Log($"RestoreState: moving unit to {s.gridPosition}");
 
+        // ── Position restore ─────────────────────────────────────────────────
         if (rewindableUnit.GridPosition != s.gridPosition)
         {
+            // If another object now occupies the target tile, evict it first.
+            // Only unregister if it's NOT this unit (guard against stale registry state).
+            IGridObject occupant = GridObjectRegistry.Instance.GetObjectAt(s.gridPosition);
+            if (occupant != null && !ReferenceEquals(occupant, rewindableUnit))
+                GridObjectRegistry.Instance.UnregisterObject(occupant, s.gridPosition);
+
             Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(s.gridPosition);
             rewindableUnit.transform.DOMove(targetWorldPosition, 1f);
 
-            IGridObject obj = GridObjectRegistry.Instance.GetObjectAt(s.gridPosition);
-            GridObjectRegistry.Instance.UnregisterObject(obj, s.gridPosition);
             GridObjectRegistry.Instance.MoveObject(rewindableUnit, rewindableUnit.GridPosition, s.gridPosition);
         }
 
-        //rewindableUnit.GridPosition = s.gridPosition;
+        // ── State restore ─────────────────────────────────────────────────────
         rewindableUnit.HasTakenActionThisTurn = s.hasTakenActionThisTurn;
-
         rewindableUnit.SetHealth(s.currentHealth, s.maxHealth);
         rewindableUnit.SetMovingState(s.isMoving);
-
         rewindableUnit.CopyUsedAbilities(s.usedAbilitiesAmountPerTurn);
-
         rewindableUnit.MovedPerTurn = s.movedPerTurn;
+        rewindableUnit.StatusEffects.RestoreEffects(s.activeEffects);
+    }
+
+    private static Dictionary<AbilityBaseSO, int> CopyAbilities(Dictionary<AbilityBaseSO, int> source)
+    {
+        var copy = new Dictionary<AbilityBaseSO, int>(source.Count);
+        foreach (var kvp in source)
+            copy[kvp.Key] = kvp.Value;
+        return copy;
     }
 }

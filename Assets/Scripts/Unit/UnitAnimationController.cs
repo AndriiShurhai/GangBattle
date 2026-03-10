@@ -4,74 +4,54 @@ public class UnitAnimationController : MonoBehaviour
 {
     private void Start()
     {
-        Unit.OnAnyUnitDied += Unit_OnAnyUnitDied;
-        Unit.OnAnyUnitTookDamage += Unit_OnAnyUnitTookDamage;
-        Unit.OnAnyUnitStartMoving += Unit_OnAnyUnitStartMoving;
-        Unit.OnAnyUnitFinishedMoving += Unit_OnAnyUnitFinishedMoving;
-        Unit.OnAnyUnitUsedAbility += Unit_OnAnyUnitUsedAbility;
-        Unit.OnAnyUnitGainedStatusEffect += Unit_OnAnyUnitGainedStatusEffect;
-        Unit.OnAnyUnitLostStatusEffect += Unit_OnAnyUnitLostStatusEffect;
+        Unit.OnAnyUnitDied += OnUnitDied;
+        Unit.OnAnyUnitTookDamage += OnUnitTookDamage;
+        Unit.OnAnyUnitStartMoving += OnUnitStartMoving;
+        Unit.OnAnyUnitFinishedMoving += OnUnitFinishedMoving;
+        Unit.OnAnyUnitUsedAbility += OnUnitUsedAbility;
+        Unit.OnAnyUnitGainedStatusEffect += OnUnitGainedStatusEffect;
+        Unit.OnAnyUnitLostStatusEffect += OnUnitLostStatusEffect;
     }
 
     private void OnDestroy()
     {
-        Unit.OnAnyUnitDied -= Unit_OnAnyUnitDied;
-        Unit.OnAnyUnitTookDamage -= Unit_OnAnyUnitTookDamage;
-        Unit.OnAnyUnitStartMoving -= Unit_OnAnyUnitStartMoving;
-        Unit.OnAnyUnitFinishedMoving -= Unit_OnAnyUnitFinishedMoving;
-        Unit.OnAnyUnitUsedAbility -= Unit_OnAnyUnitUsedAbility;
-        Unit.OnAnyUnitGainedStatusEffect -= Unit_OnAnyUnitGainedStatusEffect;
-        Unit.OnAnyUnitLostStatusEffect -= Unit_OnAnyUnitLostStatusEffect;
+        Unit.OnAnyUnitDied -= OnUnitDied;
+        Unit.OnAnyUnitTookDamage -= OnUnitTookDamage;
+        Unit.OnAnyUnitStartMoving -= OnUnitStartMoving;
+        Unit.OnAnyUnitFinishedMoving -= OnUnitFinishedMoving;
+        Unit.OnAnyUnitUsedAbility -= OnUnitUsedAbility;
+        Unit.OnAnyUnitGainedStatusEffect -= OnUnitGainedStatusEffect;
+        Unit.OnAnyUnitLostStatusEffect -= OnUnitLostStatusEffect;
     }
-    private void Unit_OnAnyUnitUsedAbility(Unit unit, AbilityBaseSO ability)
+
+    private void OnUnitUsedAbility(Unit unit, AbilityBaseSO ability)
     {
-        Debug.Log("UNIT USAGE ABILITY HAS BEEN CALLED");
-        if (ability is AttackAbilitySO attackSO)
-        {
-            Debug.Log("UNIT ATTACK ABILITY HAS BEEN CALLED");
+        if (ability is AttackAbilitySO)
             unit.GetUnitVisualBridge().AttackAnimation();
-        }
     }
 
-    private void Unit_OnAnyUnitFinishedMoving(Unit unit)
+    private void OnUnitStartMoving(Unit unit, Vector3 destination)
+        => unit.GetUnitVisualBridge().StartRunningAnimation(destination);
+
+    private void OnUnitFinishedMoving(Unit unit)
+        => unit.GetUnitVisualBridge().StopRunningAnimation();
+
+    private void OnUnitTookDamage(Unit unit, int amount, int currentHealth)
+        => unit.GetUnitVisualBridge().TakeDamageAnimation();
+
+    private void OnUnitDied(Unit unit)
+        => unit.GetUnitVisualBridge().DeathAnimation();
+
+    private void OnUnitGainedStatusEffect(Unit unit, EffectStatusType effectType)
     {
-        unit.GetUnitVisualBridge().StopRunningAnimation();
+        if (effectType == EffectStatusType.Stunned || effectType == EffectStatusType.Rooted)
+            unit.GetUnitVisualBridge().StartDebuffAnimation();
     }
 
-    private void Unit_OnAnyUnitStartMoving(Unit unit, Vector3 destination)
+    private void OnUnitLostStatusEffect(Unit unit, EffectStatusType effectType)
     {
-        unit.GetUnitVisualBridge().StartRunningAnimation(destination);
-    }
-
-    private void Unit_OnAnyUnitTookDamage(Unit unit, int arg2, int arg3)
-    {
-        unit.GetUnitVisualBridge().TakeDamageAnimation();
-    }
-
-    private void Unit_OnAnyUnitLostStatusEffect(Unit unit, EffectStatusType effectType)
-    {
+        // Only stop debuff animation if no other debuffing effects remain
         if (!unit.HasStatus(EffectStatusType.Stunned) && !unit.HasStatus(EffectStatusType.Rooted))
-        {
             unit.GetUnitVisualBridge().StopDebuffAnimation();
-        }
-    }
-
-    private void Unit_OnAnyUnitGainedStatusEffect(Unit unit, EffectStatusType effectType)
-    {
-        switch (effectType)
-        {
-            case EffectStatusType.Stunned:
-                unit.GetUnitVisualBridge().StartDebuffAnimation();
-                break;
-
-            case EffectStatusType.Rooted:
-                unit.GetUnitVisualBridge().StartDebuffAnimation();
-                break;
-        }
-    }
-
-    private void Unit_OnAnyUnitDied(Unit unit)
-    {
-        //unit.GetUnitVisualBridge().DeathAnimation();
     }
 }

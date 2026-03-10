@@ -142,11 +142,11 @@ public class MapManager : MonoBehaviour
             zoomDuration
         ));
 
-        yield return fadeRegion;
-
         Coroutine fadeBiome = StartCoroutine(
             FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration)
         );
+        yield return fadeRegion;
+
 
         activeBiome = null;
         CurrentState = ZoomState.World;
