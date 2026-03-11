@@ -205,11 +205,12 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public void UpdateEffectsStatus() => statusEffectComponent.UpdateAll();
 
     public void ProvokeUnit(Unit target) => forcedTarget = target;
+    public void UnprovokeUnit() => forcedTarget = null;
 
     /// <summary>Called by UnitStatusEffectComponent when hard-CC is applied mid-move.</summary>
     public void InterruptMovement()
     {
-        movementComponent.StopAllCoroutines();
+        movementComponent.Interrupt();
         SetMovingState(false);
         movementComponent.MoveTo(GridManager.Instance.WorldToGrid(transform.position));
         transform.position = GridManager.Instance.GridToWorld(gridPosition);

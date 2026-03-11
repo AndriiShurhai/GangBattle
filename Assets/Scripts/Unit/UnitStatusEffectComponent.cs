@@ -102,6 +102,11 @@ public class UnitStatusEffectComponent : MonoBehaviour
                 if (expiredType == EffectStatusType.Boosted)
                     owner.UnboostUnit();
 
+                if (expiredType == EffectStatusType.Provoked)
+                {
+                    owner.UnprovokeUnit();
+                }
+
                 activeEffects[i].RemoveVisualEffect(owner);
                 activeEffects.RemoveAt(i);
                 OnEffectLost?.Invoke(expiredType);

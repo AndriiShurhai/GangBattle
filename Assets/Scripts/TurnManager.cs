@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using System;
 using System.Linq;
 
-public class  TurnManagerSnapshotState
+public class TurnManagerSnapshotState
 {
     public int currentTurn;
     public TurnManager.TurnState currentState;
@@ -19,49 +19,36 @@ public class TurnManager : MonoBehaviour, IRewindable
 {
     public static TurnManager Instance { get; private set; }
 
-    public List<Transform> playersPositions;
-    public List<Transform> enemiesPositions;
+    [SerializeField] private List<Transform> playersPositions;
+    [SerializeField] private List<Transform> enemiesPositions;
 
-    public List<Unit> playerUnits;
-    public List<Unit> enemyUnits;
-
-    public string RewindID => id.ID;
+    [SerializeField] private List<Unit> playerUnits;
+    [SerializeField] private List<Unit> enemyUnits;
 
     [SerializeField] private CharacterSelectionController characterSelectionController;
     [SerializeField] private Button endPlayerTurnButton;
     [SerializeField] private float enemyPreTurnDelay = 0.3f;
     [SerializeField] private float enemyPostTurnDelay = 0.5f;
-    public enum TurnState { PlayerTurn, EnemyTurn }
-    private TurnState currentState;
 
+    public string RewindID => id.ID;
+
+    public enum TurnState { PlayerTurn, EnemyTurn }
+
+    private TurnState currentState;
     private bool isGameOver;
     private int currentTurn = -1;
-
     private RewindableID id;
 
     private List<Unit> allPlayerUnits = new();
     private List<Unit> allEnemyUnits = new();
+
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
 
-        endPlayerTurnButton.onClick.AddListener(() =>
-        {
-            EndTurn();
-        });
-
+        endPlayerTurnButton.onClick.AddListener(EndTurn);
         id = GetComponent<RewindableID>();
-    }
-
-    private void Unit_OnUnitMadeAction()
-    {
     }
 
     private void Start()
@@ -70,11 +57,9 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         for (int i = 0; i < enemyUnits.Count; i++)
         {
-            GameObject enemy = Instantiate(enemyUnits[i].gameObject);
-            Unit enemyScript = enemy.GetComponent<Unit>();
+            Unit enemyScript = Instantiate(enemyUnits[i].gameObject).GetComponent<Unit>();
             enemyScript.Initialize();
             enemyScript.PlaceUnit(enemiesPositions[i].position);
-            enemyScript.OnUnitMadeAction += Unit_OnUnitMadeAction;
 
             enemyUnits[i] = enemyScript;
             allEnemyUnits.Add(enemyScript);
@@ -82,48 +67,38 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         for (int i = 0; i < playerUnits.Count; i++)
         {
-            GameObject player = Instantiate(playerUnits[i].gameObject);
-            Unit playerScript = player.GetComponent<Unit>();
+            Unit playerScript = Instantiate(playerUnits[i].gameObject).GetComponent<Unit>();
             playerScript.Initialize();
             playerScript.PlaceUnit(playersPositions[i].position);
-            playerScript.OnUnitMadeAction += Unit_OnUnitMadeAction;
 
             playerUnits[i] = playerScript;
             allPlayerUnits.Add(playerScript);
         }
 
-        foreach (var playerUnit in allPlayerUnits)
-        {
-            playerUnit.OnUnitDied += Unit_OnUnitDied;
-        }
-
-        foreach (var enemyUnit in allEnemyUnits)
-        {
-            enemyUnit.OnUnitDied += Unit_OnUnitDied;
-        }
+        foreach (var unit in allPlayerUnits) unit.OnUnitDied += Unit_OnUnitDied;
+        foreach (var unit in allEnemyUnits) unit.OnUnitDied += Unit_OnUnitDied;
 
         StartPlayerTurn();
     }
 
+    // ── Rewind ────────────────────────────────────────────────────────────────
+
+    public void RegisterSelf() => RewindManager.Instance.RegisterRewindable(this);
+
     public object CaptureState()
     {
-        TurnManagerSnapshotState currentState = new TurnManagerSnapshotState
+        return new TurnManagerSnapshotState
         {
             currentState = this.currentState,
             currentTurn = this.currentTurn,
             isGameOver = this.isGameOver,
-
             alivePlayerUnitIds = playerUnits.Select(u => u.RewindID).ToList(),
             aliveEnemyUnitIds = enemyUnits.Select(u => u.RewindID).ToList()
         };
-
-        return currentState;
     }
 
-    public object CaptureDeactivatedState()
-    {
-        return CaptureState();
-    }
+    public object CaptureDeactivatedState() => CaptureState();
+
     public void RestoreState(object state)
     {
         var s = (TurnManagerSnapshotState)state;
@@ -136,58 +111,35 @@ public class TurnManager : MonoBehaviour, IRewindable
         foreach (string unitId in s.alivePlayerUnitIds)
         {
             Unit unit = allPlayerUnits.Find(u => u.RewindID == unitId);
-            if (unit != null)
-            {
-                playerUnits.Add(unit);
-            }
+            if (unit != null) playerUnits.Add(unit);
         }
 
         enemyUnits.Clear();
         foreach (string unitId in s.aliveEnemyUnitIds)
         {
             Unit unit = allEnemyUnits.Find(u => u.RewindID == unitId);
-            if (unit != null)
-            {
-                enemyUnits.Add(unit);
-            }
+            if (unit != null) enemyUnits.Add(unit);
         }
 
-        if (currentState == TurnState.PlayerTurn)
-        {
-            endPlayerTurnButton.gameObject.SetActive(true);
-            if (characterSelectionController != null)
-                characterSelectionController.gameObject.SetActive(true);
-        }
-        else
-        {
-            endPlayerTurnButton.gameObject.SetActive(false);
-            if (characterSelectionController != null)
-                characterSelectionController.gameObject.SetActive(false);
-        }
+        bool isPlayerTurn = currentState == TurnState.PlayerTurn;
+        endPlayerTurnButton.gameObject.SetActive(isPlayerTurn);
+        if (characterSelectionController != null)
+            characterSelectionController.gameObject.SetActive(isPlayerTurn);
 
-        Debug.Log("Restore in the Manager has been called");
+        Debug.Log($"TurnManager state restored to turn {s.currentTurn}.");
     }
 
-    public void RegisterSelf()
-    {
-        RewindManager.Instance.RegisterRewindable(this);
-    }
     private void SaveTurn()
     {
         currentTurn++;
         RewindManager.Instance.SaveTurn(currentTurn);
     }
 
-    private void RewindTo(int turnIndex)
-    {
-        RewindManager.Instance.RewindTo(turnIndex);
-    }
-
     public void RewindOneStep()
     {
         if (currentTurn < 0)
         {
-            Debug.Log("Already at the beginning, cannot rewind");
+            Debug.Log("Already at the beginning, cannot rewind.");
             return;
         }
 
@@ -195,64 +147,55 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         if (availableTurns.Count == 0)
         {
-            Debug.Log("No snapshots available to rewind");
+            Debug.Log("No snapshots available to rewind.");
             return;
         }
 
+        // Dictionary keys have no guaranteed order — sort descending to find the closest previous turn.
+        availableTurns.Sort((a, b) => b.CompareTo(a));
+
         int targetTurn = -1;
-        for (int i = currentTurn - 1; i >= 0; i--)
+        foreach (int turn in availableTurns)
         {
-            if (availableTurns.Contains(i))
+            if (turn < currentTurn)
             {
-                targetTurn = i;
+                targetTurn = turn;
                 break;
             }
         }
 
         if (targetTurn == -1)
         {
-            Debug.Log("No previous snapshot found");
-            RewindManager.Instance.RewindTo(currentTurn);
+            Debug.Log("No previous snapshot found.");
             return;
         }
 
-        Debug.Log($"Rewinding from turn {currentTurn} to turn {targetTurn}");
+        Debug.Log($"Rewinding from turn {currentTurn} to turn {targetTurn}.");
+
+        StopAllCoroutines();
+        StopAllEnemyCoroutines();
         RewindManager.Instance.RewindTo(targetTurn);
     }
 
     public void RewindToCurrentTurn()
     {
-        Debug.Log($"Reset current turn has been called. Current turn: {currentTurn}");
+        Debug.Log($"Resetting current turn {currentTurn}.");
+
+        StopAllCoroutines();
+        StopAllEnemyCoroutines();
         RewindManager.Instance.RewindTo(currentTurn);
     }
-    private void Unit_OnUnitDied(Unit unit)
+
+    private void StopAllEnemyCoroutines()
     {
-        if (isGameOver) return;
-
-        if (playerUnits.Contains(unit))
+        foreach (var unit in allEnemyUnits)
         {
-            playerUnits.Remove(unit);  
-            
-            if (playerUnits.Count == 0)
-            {
-                Debug.Log("enemies win");
-                isGameOver = true;
-                EndGame();
-            }
-        }
-
-        else if(enemyUnits.Contains(unit))
-        {
-            enemyUnits.Remove(unit);
-
-            if (enemyUnits.Count == 0)
-            {
-                Debug.Log("player wins");
-                isGameOver = true;
-                EndGame();
-            }
+            if (unit == null) continue;
+            unit.GetComponent<AIBrain>()?.StopAllCoroutines();
+            unit.StopAllCoroutines();
         }
     }
+    // ── Turn Flow ─────────────────────────────────────────────────────────────
 
     public void StartPlayerTurn()
     {
@@ -260,10 +203,7 @@ public class TurnManager : MonoBehaviour, IRewindable
         Debug.Log("--- PLAYER TURN START ---");
 
         if (characterSelectionController != null)
-        {
-            Debug.Log("enabling character selection controller");
             characterSelectionController.gameObject.SetActive(true);
-        }
 
         foreach (Unit unit in GetAlivePlayerUnits())
         {
@@ -272,6 +212,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             unit.ResetUsedMovement();
             unit.UpdateEffectsStatus();
         }
+
         SaveTurn();
     }
 
@@ -281,10 +222,7 @@ public class TurnManager : MonoBehaviour, IRewindable
         Debug.Log("--- ENEMY TURN START ---");
 
         if (characterSelectionController != null)
-        {
-            Debug.Log("Disabling character selection controller");
             characterSelectionController.gameObject.SetActive(false);
-        }
 
         foreach (Unit unit in enemyUnits)
         {
@@ -295,13 +233,12 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         StartCoroutine(EnemyTurnRoutine());
     }
+
     public void EndTurn()
     {
         List<Trap> traps = new List<Trap>(TrapRegistry.Instance.GetTraps());
         foreach (Trap trap in traps)
-        {
             trap.DecreaseDuration();
-        }
 
         if (currentState == TurnState.PlayerTurn)
         {
@@ -318,73 +255,77 @@ public class TurnManager : MonoBehaviour, IRewindable
     private IEnumerator EnemyTurnRoutine()
     {
         foreach (Unit unit in GetAliveEnemyUnits())
-        {
             unit.UpdateEffectsStatus();
-        }
+
         yield return new WaitForSeconds(enemyPreTurnDelay);
 
         List<Unit> enemiesToTakeTurn = new List<Unit>(enemyUnits);
 
         foreach (Unit enemyUnit in enemiesToTakeTurn)
         {
-            if (enemyUnits.Contains(enemyUnit))
-            {
-                bool isTurnComplete = false;
+            if (!enemyUnits.Contains(enemyUnit)) continue;
 
-                enemyUnit.GetComponent<AIBrain>()?.TakeTurn(() =>
-                {
-                    isTurnComplete = true;
-                });
+            bool isTurnComplete = false;
+            enemyUnit.GetComponent<AIBrain>()?.TakeTurn(() => isTurnComplete = true);
 
-                yield return new WaitUntil(() => isTurnComplete);
-                yield return new WaitForSeconds(enemyPostTurnDelay);
+            yield return new WaitUntil(() => isTurnComplete);
+            yield return new WaitForSeconds(enemyPostTurnDelay);
 
-                if (enemyUnit != null) enemyUnit.HasTakenActionThisTurn = true;
-            }
+            if (enemyUnit != null) enemyUnit.HasTakenActionThisTurn = true;
         }
 
         Debug.Log("--- ENEMY TURN END ---");
-
         EndTurn();
     }
 
     private void EndGame()
     {
         StopAllCoroutines();
-
         characterSelectionController.ClearSelection();
-
         characterSelectionController.gameObject.SetActive(false);
-
-        // show a victory or defeat screen or something
+        // TODO: show victory/defeat screen
     }
 
-    public List<Unit> GetPlayerUnits()
+    // ── Unit Events ───────────────────────────────────────────────────────────
+
+    private void Unit_OnUnitDied(Unit unit)
     {
-        return playerUnits;
+        if (isGameOver) return;
+
+        if (playerUnits.Contains(unit))
+        {
+            playerUnits.Remove(unit);
+            if (playerUnits.Count == 0)
+            {
+                Debug.Log("Enemies win.");
+                isGameOver = true;
+                EndGame();
+            }
+        }
+        else if (enemyUnits.Contains(unit))
+        {
+            enemyUnits.Remove(unit);
+            if (enemyUnits.Count == 0)
+            {
+                Debug.Log("Player wins.");
+                isGameOver = true;
+                EndGame();
+            }
+        }
     }
 
-    public List<Unit> GetEnemyUnits()
-    {
-        return enemyUnits;
-    }
+    // ── Accessors ─────────────────────────────────────────────────────────────
+
+    public List<Unit> GetPlayerUnits() => playerUnits;
+    public List<Unit> GetEnemyUnits() => enemyUnits;
 
     public List<Unit> GetAllUnits()
     {
-        List<Unit> allUnits = new List<Unit>();
-        allUnits.AddRange(playerUnits);
-        allUnits.AddRange(enemyUnits);
-
-        return allUnits;
+        var all = new List<Unit>(playerUnits);
+        all.AddRange(enemyUnits);
+        return all;
     }
 
-    public List<Unit> GetAlivePlayerUnits()
-    {
-        return playerUnits.Where(unit => unit.IsAlive).ToList();
-    }
-
-    public List<Unit> GetAliveEnemyUnits()
-    {
-        return enemyUnits.Where(unit => unit.IsAlive).ToList(); 
-    }
+    public List<Unit> GetAlivePlayerUnits() => playerUnits.Where(u => u.IsAlive).ToList();
+    public List<Unit> GetAliveEnemyUnits() => enemyUnits.Where(u => u.IsAlive).ToList();
 }

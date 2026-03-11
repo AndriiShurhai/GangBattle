@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Note: RequireComponent does not support interfaces — validation is done at runtime in Awake.
 public class MovementComponent : MonoBehaviour
 {
     [SerializeField] private int movementRange = 3;
@@ -12,6 +11,7 @@ public class MovementComponent : MonoBehaviour
     private IMoveable moveableObject;
     private bool isMoving;
     private Coroutine moveCoroutine;
+    private Action onMoveFailed;
 
     public bool IsMoving => isMoving;
     public int MovementRange => movementRange;
@@ -66,7 +66,21 @@ public class MovementComponent : MonoBehaviour
             return;
         }
 
+        onMoveFailed = onFailed;
         moveCoroutine = StartCoroutine(MoveAlongPath(path, onComplete));
+    }
+
+    public void Interrupt()
+    {
+        if (!isMoving) return;
+
+        if (moveCoroutine != null) StopCoroutine(moveCoroutine);
+
+        isMoving = false;
+
+        Action callback = onMoveFailed;
+        onMoveFailed = null;
+        callback?.Invoke();
     }
 
     private IEnumerator MoveAlongPath(List<Vector3Int> path, Action onComplete)

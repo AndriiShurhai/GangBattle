@@ -8,65 +8,41 @@ public class RewindManager : MonoBehaviour
 
     [SerializeField] private int maxHistorySize = 100;
 
-    private List<TurnSnapshot> history = new();
-    private List<IRewindable> rewindables = new();
-    private int currentTurn = 0;
+    private readonly Dictionary<int, TurnSnapshot> history = new();
+    private readonly List<IRewindable> rewindables = new();
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    public void SaveTurn(int currentTurn)
+    public void SaveTurn(int turnIndex)
     {
-        var snapshot = new TurnSnapshot
-        {
-            turnIndex = currentTurn,
-        };
+        var snapshot = new TurnSnapshot { turnIndex = turnIndex };
 
         foreach (var r in rewindables)
         {
             if (r == null) continue;
-
-            if (!snapshot.objectStates.ContainsKey(r.RewindID))
-            {
-                snapshot.objectStates.Add(r.RewindID, r.CaptureState());
-            }
-            else
-            {
-                snapshot.objectStates[r.RewindID] = r.CaptureState();
-            }
+            snapshot.objectStates[r.RewindID] = r.CaptureState();
         }
 
-        var previousSnapshotOnCurrentTurn = history.FirstOrDefault(r => r.turnIndex == currentTurn);
-        if (previousSnapshotOnCurrentTurn != null)
-        {
-            history.Remove(previousSnapshotOnCurrentTurn);
-        }
-        history.Add(snapshot);
+        // Overwrite any existing snapshot for this turn — always keep the latest version.
+        history[turnIndex] = snapshot;
 
         if (history.Count > maxHistorySize)
         {
-            history.RemoveAt(0);
-            Debug.Log($"Removed oldest snapshot. History size: {history.Count}");
+            int oldest = history.Keys.Min();
+            history.Remove(oldest);
+            Debug.Log($"Removed oldest snapshot (turn {oldest}). History size: {history.Count}");
         }
 
-        this.currentTurn = currentTurn;
-        Debug.Log($"Saved turn {currentTurn}. Total snapshots: {history.Count}");
+        Debug.Log($"Saved turn {turnIndex}. Total snapshots: {history.Count}");
     }
 
     public void RewindTo(int turnIndex)
     {
-        var snapshot = history.FirstOrDefault(r => r.turnIndex == turnIndex);
-
-        if (snapshot == null)
+        if (!history.TryGetValue(turnIndex, out var snapshot))
         {
             Debug.LogError($"No snapshot found for turn {turnIndex}");
             return;
@@ -76,9 +52,7 @@ public class RewindManager : MonoBehaviour
 
         rewindables.RemoveAll(r => r == null);
 
-        var rewindablesCopy= new List<IRewindable>(rewindables);
-
-        foreach (var r in rewindablesCopy)
+        foreach (var r in new List<IRewindable>(rewindables))
         {
             if (snapshot.objectStates.TryGetValue(r.RewindID, out var state))
             {
@@ -86,23 +60,20 @@ public class RewindManager : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"No state found for {r.RewindID} in turn {turnIndex}");
-                var deactivatedState = r.CaptureDeactivatedState();
-                
-                r.RestoreState(deactivatedState);
-
+                // This rewindable didn't exist at this turn (e.g. a trap placed mid-turn).
+                // Restore it to its declared deactivated state and drop it from tracking.
+                Debug.LogWarning($"No state for {r.RewindID} at turn {turnIndex} — restoring as deactivated.");
+                r.RestoreState(r.CaptureDeactivatedState());
                 rewindables.Remove(r);
             }
         }
-
-        this.currentTurn = turnIndex;
     }
 
     public void RegisterRewindable(IRewindable rewindable)
     {
         if (rewindable == null)
         {
-            Debug.LogError("Attempted to register null rewindable");
+            Debug.LogError("Attempted to register null rewindable.");
             return;
         }
 
@@ -115,26 +86,12 @@ public class RewindManager : MonoBehaviour
 
     public void UnregisterRewindable(IRewindable rewindable)
     {
-        if (rewindable != null)
-        {
-            rewindables.Remove(rewindable);
-            Debug.Log($"Unregistered rewindable: {rewindable.RewindID}");
-        }
+        if (rewindable == null) return;
+        rewindables.Remove(rewindable);
+        Debug.Log($"Unregistered rewindable: {rewindable.RewindID}");
     }
 
-    public int GetHistoryCount()
-    {
-        return history.Count;
-    }
-
-    public List<int> GetAvailableTurns()
-    {
-        return history.Select(h => h.turnIndex).ToList();
-    }
-
-    public void ClearHistory()
-    {
-        history.Clear();
-        Debug.Log("History cleared");
-    }
+    public List<int> GetAvailableTurns() => history.Keys.ToList();
+    public int GetHistoryCount() => history.Count;
+    public void ClearHistory() { history.Clear(); Debug.Log("History cleared."); }
 }
