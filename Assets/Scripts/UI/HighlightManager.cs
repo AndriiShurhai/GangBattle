@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 public class HighlightManager
 {
-    [SerializeField] private float highlightAnimDuration = 0.3f;
+    private float highlightAnimDuration = 0.3f;
     private readonly GameObject _highlightPrefab;
     private readonly Transform _container;
     private readonly List<GameObject> _activeHighlights = new List<GameObject>();
@@ -37,7 +37,15 @@ public class HighlightManager
     {
         foreach (GameObject highlight in  _activeHighlights)
         {
-            if (highlight != null) Object.Destroy(highlight);
+            if (highlight != null)
+            {
+                Sequence destroy = DOTween.Sequence();
+                destroy.Append(highlight.transform.DOScale(0f, highlightAnimDuration));
+                destroy.AppendCallback(() =>
+                {
+                    Object.Destroy(highlight);
+                });
+            }
         }
 
         _activeHighlights.Clear();

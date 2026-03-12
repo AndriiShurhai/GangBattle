@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 public class CharacterSelectionController : MonoBehaviour
 {
+    public static CharacterSelectionController Instance { get; private set; }
     private Camera mainCamera;
     private Unit selectedUnit;
 
@@ -14,6 +15,14 @@ public class CharacterSelectionController : MonoBehaviour
     {
         mainCamera = Camera.main;
         noSelectionState = new NoSelectionState(this);
+
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
     }
     private void Start()
     {

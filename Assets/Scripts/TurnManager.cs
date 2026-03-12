@@ -137,6 +137,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     public void RewindOneStep()
     {
+        CharacterSelectionController.Instance.ClearSelection();
         if (currentTurn < 0)
         {
             Debug.Log("Already at the beginning, cannot rewind.");
@@ -180,6 +181,7 @@ public class TurnManager : MonoBehaviour, IRewindable
     public void RewindToCurrentTurn()
     {
         Debug.Log($"Resetting current turn {currentTurn}.");
+        CharacterSelectionController.Instance.ClearSelection();
 
         StopAllCoroutines();
         StopAllEnemyCoroutines();
@@ -199,6 +201,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     public void StartPlayerTurn()
     {
+        CharacterSelectionController.Instance.ClearSelection();
         currentState = TurnState.PlayerTurn;
         Debug.Log("--- PLAYER TURN START ---");
 
@@ -218,6 +221,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     public void StartEnemyTurn()
     {
+        CharacterSelectionController.Instance.ClearSelection();
         currentState = TurnState.EnemyTurn;
         Debug.Log("--- ENEMY TURN START ---");
 

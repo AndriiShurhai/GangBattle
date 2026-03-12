@@ -179,6 +179,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         StopAllCoroutines();
         movementComponent.StopAllCoroutines();
         rewindComponent.RestoreState(state);
+
+        if (!statusEffectComponent.Has(EffectStatusType.Provoked)) UnprovokeUnit();
     }
 
     // ── Stats / Buffs ─────────────────────────────────────────────────────────
@@ -347,6 +349,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         abilitySO.Execute(this, targetPosition, () => OnAnyUnitUsedAbility?.Invoke(this, abilitySO));
         usedAbilitiesAmountPerTurn[abilitySO]++;
         OnUnitMadeAction?.Invoke();
+        CharacterSelectionController.Instance.ClearSelection();
     }
 
     public void ResetUsedAbilities()

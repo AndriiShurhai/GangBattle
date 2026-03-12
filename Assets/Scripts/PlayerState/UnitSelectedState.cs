@@ -32,11 +32,7 @@ public class UnitSelectedState : IPlayerState
     {
         Vector3 mousePosition = GameInput.Instance.GetMousePosition();
 
-        Vector3Int gridPositoin = GridManager.Instance.WorldToGrid(mousePosition);
-
-        if (_selectedUnit.CanMoveTo(gridPositoin) && _selectedUnit.UnitFaction == Faction.Player)
-        {
-        }
+        Vector3Int gridPosition = GridManager.Instance.WorldToGrid(mousePosition);
     }
     public void Exit()
     {
