@@ -7,7 +7,9 @@ using UnityEngine.UIElements;
 [CreateAssetMenu(menuName ="Abilities/Burn Attack")]
 public class BurnAttackAbilitySO : AbilityBaseSO
 {
-    public int duration = 3;
+    [UnityEngine.Serialization.FormerlySerializedAs("duration")]
+    [SerializeField] private int _duration = 3;
+    public int Duration => _duration;
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
     {
         IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
@@ -15,7 +17,7 @@ public class BurnAttackAbilitySO : AbilityBaseSO
         if (targetObject is Unit targetUnit)
         {
 
-            GameObject fireVisual = Instantiate(abilityEffectPrefab, GridManager.Instance.GridToWorld(targetPosition), Quaternion.identity);
+            GameObject fireVisual = Instantiate(AbilityEffectPrefab, GridManager.Instance.GridToWorld(targetPosition), Quaternion.identity);
 
 
             fireVisual.transform.localScale = Vector3.zero;
@@ -24,7 +26,7 @@ public class BurnAttackAbilitySO : AbilityBaseSO
 
             targetUnit.TakeDamage(damage, caster);
 
-            targetUnit.ApplyEffect(EffectStatusType.Burned, duration, () =>
+            targetUnit.ApplyEffect(EffectStatusType.Burned, Duration, () =>
             {
                 targetUnit.TakeDamage(damage / 2, caster);
             });

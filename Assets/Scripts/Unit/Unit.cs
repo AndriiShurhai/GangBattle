@@ -316,7 +316,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             return false;
         }
 
-        if (abilitySO.howMuchCanBeUsed <= usedAbilitiesAmountPerTurn[abilitySO])
+        if (abilitySO.MaxUses <= usedAbilitiesAmountPerTurn[abilitySO])
         {
             Debug.Log($"Ability usage limit reached this round. $[{abilitySO.name}]");
             return false;

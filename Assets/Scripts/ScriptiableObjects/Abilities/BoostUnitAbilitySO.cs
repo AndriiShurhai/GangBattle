@@ -4,7 +4,9 @@ using UnityEngine;
 [CreateAssetMenu(menuName ="Abilities/Boost Unit Ability")]
 public class BoostUnitAbilitySO : AbilityBaseSO
 {
-    public int duration = 2;
+    [UnityEngine.Serialization.FormerlySerializedAs("duration")]
+    [SerializeField] private int _duration = 2;
+    public int Duration => _duration;
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
     {
         IGridObject gridObj = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
@@ -16,7 +18,7 @@ public class BoostUnitAbilitySO : AbilityBaseSO
             int agilityBoost = GetPower(unit);
 
             unit.BoostUnit(strengthBosst, intelligenceBoost, agilityBoost); 
-            unit.ApplyEffect(EffectStatusType.Boosted, duration);
+            unit.ApplyEffect(EffectStatusType.Boosted, Duration);
             onAbilityInvoke?.Invoke();
         }
     }

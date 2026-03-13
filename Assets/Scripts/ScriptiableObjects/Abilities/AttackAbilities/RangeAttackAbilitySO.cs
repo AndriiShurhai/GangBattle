@@ -6,10 +6,21 @@ using UnityEngine;
 public class RangeAttackAbilitySO : AbilityBaseSO
 {
     [Header("Attack Settings")]
-    public bool canAttackDiagonally = true;
-    public GameObject projectile;
-    public float projectileJumpHeight = 0.5f;
-    public float projectileJumpDuration = 0.3f;
+    [UnityEngine.Serialization.FormerlySerializedAs("canAttackDiagonally")]
+    [SerializeField] private bool _canAttackDiagonally = true;
+    public bool CanAttackDiagonally => _canAttackDiagonally;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("projectile")]
+    [SerializeField] private GameObject _projectile;
+    public GameObject Projectile => _projectile;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("projectileJumpHeight")]
+    [SerializeField] private float _projectileJumpHeight = 0.5f;
+    public float ProjectileJumpHeight => _projectileJumpHeight;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("projectileJumpDuration")]
+    [SerializeField] private float _projectileJumpDuration = 0.3f;
+    public float ProjectileJumpDuration => _projectileJumpDuration;
 
     private void Awake()
     {
@@ -29,7 +40,7 @@ public class RangeAttackAbilitySO : AbilityBaseSO
 
             Sequence attackSequence = DOTween.Sequence();
 
-            GameObject projectileGameObject = Instantiate(projectile, caster.transform.position, Quaternion.identity);
+            GameObject projectileGameObject = Instantiate(Projectile, caster.transform.position, Quaternion.identity);
 
             Vector3 direction = caster.transform.position - targetWorldPosition;
 
@@ -42,7 +53,7 @@ public class RangeAttackAbilitySO : AbilityBaseSO
                 projectileGameObject.transform.localScale = new Vector3(1, 1, 1);
             }
 
-            attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, projectileJumpHeight, 1, projectileJumpDuration));
+            attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, ProjectileJumpHeight, 1, ProjectileJumpDuration));
             attackSequence.AppendCallback(() =>
             {
                 onAbilityInvoke?.Invoke();
@@ -51,10 +62,10 @@ public class RangeAttackAbilitySO : AbilityBaseSO
                 Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
 
                 // Spawn effect if available
-                if (abilityEffectPrefab != null)
+                if (AbilityEffectPrefab != null)
                 {
                     Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
-                    GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                    GameObject effect = Instantiate(AbilityEffectPrefab, worldPos, Quaternion.identity);
                     Destroy(effect, 2f);
                 }
             });
@@ -76,7 +87,7 @@ public class RangeAttackAbilitySO : AbilityBaseSO
             return false;
         }
 
-        if (!canAttackDiagonally)
+        if (!CanAttackDiagonally)
         {
             int dx = Mathf.Abs(targetPosition.x - casterPosition.x);
             int dy = Mathf.Abs(targetPosition.y - casterPosition.y);

@@ -5,9 +5,17 @@ using UnityEngine;
 public class TrapAbilitySO : AbilityBaseSO
 {
     [Header("Trap settings")]
-    public GameObject trapPrefab;
-    public int trapDamage = 15;
-    public int duration = 3;
+    [UnityEngine.Serialization.FormerlySerializedAs("trapPrefab")]
+    [SerializeField] private GameObject _trapPrefab;
+    public GameObject TrapPrefab => _trapPrefab;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("trapDamage")]
+    [SerializeField] private int _trapDamage = 15;
+    public int TrapDamage => _trapDamage;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("duration")]
+    [SerializeField] private int _duration = 3;
+    public int Duration => _duration;
 
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
@@ -24,25 +32,25 @@ public class TrapAbilitySO : AbilityBaseSO
 
         Debug.Log($"{caster.name} placed a trap at {targetPosition}");
 
-        if (abilityEffectPrefab != null)
+        if (AbilityEffectPrefab != null)
         {
             Vector3 worldPosition = GridManager.Instance.GridToWorld(targetPosition);
-            GameObject effect = Instantiate(abilityEffectPrefab, worldPosition, Quaternion.identity);
+            GameObject effect = Instantiate(AbilityEffectPrefab, worldPosition, Quaternion.identity);
             Destroy(effect, 1);
         }
     }
 
     private void CreateTrap(Vector3Int position)
     {
-        if (trapPrefab == null)
+        if (TrapPrefab == null)
         {
             Debug.LogError("Trap prefab is not assigned in the TrapAbilitySO!");
             return;
         }
         Vector3 worldPosition = GridManager.Instance.GridToWorld(position);
-        GameObject trapObject = Instantiate(trapPrefab, worldPosition, Quaternion.identity);
+        GameObject trapObject = Instantiate(TrapPrefab, worldPosition, Quaternion.identity);
 
         Trap trap = trapObject.GetComponent<Trap>();
-        if (trap != null) trap.Initialize(position, trapDamage, duration);
+        if (trap != null) trap.Initialize(position, TrapDamage, Duration);
     }
 }

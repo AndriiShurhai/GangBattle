@@ -37,7 +37,7 @@ public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, 
     {
         ability = abilityData;
         caster = unitCaster;
-        abilityIcon.sprite = abilityData.abilityIcon;
+        abilityIcon.sprite = abilityData.AbilityIcon;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
