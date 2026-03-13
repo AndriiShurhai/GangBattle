@@ -25,13 +25,19 @@ public class AoEAbilityActionSO : AbilityActionBase
     [SerializeField] private AbilityBaseSO aoeAbility;
 
     [Tooltip("Base score when the minimum number of targets are hit.")]
-    public float baseScore = 80f;
+    [UnityEngine.Serialization.FormerlySerializedAs("baseScore")]
+    [SerializeField] private float _baseScore = 80f;
+    public float BaseScore => _baseScore;
 
     [Tooltip("Additional score per enemy caught in the blast.")]
-    public float perTargetBonus = 50f;
+    [UnityEngine.Serialization.FormerlySerializedAs("perTargetBonus")]
+    [SerializeField] private float _perTargetBonus = 50f;
+    public float PerTargetBonus => _perTargetBonus;
 
     [Tooltip("Minimum enemies that must be hittable for the ability to be considered at all.")]
-    public int minTargetsToUse = 2;
+    [UnityEngine.Serialization.FormerlySerializedAs("minTargetsToUse")]
+    [SerializeField] private int _minTargetsToUse = 2;
+    public int MinTargetsToUse => _minTargetsToUse;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
@@ -59,9 +65,9 @@ public class AoEAbilityActionSO : AbilityActionBase
             }
         }
 
-        if (bestEnemyCount < minTargetsToUse) return scoreData;
+        if (bestEnemyCount < MinTargetsToUse) return scoreData;
 
-        scoreData.score = baseScore + bestEnemyCount * perTargetBonus;
+        scoreData.score = BaseScore + bestEnemyCount * PerTargetBonus;
         scoreData.target = bestTile;
         return scoreData;
     }

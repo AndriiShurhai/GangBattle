@@ -22,21 +22,27 @@ public class ProvokeAbilityActionSO : AbilityActionBase
     [SerializeField] private AbilityBaseSO provokeAbility;
 
     [Tooltip("Base score when at least one enemy is in range.")]
-    public float baseScore = 70f;
+    [UnityEngine.Serialization.FormerlySerializedAs("baseScore")]
+    [SerializeField] private float _baseScore = 70f;
+    public float BaseScore => _baseScore;
 
     [Tooltip("Additional score per enemy that will be provoked.")]
-    public float perEnemyBonus = 30f;
+    [UnityEngine.Serialization.FormerlySerializedAs("perEnemyBonus")]
+    [SerializeField] private float _perEnemyBonus = 30f;
+    public float PerEnemyBonus => _perEnemyBonus;
 
     [Tooltip("Only consider provoking when HP is above this threshold. " +
              "A low-HP unit shouldn't be drawing attention to itself.")]
-    [Range(0f, 1f)] public float minimumHealthPercent = 0.5f;
+    [UnityEngine.Serialization.FormerlySerializedAs("minimumHealthPercent")]
+    [SerializeField] [Range(0f, 1f)] private float _minimumHealthPercent = 0.5f;
+    public float MinimumHealthPercent => _minimumHealthPercent;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
         AIScoreData scoreData = new AIScoreData();
 
         float healthPercent = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth;
-        if (healthPercent < minimumHealthPercent) return scoreData;
+        if (healthPercent < MinimumHealthPercent) return scoreData;
 
         List<Vector3Int> tilesInRange = provokeAbility.GetTilesInRange(aiUnit.GridPosition);
 
@@ -46,7 +52,7 @@ public class ProvokeAbilityActionSO : AbilityActionBase
 
         if (unprovokedEnemiesInRange == 0) return scoreData;
 
-        scoreData.score = baseScore + unprovokedEnemiesInRange * perEnemyBonus;
+        scoreData.score = BaseScore + unprovokedEnemiesInRange * PerEnemyBonus;
         // Provoke radiates from the caster's position, so the "target" is the caster itself
         scoreData.target = aiUnit.GridPosition;
         return scoreData;

@@ -21,10 +21,14 @@ public class HealAllyActionSO : AbilityActionBase
     [SerializeField] private AbilityBaseSO healAbility;
 
     [Tooltip("Only consider healing allies whose HP% is at or below this threshold.")]
-    [Range(0f, 1f)] public float healThreshold = 0.7f;
+    [UnityEngine.Serialization.FormerlySerializedAs("healThreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _healThreshold = 0.7f;
+    public float HealThreshold => _healThreshold;
 
     [Tooltip("Base score when a healable target is found. Scales up with injury severity.")]
-    public float baseScore = 90f;
+    [UnityEngine.Serialization.FormerlySerializedAs("baseScore")]
+    [SerializeField] private float _baseScore = 90f;
+    public float BaseScore => _baseScore;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
@@ -33,7 +37,7 @@ public class HealAllyActionSO : AbilityActionBase
         List<Vector3Int> tilesInRange = healAbility.GetTilesInRange(aiUnit.GridPosition);
 
         Unit bestTarget = null;
-        float lowestHealthPercent = healThreshold;
+        float lowestHealthPercent = HealThreshold;
 
         foreach (Vector3Int tile in tilesInRange)
         {
@@ -54,7 +58,7 @@ public class HealAllyActionSO : AbilityActionBase
         if (bestTarget == null) return scoreData;
 
         // More injured ally = higher urgency
-        scoreData.score = baseScore + (1f - lowestHealthPercent) * 100f;
+        scoreData.score = BaseScore + (1f - lowestHealthPercent) * 100f;
         scoreData.target = bestTarget;
         return scoreData;
     }

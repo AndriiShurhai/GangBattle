@@ -24,14 +24,20 @@ public class TeleportAbilityActionSO : AbilityActionBase
     [SerializeField] private AbilityBaseSO teleportAbility;
 
     [Tooltip("Base score when a beneficial teleport destination is found.")]
-    public float baseScore = 60f;
+    [UnityEngine.Serialization.FormerlySerializedAs("baseScore")]
+    [SerializeField] private float _baseScore = 60f;
+    public float BaseScore => _baseScore;
 
     [Tooltip("Multiplied by the distance improvement to produce the full score.")]
-    public float gainMultiplier = 12f;
+    [UnityEngine.Serialization.FormerlySerializedAs("gainMultiplier")]
+    [SerializeField] private float _gainMultiplier = 12f;
+    public float GainMultiplier => _gainMultiplier;
 
     [Tooltip("HP percentage below which the unit teleports away from enemies (Escape) " +
              "instead of toward them (Flank).")]
-    [Range(0f, 1f)] public float escapeHealthThreshold = 0.3f;
+    [UnityEngine.Serialization.FormerlySerializedAs("escapeHealthThreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _escapeHealthThreshold = 0.3f;
+    public float EscapeHealthThreshold => _escapeHealthThreshold;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
@@ -42,7 +48,7 @@ public class TeleportAbilityActionSO : AbilityActionBase
 
         List<Vector3Int> tilesInRange = teleportAbility.GetTilesInRange(aiUnit.GridPosition);
 
-        bool escapeMode = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth < escapeHealthThreshold;
+        bool escapeMode = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth < EscapeHealthThreshold;
 
         Vector3Int bestTile = default;
         float bestGain = 0f;
@@ -64,7 +70,7 @@ public class TeleportAbilityActionSO : AbilityActionBase
 
         if (bestGain <= 0f) return scoreData; // Teleporting doesn't help
 
-        scoreData.score = baseScore + bestGain * gainMultiplier;
+        scoreData.score = BaseScore + bestGain * GainMultiplier;
         scoreData.target = bestTile;
         return scoreData;
     }

@@ -34,25 +34,41 @@ public class ShieldBashActionSO : AbilityActionBase
     [Header("Base Scoring")]
     [Tooltip("Starting score when a valid target exists. Should be lower than AttackActionSO's " +
              "100 baseline so stun is a conditional upgrade, not a default preference.")]
-    public float baseScore = 80f;
+    [UnityEngine.Serialization.FormerlySerializedAs("baseScore")]
+    [SerializeField] private float _baseScore = 80f;
+    public float BaseScore => _baseScore;
 
     [Header("Situational Bonuses")]
     [Tooltip("Bonus when the target is above this HP% — stun is wasted on someone about to die.")]
-    [Range(0f, 1f)] public float highHpThreshold = 0.6f;
-    public float highHpBonus = 60f;
+    [UnityEngine.Serialization.FormerlySerializedAs("highHpThreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _highHpThreshold = 0.6f;
+    public float HighHpThreshold => _highHpThreshold;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("highHpBonus")]
+    [SerializeField] private float _highHpBonus = 60f;
+    public float HighHpBonus => _highHpBonus;
 
     [Tooltip("Bonus per enemy unit that outnumbers the AI's team. " +
              "More enemies alive = each stun is more valuable.")]
-    public float outnumberedBonusPerUnit = 25f;
+    [UnityEngine.Serialization.FormerlySerializedAs("outnumberedBonusPerUnit")]
+    [SerializeField] private float _outnumberedBonusPerUnit = 25f;
+    public float OutnumberedBonusPerUnit => _outnumberedBonusPerUnit;
 
     [Header("Penalties")]
     [Tooltip("Score multiplier applied when the target is already stunned. " +
              "Near zero to make it essentially never chosen.")]
-    [Range(0f, 1f)] public float alreadyStunnedMultiplier = 0.05f;
+    [UnityEngine.Serialization.FormerlySerializedAs("alreadyStunnedMultiplier")]
+    [SerializeField] [Range(0f, 1f)] private float _alreadyStunnedMultiplier = 0.05f;
+    public float AlreadyStunnedMultiplier => _alreadyStunnedMultiplier;
 
     [Tooltip("HP% below which the unit penalises using bash (should flee or kill instead).")]
-    [Range(0f, 1f)] public float lowOwnHpThreshold = 0.25f;
-    public float lowOwnHpPenalty = 50f;
+    [UnityEngine.Serialization.FormerlySerializedAs("lowOwnHpThreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _lowOwnHpThreshold = 0.25f;
+    public float LowOwnHpThreshold => _lowOwnHpThreshold;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("lowOwnHpPenalty")]
+    [SerializeField] private float _lowOwnHpPenalty = 50f;
+    public float LowOwnHpPenalty => _lowOwnHpPenalty;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
@@ -61,28 +77,28 @@ public class ShieldBashActionSO : AbilityActionBase
         Unit bestTarget = FindBestTarget(aiUnit);
         if (bestTarget == null) return scoreData;
 
-        float score = baseScore;
+        float score = BaseScore;
 
         // BONUS: Target is high HP — still a threat next turn, stun is meaningful
         float targetHpPercent = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
-        if (targetHpPercent >= highHpThreshold)
-            score += highHpBonus;
+        if (targetHpPercent >= HighHpThreshold)
+            score += HighHpBonus;
 
         // BONUS: AI team is outnumbered — each disabled enemy counts more
         int aliveEnemies = TurnManager.Instance.GetAlivePlayerUnits().Count;
         int aliveAllies = TurnManager.Instance.GetAliveEnemyUnits().Count;
         int deficit = aliveEnemies - aliveAllies;
         if (deficit > 0)
-            score += deficit * outnumberedBonusPerUnit;
+            score += deficit * OutnumberedBonusPerUnit;
 
         // PENALTY: Target is already stunned — pick something else
         if (bestTarget.HasStatus(EffectStatusType.Stunned))
-            score *= alreadyStunnedMultiplier;
+            score *= AlreadyStunnedMultiplier;
 
         // PENALTY: AI unit is critically low — stun doesn't save it, aggression or flee does
         float ownHpPercent = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth;
-        if (ownHpPercent < lowOwnHpThreshold)
-            score -= lowOwnHpPenalty;
+        if (ownHpPercent < LowOwnHpThreshold)
+            score -= LowOwnHpPenalty;
 
         if (score <= 0f) return scoreData;
 

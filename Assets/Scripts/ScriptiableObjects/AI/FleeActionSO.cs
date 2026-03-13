@@ -20,11 +20,15 @@ public class FleeActionSO : AIActionSO
     public override AIActionCategory Category => AIActionCategory.Flee;
 
     [Tooltip("HP percentage below which this action becomes valid (0 = never flee, 1 = always flee).")]
-    [Range(0f, 1f)] public float fleeHealthTreshold = 0.35f;
+    [UnityEngine.Serialization.FormerlySerializedAs("fleeHealthTreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _fleeHealthTreshold = 0.35f;
+    public float FleeHealthTreshold => _fleeHealthTreshold;
 
     [Tooltip("Base score when at 0 HP. Actual score = baseScore * (1 - healthPercent). " +
          "Set above 200 to override even high-value attacks when critically injured.")]
-    public float fleeBaseScore = 150f;
+    [UnityEngine.Serialization.FormerlySerializedAs("fleeBaseScore")]
+    [SerializeField] private float _fleeBaseScore = 150f;
+    public float FleeBaseScore => _fleeBaseScore;
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
         AIScoreData scoreData = new AIScoreData() { score = 0f, target = null };
@@ -32,13 +36,13 @@ public class FleeActionSO : AIActionSO
 
         float healthPercentage = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth;
 
-        if (healthPercentage >= fleeHealthTreshold) return scoreData;
+        if (healthPercentage >= FleeHealthTreshold) return scoreData;
 
         Vector3Int safeTile = FindSafestReachableTile(aiUnit);
 
         if (safeTile == aiUnit.GridPosition) return scoreData;
 
-        scoreData.score = fleeBaseScore * (1f - healthPercentage);
+        scoreData.score = FleeBaseScore * (1f - healthPercentage);
         scoreData.target = safeTile;
 
         return scoreData;
