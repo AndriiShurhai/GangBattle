@@ -28,7 +28,7 @@ public class ShieldBashSO : AbilityBaseSO
         {
             int damage = GetPower(caster);
 
-            caster.transform.DOJump(GridManager.Instance.GridToWorld(position), 0.5f, 1, 0.3f).OnComplete(() =>
+            caster.transform.DOJump(GridManager.Instance.GridToWorld(position), JumpHeight, 1, JumpDuration).OnComplete(() =>
             {
                 targetUnit.TakeDamage(damage, caster);
 
