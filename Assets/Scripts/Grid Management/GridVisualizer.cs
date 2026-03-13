@@ -7,7 +7,7 @@ public class GridVisualizer : MonoBehaviour
 
     [Header("Visual Feedback")]
     [SerializeField] private GameObject movementHighlightPrefab;
-    [SerializeField] private Color validMoveColor = Color.green;
+    [SerializeField] private Color validMoveColor = Color.black;
     [SerializeField] private Color invalidMoveColor = Color.red;
     [SerializeField] private Transform highlightsContainer;
 

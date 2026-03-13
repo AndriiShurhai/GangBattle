@@ -573,7 +573,7 @@ TilemapRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 305763123
-  m_SortingLayer: 3
+  m_SortingLayer: 5
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_ChunkSize: {x: 32, y: 32, z: 32}
@@ -801,7 +801,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   movementHighlightPrefab: {fileID: 4128918661905500796, guid: 00344d9fe0825f4439bb5f4f9010258d,
     type: 3}
-  validMoveColor: {r: 0.82153785, g: 0.8867924, b: 0.82153785, a: 0.11764706}
+  validMoveColor: {r: 0, g: 0, b: 0, a: 0.3529412}
   invalidMoveColor: {r: 1, g: 0, b: 0, a: 1}
   highlightsContainer: {fileID: 1643330695}
 --- !u!4 &243988951
@@ -5133,6 +5133,8 @@ MonoBehaviour:
   - {fileID: 8841607834726875372, guid: ad20710b696f12f43ad524c607f30423, type: 3}
   characterSelectionController: {fileID: 1655297848}
   endPlayerTurnButton: {fileID: 2019507490}
+  enemyPreTurnDelay: 0.3
+  enemyPostTurnDelay: 0.5
 --- !u!4 &1432973249
 Transform:
   m_ObjectHideFlags: 0
@@ -5558,7 +5560,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18136693ef70d7247b4548e1b423f34c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  registeredTraps: []
 --- !u!1 &1643330694
 GameObject:
   m_ObjectHideFlags: 0

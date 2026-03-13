@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5040104104855744377}
   - component: {fileID: 283072195458989244}
   - component: {fileID: 3307618630391789244}
+  - component: {fileID: 8878909779730170145}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -84,7 +85,7 @@ SpriteRenderer:
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6,
     type: 3}
-  m_Color: {r: 0.35180426, g: 1, b: 0, a: 0.050980393}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.11764706}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -145,6 +146,19 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
+--- !u!114 &8878909779730170145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3836166386204590497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b924655a606608240918ca55145cfd11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightDefaultIntensity
+  defaultIntensity: 0
 --- !u!1 &4128918661905500796
 GameObject:
   m_ObjectHideFlags: 0
@@ -176,8 +190,8 @@ Transform:
   m_LocalScale: {x: 1.9, y: 1.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5040104104855744377}
   - {fileID: 6068115938654521831}
+  - {fileID: 5040104104855744377}
   - {fileID: 5307556347105559000}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -222,6 +236,7 @@ GameObject:
   - component: {fileID: 6068115938654521831}
   - component: {fileID: 667390997614912559}
   - component: {fileID: 7875500657568442080}
+  - component: {fileID: 8603867060606865695}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -356,6 +371,19 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
+--- !u!114 &8603867060606865695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4796632050795307293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b924655a606608240918ca55145cfd11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightDefaultIntensity
+  defaultIntensity: 0
 --- !u!1 &7236156185609193755
 GameObject:
   m_ObjectHideFlags: 0

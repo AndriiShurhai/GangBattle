@@ -17,12 +17,9 @@ public class AbilityTargetingVisualizer : MonoBehaviour
     [SerializeField] private Transform rangeHighlightsContainer;
 
     private HighlightManager _rangeHighlightManager;
-    private List<GameObject> _targetHighlights = new();
-    private Tween pulseTween;
+    private HighlightManager _targetHighlightManager;
 
     private Unit _pulsingUnit;
-    private Vector3 _originalScale;
-    private Dictionary<SpriteRenderer, Color> _originalColors = new();
 
 
     private void Awake()
@@ -31,6 +28,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
         {
             Instance = this;
             _rangeHighlightManager = new HighlightManager(rangeHighlightPrefab, rangeHighlightsContainer);
+            _targetHighlightManager = new HighlightManager(targetHighlightPrefab, rangeHighlightsContainer);
         }
         else
         {
@@ -73,15 +71,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
 
     public void UpdateTargetPreview(Vector3Int targetPosition, AbilityBaseSO abilityBaseSO, Unit caster)
     {
-        if (_targetHighlights?.Count != 0)
-        {
-            foreach (GameObject obj in _targetHighlights)
-            {
-                Destroy(obj);
-            }
-
-            _targetHighlights.Clear();
-        }
+        _targetHighlightManager.ClearAllHighlights();
 
         if (caster.ForcedUnitGridPosition != null)
         {
@@ -94,29 +84,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
                     StopPulse();
 
                     _pulsingUnit = unit;
-                    _originalScale = unit.transform.localScale;
-                    _originalColors.Clear();
-
-                    foreach (var sr in unit.GetComponentsInChildren<SpriteRenderer>())
-                    {
-                        _originalColors[sr] = sr.color;
-                    }
-
-                    pulseTween = unit.transform
-                        .DOScale(_originalScale * 1.2f, 0.35f)
-                        .SetEase(Ease.OutQuad)
-                        .SetLoops(-1, LoopType.Yoyo)
-                        .SetId(_pulsingUnit); // allows safe global kill
-
-                    SpriteRenderer[] spriteRenderers = unit.GetComponentsInChildren<SpriteRenderer>();
-
-                    foreach (var sr in spriteRenderers)
-                    {
-                        sr.DOColor(Color.red, 0.35f)
-                          .SetLoops(-1, LoopType.Yoyo)
-                          .SetEase(Ease.InOutSine)
-                          .SetId(_pulsingUnit);
-                    }
+                    _pulsingUnit.GetUnitVisualBridge().StartPulse();
                 }
             }
         }
@@ -131,11 +99,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
         {
             if (abilityBaseSO.IsValidTarget(caster.GridPosition, position, caster))
             {
-                CreateTargetHighlight(position, currentTargetColor);
-
-            }
-            else
-            {
+                _targetHighlightManager.CreateHighlight(position, currentTargetColor, false);
             }
         }
     }
@@ -144,13 +108,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
     {
         if (_pulsingUnit != null)
         {
-            DOTween.Kill(_pulsingUnit);
-            _pulsingUnit.transform.localScale = _originalScale;
-            foreach (var pair in _originalColors)
-            {
-                if (pair.Key != null)
-                    pair.Key.color = pair.Value;
-            }
+            _pulsingUnit.GetUnitVisualBridge().StopPulse();
             _pulsingUnit = null;
 
         }
@@ -160,31 +118,7 @@ public class AbilityTargetingVisualizer : MonoBehaviour
     public void HideAbilityRange()
     {
         _rangeHighlightManager.ClearAllHighlights();
-
         StopPulse();
-        if (_targetHighlights?.Count != 0)
-        {
-            foreach (GameObject obj in _targetHighlights)
-            {
-                Destroy(obj);
-            }
-
-            _targetHighlights.Clear();
-        }
-    }
-
-    private void CreateTargetHighlight(Vector3Int gridPosition, Color color)
-    {
-        if (targetHighlightPrefab == null) return;
-
-        Vector3 worldPosition = GridManager.Instance.GridToWorld(gridPosition);
-        GameObject highlight = Instantiate(targetHighlightPrefab, worldPosition, Quaternion.identity, rangeHighlightsContainer);
-
-        var renderer = highlight.GetComponentInChildren<SpriteRenderer>();
-        if (renderer != null)
-        {
-            renderer.color = color;
-        }
-        _targetHighlights.Add(highlight);
+        _targetHighlightManager.ClearAllHighlights();
     }
 }

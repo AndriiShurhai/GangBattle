@@ -1,10 +1,58 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class UnitVisualBridge : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private SPUM_Prefabs _spumPrefabs;
+
+    private Vector3 _originalScale;
+    private Dictionary<SpriteRenderer, Color> _originalColors = new();
+    private bool _isPulsing = false;
+
+    public void StartPulse()
+    {
+        if (_isPulsing) return;
+        _isPulsing = true;
+        _originalScale = transform.localScale;
+        _originalColors.Clear();
+
+        foreach (var sr in GetComponentsInChildren<SpriteRenderer>())
+        {
+            _originalColors[sr] = sr.color;
+        }
+
+        transform
+            .DOScale(_originalScale * 1.2f, 0.35f)
+            .SetEase(Ease.OutQuad)
+            .SetLoops(-1, LoopType.Yoyo)
+            .SetId(this); 
+
+        SpriteRenderer[] spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+
+        foreach (var sr in spriteRenderers)
+        {
+            sr.DOColor(Color.red, 0.35f)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetEase(Ease.InOutSine)
+                .SetId(this);
+        }
+    }
+
+    public void StopPulse()
+    {
+        if (!_isPulsing) return;
+        _isPulsing = false;
+        DOTween.Kill(this);
+        transform.localScale = _originalScale;
+        foreach (var pair in _originalColors)
+        {
+            if (pair.Key != null)
+                pair.Key.color = pair.Value;
+        }
+    }
 
     public void StartRunningAnimation(Vector3 destination)
     {

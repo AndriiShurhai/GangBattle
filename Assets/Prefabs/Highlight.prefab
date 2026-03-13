@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5040104104855744377}
   - component: {fileID: 283072195458989244}
   - component: {fileID: 3307618630391789244}
+  - component: {fileID: 3299777846090854678}
   m_Layer: 0
   m_Name: Fill
   m_TagString: Untagged
@@ -145,6 +146,19 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
+--- !u!114 &3299777846090854678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3836166386204590497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b924655a606608240918ca55145cfd11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightDefaultIntensity
+  defaultIntensity: 0
 --- !u!1 &4128918661905500796
 GameObject:
   m_ObjectHideFlags: 0
@@ -221,6 +235,7 @@ GameObject:
   - component: {fileID: 6068115938654521831}
   - component: {fileID: 667390997614912559}
   - component: {fileID: 7875500657568442080}
+  - component: {fileID: 5376957718568970712}
   m_Layer: 0
   m_Name: Border
   m_TagString: Untagged
@@ -355,3 +370,16 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
+--- !u!114 &5376957718568970712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4796632050795307293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b924655a606608240918ca55145cfd11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightDefaultIntensity
+  defaultIntensity: 0
