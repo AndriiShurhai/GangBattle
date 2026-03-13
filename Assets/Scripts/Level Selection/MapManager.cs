@@ -1,7 +1,4 @@
 using System.Collections;
-using Unity.VisualScripting;
-using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -49,6 +46,7 @@ public class MapManager : MonoBehaviour
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
         Instance = this;
 
@@ -144,17 +142,11 @@ public class MapManager : MonoBehaviour
             zoomDuration
         ));
 
-        yield return fadeRegion;
-
         Coroutine fadeBiome = StartCoroutine(
             FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration)
         );
+        yield return fadeRegion;
 
-
-        //yield return FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, fadeDuration);
-        //yield return FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration);
-
-        //yield return LerpCamera(worldCameraPosition, worldOrthographicSize, zoomDuration);
 
         activeBiome = null;
         CurrentState = ZoomState.World;

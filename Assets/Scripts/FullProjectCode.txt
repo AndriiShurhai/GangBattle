@@ -5,6 +5,7 @@
 // ==================================================
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -12,7 +13,13 @@ using UnityEngine;
 public class AIBrain : MonoBehaviour
 {
     [SerializeField] private List<AIActionSO> aiActions;
-    [SerializeField] private List<AIActionSO> attackAIActions;
+
+    [Tooltip("Optional. Defines this enemy's archetype via per-category score multipliers.")]
+    [SerializeField] private AIPersonalitySO personality;
+
+    [SerializeField] private float minimumScoreToAct = 10f;
+
+    [SerializeField] private int maxActionsPerTurn = 5;
 
     private Unit aiUnit;
 
@@ -21,47 +28,157 @@ public class AIBrain : MonoBehaviour
         aiUnit = GetComponent<Unit>();   
     }
 
+
     public void TakeTurn(Action onComplete)
     {
-        if (aiActions == null || aiActions.Count == 0) return;
-
-        List<AIScoreData> allScoreData = new List<AIScoreData>();   
-
-        if (aiUnit.HasStatus(EffectStatusType.Provoked))
+        if (aiActions == null || aiActions.Count == 0) 
         {
-            Debug.Log("FUCK, I AM PROVOKED");
-            foreach (AIActionSO action in attackAIActions)
-            {
-                AIScoreData scoreData = action.GetScoreAction(aiUnit);
-                scoreData.action = action;
-                allScoreData.Add(scoreData);
-            }
+            Debug.LogWarning($"{aiUnit.name} has no AI actions assigned.");
+            onComplete?.Invoke();
+            return;
+        }
+        StartCoroutine(ExecuteNextAction(onComplete, 0));
+    }
+    private IEnumerator ExecuteNextAction(Action onComplete, int actionsTaken)
+    {
+        yield return new WaitForSeconds(1f);
+
+        if (actionsTaken >= maxActionsPerTurn)
+        {
+            Debug.Log($"{aiUnit.name} reached max actions per turn ({maxActionsPerTurn})");
+            onComplete?.Invoke();
+            yield break;
+        }
+
+        AIScoreData bestScoreData = ScoreBestAction();
+
+        if (bestScoreData.action != null && bestScoreData.score >= minimumScoreToAct)
+        {
+            Debug.Log($"{aiUnit.name} executes {bestScoreData.action.name} with score {bestScoreData.score}");
+            bestScoreData.action.Execute(aiUnit, bestScoreData.target, () => StartCoroutine(ExecuteNextAction(onComplete, actionsTaken + 1)));
         }
         else
         {
-            foreach (AIActionSO action in aiActions)
-            {
-                AIScoreData scoreData = action.GetScoreAction(aiUnit);
-                scoreData.action = action;
-                allScoreData.Add(scoreData);
-            }
+            Debug.Log($"{aiUnit.name} has no valid actions to take or all scores are below the threshold.");
+            onComplete?.Invoke();
         }
+    }
 
-        AIScoreData bestScoreData = allScoreData
+    private AIScoreData ScoreBestAction()
+    {
+        List<AIScoreData> allScoreData = new List<AIScoreData>();
+        foreach (AIActionSO action in aiActions)
+        {
+            if (!action.CanExecute(aiUnit)) continue;
+
+            AIScoreData scoreData = action.GetScoreAction(aiUnit);
+            scoreData.action = action;
+
+            if (personality != null)
+            {
+                scoreData.score *= personality.GetCategoryWeight(action.Category);
+            }
+            if (aiUnit.HasStatus(EffectStatusType.Provoked))
+            {
+                scoreData = ApplyProvokeModifier(scoreData);
+            }
+            allScoreData.Add(scoreData);
+        }
+        return allScoreData
             .OrderByDescending(data => data.score)
             .FirstOrDefault();
+    }
 
-        if (bestScoreData.action != null && bestScoreData.score >= 0)
+    //public void TakeTurn(Action onComplete)
+    //{
+    //    if (aiActions == null || aiActions.Count == 0) return;
+
+    //    List<AIScoreData> allScoreData = new List<AIScoreData>();   
+
+    //    foreach (AIActionSO action in aiActions)
+    //    {
+    //        AIScoreData scoreData = action.GetScoreAction(aiUnit);
+    //        scoreData.action = action;
+
+    //        if (personality != null)
+    //        {
+    //            scoreData.score *= personality.GetCategoryWeight(action.Category);
+    //        }
+
+    //        if (aiUnit.HasStatus(EffectStatusType.Provoked))
+    //        {
+    //            scoreData = ApplyProvokeModifier(scoreData);    
+    //        }
+
+    //        allScoreData.Add(scoreData);
+    //    }
+
+    //    AIScoreData bestScoreData = allScoreData
+    //        .OrderByDescending(data => data.score)
+    //        .FirstOrDefault();
+
+    //    if (bestScoreData.action != null && bestScoreData.score >= 0)
+    //    {
+    //        bestScoreData.action.Execute(aiUnit, bestScoreData.target, onComplete);
+    //        Debug.Log($"Action is executed yeaaaah, {bestScoreData.action.name}");
+    //    }
+
+    //    else
+    //    {
+    //        onComplete?.Invoke();
+    //        Debug.Log($"{aiUnit.name} has no valid actions to take");
+    //    }
+    //}
+
+    private AIScoreData ApplyProvokeModifier(AIScoreData scoreData)
+    {
+        if (aiUnit.ForcedUnitGridPosition == null) return scoreData;
+
+
+        Unit target = null;
+
+        if (scoreData.target is Unit)
         {
-            bestScoreData.action.Execute(aiUnit, bestScoreData.target, onComplete);
-            Debug.Log($"Action is executed yeaaaah, {bestScoreData.action.name}");
+            target = (Unit)scoreData.target;
         }
 
-        else
+        switch (scoreData.action.Category)
         {
-            onComplete?.Invoke();
-            Debug.Log($"{aiUnit.name} has no valid actions to take");
+            case AIActionCategory.Attack:
+                if (target != null && target.GridPosition.Equals(aiUnit.ForcedUnitGridPosition))
+                {
+                    scoreData.score *= 2f; // Double the score for attacks against the provoking unit
+                }
+                else
+                {
+                    scoreData.score *= 0.1f; // Halve the score for attacks against other unit
+                }
+                break;
+
+            case AIActionCategory.Flee:
+                scoreData.score *= 1.2f;
+                break;
+
+            case AIActionCategory.AoE:
+                if (target != null && target.GridPosition.Equals(aiUnit.ForcedUnitGridPosition))
+                {
+                    scoreData.score *= 2f; // Double the score for attacks against the provoking unit
+                }
+                else
+                {
+                    scoreData.score *= 0.1f; // Halve the score for attacks against other unit
+                }
+                break;
+
+            case AIActionCategory.Move:
+                scoreData.score *= 1.5f;
+                break;
+
+            default:
+                scoreData.score *= 0.1f;
+                break;
         }
+        return scoreData;
     }
 }
 
@@ -245,7 +362,7 @@ public class TrapRegistry : MonoBehaviour
 {
     public static TrapRegistry Instance { get; private set; }
 
-    [SerializeField] private List<Trap> registeredTraps;
+    private List<Trap> registeredTraps;
 
     private void Awake()
     {
@@ -287,7 +404,6 @@ public class TrapRegistry : MonoBehaviour
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine.UI;
 using System;
 using System.Linq;
@@ -550,7 +666,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             characterSelectionController.gameObject.SetActive(true);
         }
 
-        foreach (Unit unit in playerUnits)
+        foreach (Unit unit in GetAlivePlayerUnits())
         {
             unit.ResetUsedAbilities();
             unit.HasTakenActionThisTurn = false;
@@ -602,7 +718,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     private IEnumerator EnemyTurnRoutine()
     {
-        foreach (Unit unit in enemyUnits)
+        foreach (Unit unit in GetAliveEnemyUnits())
         {
             unit.UpdateEffectsStatus();
         }
@@ -681,7 +797,6 @@ public class TurnManager : MonoBehaviour, IRewindable
 
 using UnityEngine;
 using System;
-using Unity.VisualScripting;
 public enum EffectStatusType
 {
     None,
@@ -696,12 +811,40 @@ public class StatusEffect
     public EffectStatusType type;
     public int duration;
     public Action tickAction;
+    public GameObject visualEffectPrefab;
 
-    public StatusEffect(EffectStatusType type, int duration, Action tickAction = null)
+    public StatusEffect(EffectStatusType type, int duration, Action tickAction = null, GameObject visualEffectPrefab = null)
     {
         this.type = type;
         this.duration = duration;
         this.tickAction = tickAction;
+        if (visualEffectPrefab != null)
+        {
+            this.visualEffectPrefab = visualEffectPrefab;
+        }
+    }
+
+    public void InstantiateVisualEffect(Unit unit)
+    {
+        if (visualEffectPrefab != null)
+        {
+            GameObject effectInstance = GameObject.Instantiate(visualEffectPrefab, unit.transform);
+            effectInstance.transform.localPosition = Vector3.zero; 
+        }
+    }
+
+    public void RemoveVisualEffect(Unit unit)
+    {
+        if (visualEffectPrefab != null)
+        {
+            foreach (Transform child in unit.transform)
+            {
+                if (child.gameObject.name.Contains(visualEffectPrefab.name))
+                {
+                    GameObject.Destroy(child.gameObject);
+                }
+            }
+        }
     }
 
     public void Tick(Unit unit)
@@ -1644,10 +1787,509 @@ public class SceneLoader : MonoBehaviour
 
 
 // ==================================================
+// FILE: BiomeController.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+public class BiomeController : MonoBehaviour,
+    IPointerEnterHandler,
+    IPointerExitHandler,
+    IPointerClickHandler
+{
+    [Header("Identity")]
+    public string biomName;
+
+    [Header("Visuals")]
+    [Tooltip("Automatically assigned if left empty")]
+    public SpriteRenderer spriteRenderer;
+
+    [Tooltip("SpriteRenderer used to visualize the biome region")]
+    public SpriteRenderer regionSpriteRenderer;
+
+    [Tooltip("SpriteRender with logical bounds to zoom in")]
+    public SpriteRenderer zoomSpriteRenderer;
+
+    [Tooltip("Scale multiplier when hovered")]
+    public float hoverScale = 1.2f;
+
+    [Tooltip("Time in seconds for one pulse cycle when hovered")]
+    public float hoverPulse = 0.06f;
+
+    [Tooltip("Speed of the pulse effect when hovered")]
+    public float pulseSpeed = 2f;
+
+    [Tooltip("Blend speed of the highlight color when hovered")]
+    [Range(0f, 1f)]
+    public float highlightBlendSpeed = 0.1f;
+
+    [Tooltip("Color to blend towards when hovered")]
+    public Color highlightColor = Color.white;
+
+    [Tooltip("Time in seconds to return to original state after unhovering")]
+    public float unhoverDuration = 0.15f;
+
+    [Header("Level Nodes")]
+    [Tooltip("Parent transform containing level nodes for this biom")]
+    public Transform levelNodesParent;
+
+    [HideInInspector]public Bounds worldBounds;
+
+    private Vector3 originalScale;
+    private Color originalColor;
+    private float pulseTime;
+    Coroutine coroutine;
+
+    private void Reset()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void Awake()
+    {
+        if (spriteRenderer == null) spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
+
+        originalScale = transform.localScale;
+        originalColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (MapManager.Instance.CurrentState != MapManager.ZoomState.World) return;
+        UpdateBounds();
+        SetCoroutine(PulseHighlight());
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        SetCoroutine(RestoreHighlight());
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (MapManager.Instance == null)
+        {
+            Debug.LogWarning("MapManager instance not found. Cannot zoom to biome.");
+            return;
+        }
+
+        transform.localScale = originalScale;
+        if (spriteRenderer != null) spriteRenderer.color = originalColor;
+        if (coroutine != null) StopCoroutine(coroutine);
+        coroutine = null;
+        Debug.Log($"Clicked on biome: {biomName}");
+        MapManager.Instance.RequestZoomToBiome(this);
+
+    }
+
+    public void UpdateBounds()
+    {
+        if (zoomSpriteRenderer != null)
+        {
+            worldBounds = zoomSpriteRenderer.bounds;
+        }
+    }
+
+    public SpriteRenderer GetRegionSpriteRenderer()
+    {
+        return regionSpriteRenderer;
+    }
+    private IEnumerator PulseHighlight()
+    {
+        pulseTime = 0f;
+
+        while (true)
+        {
+            Debug.Log("Pulsing");
+            pulseTime += Time.deltaTime;
+
+            float pulse = 1f + Mathf.Sin(pulseTime * pulseSpeed) * hoverPulse;
+            transform.localScale = originalScale * (hoverScale * pulse);
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = Color.Lerp(spriteRenderer.color, highlightColor, highlightBlendSpeed);
+            }
+
+            yield return null;
+        }
+    }
+
+    private IEnumerator RestoreHighlight()
+    {
+        float elapsed = 0f;
+        Vector3 fromScale = transform.localScale;
+        Color fromColor = spriteRenderer != null ? spriteRenderer.color : originalColor;
+
+        while (elapsed < unhoverDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / unhoverDuration);
+            transform.localScale = Vector3.Lerp(fromScale, originalScale, t);
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = Color.Lerp(fromColor, originalColor, t);
+            }
+            yield return null;
+        }
+
+        transform.localScale = originalScale;
+        if (spriteRenderer != null) spriteRenderer.color = originalColor;
+        coroutine = null;
+    }
+    private void SetCoroutine(IEnumerator routine)
+    {
+        if (coroutine != null)
+        {
+            StopCoroutine(coroutine);
+            coroutine = null;
+        }
+
+        coroutine = StartCoroutine(routine);        
+    }
+}
+
+
+// ==================================================
+// FILE: MapManager.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class MapManager : MonoBehaviour
+{
+    public static MapManager Instance { get; private set; }
+
+    [Header("Camera")]
+    [Tooltip("Main 2D orthographic camera")]
+    public Camera mainCamera;
+
+    [Header("Zoom Settings")]
+    [Tooltip("Padding multiplier around the biom bounds. 1.1 = 10% padding")]
+    public float zoomPadding = 1f;
+
+    [Tooltip("Duration of the zoom animation in seconds")]
+    public float zoomDuration = 0.6f;
+
+    [Tooltip("Animation curve for the zoom transition")]
+    public AnimationCurve zoomCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Header("Biome Fade")]
+    [Range(0f, 1f)]
+    [Tooltip("Alpha of the biome sprite after zooming in")]
+    public float biomeFadeAlpha = 0f;
+
+    [Tooltip("Duration of the biome fade animation in seconds")]
+    public float fadeDuration = 0.5f;
+
+    [Header("UI")]
+    [Tooltip("Button to return from biome view to world view")]
+    public GameObject returnFromRegionButton;
+
+    public enum ZoomState { World, Transitioning, Biome }
+    public ZoomState CurrentState { get; private set; } = ZoomState.World;
+
+    private BiomeController activeBiome;
+
+    private Vector3 worldCameraPosition;
+    private float worldOrthographicSize;
+    private Coroutine transition;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
+        if (mainCamera == null) mainCamera = Camera.main;
+
+        worldCameraPosition = mainCamera.transform.position;
+        worldOrthographicSize = mainCamera.orthographicSize;
+
+        returnFromRegionButton.GetComponent<Button>().onClick.AddListener(() => ZoomOut());
+        returnFromRegionButton.GetComponent<Button>().interactable = false;
+    }
+
+    public void RequestZoomToBiome(BiomeController biome)
+    {
+        if (CurrentState != ZoomState.World) return;
+
+        activeBiome = biome;
+        activeBiome.UpdateBounds();
+
+        SetTransition(ZoomToBiomeRoutine());
+    }
+
+    public void ZoomOut()
+    {
+        if (CurrentState != ZoomState.Biome) return;
+        SetTransition(ZoomOutRoutine());
+    }
+
+    private IEnumerator ZoomToBiomeRoutine()
+    {
+        CurrentState = ZoomState.Transitioning;
+
+        Coroutine camZoom = StartCoroutine(LerpCamera(
+            new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y, mainCamera.transform.position.z),
+            CalculateOrthographicSize(activeBiome.worldBounds),
+            zoomDuration
+        ));
+
+        yield return camZoom;
+
+        Coroutine fadeRegion = StartCoroutine(
+            FadeSprite(activeBiome.GetRegionSpriteRenderer(), 1f, 0.3f)
+        );
+
+        Coroutine regionZoom = StartCoroutine(LerpCamera(
+            new Vector3(activeBiome.GetRegionSpriteRenderer().bounds.center.x, activeBiome.GetRegionSpriteRenderer().bounds.center.y, mainCamera.transform.position.z),
+            CalculateOrthographicSize(activeBiome.GetRegionSpriteRenderer().bounds),
+            zoomDuration
+        ));
+
+        yield return fadeRegion;
+
+        Coroutine fadeBiome = StartCoroutine(
+            FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 0f, fadeDuration)
+        );
+
+        returnFromRegionButton.GetComponent<Button>().interactable = true;    
+        Coroutine fadeReturnButton = StartCoroutine(
+            FadeImage(returnFromRegionButton.GetComponent<Image>(), 1f, fadeDuration)
+        );
+
+        yield return regionZoom;    
+
+        CurrentState = ZoomState.Biome;
+    }
+
+    private IEnumerator ZoomOutRoutine()
+    {
+        CurrentState = ZoomState.Transitioning;
+
+        Coroutine camZoom = StartCoroutine(LerpCamera(
+           new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y, mainCamera.transform.position.z),
+           CalculateOrthographicSize(activeBiome.worldBounds),
+           zoomDuration
+       ));
+
+        yield return camZoom;
+
+
+        Coroutine fadeRegion = StartCoroutine(
+            FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, 0.3f)
+        );
+
+        returnFromRegionButton.GetComponent<Button>().interactable = false;
+
+        Coroutine fadeReturnButton = StartCoroutine(
+            FadeImage(returnFromRegionButton.GetComponent<Image>(), 0f, fadeDuration)
+        );
+
+        Coroutine biomeZoom = StartCoroutine(LerpCamera(
+            worldCameraPosition,
+            worldOrthographicSize,
+            zoomDuration
+        ));
+
+        yield return fadeRegion;
+
+        Coroutine fadeBiome = StartCoroutine(
+            FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration)
+        );
+
+        activeBiome = null;
+        CurrentState = ZoomState.World;
+    }
+    private IEnumerator LerpCamera(Vector3 targetPosition, float targetSize, float duration)
+    {
+        Vector3 startPosition = mainCamera.transform.position;
+        float startSize = mainCamera.orthographicSize;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = elapsed / duration;
+            float t = zoomCurve.Evaluate(progress);
+            mainCamera.transform.position = Vector3.LerpUnclamped(startPosition, targetPosition, t);
+            mainCamera.orthographicSize = Mathf.LerpUnclamped(startSize, targetSize, t);
+            yield return null;
+        }
+
+        mainCamera.transform.position = targetPosition;
+        mainCamera.orthographicSize = targetSize;
+    }
+
+    private IEnumerator FadeSprite(SpriteRenderer spriteRenderer, float targetAlpha, float duration)
+    {
+        Color startColor = spriteRenderer.color;
+        Color targetColor = new Color(startColor.r, startColor.g, startColor.b, targetAlpha);
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            spriteRenderer.color = Color.Lerp(startColor, targetColor, Mathf.Clamp01(elapsed / duration));
+            yield return null;
+        }
+
+        spriteRenderer.color = targetColor;
+    }
+
+    private IEnumerator FadeImage(Image image, float targetAlpha, float duration)
+    {
+        Color startColor = image.color;
+        Color targetColor = new Color(startColor.r, startColor.g, startColor.b, targetAlpha);
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            image.color = Color.Lerp(startColor, targetColor, Mathf.Clamp01(elapsed / duration));
+            yield return null;
+        }
+
+        image.color = targetColor;
+    }
+
+    private float CalculateOrthographicSize(Bounds bounds)
+    {
+        float sizeFromY = bounds.extents.y;
+        float sizeFromX = bounds.extents.x / mainCamera.aspect;
+
+        return Mathf.Max(sizeFromY, sizeFromX) * zoomPadding;
+    }
+
+    private void SetTransition(IEnumerator routine)
+    {
+        if (transition != null) StopCoroutine(transition);
+        transition = StartCoroutine(routine);
+    }
+}
+
+
+// ==================================================
+// FILE: MainMenuShowcaseContext.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
+
+public class  MainMenuShowcaseContext
+{
+    public Dictionary<string, MenuActor> Actors;
+    public MonoBehaviour Runner;
+}
+
+
+// ==================================================
+// FILE: MainMenuShowcaseDirector.cs
+// ==================================================
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class MenuShowcaseDirector : MonoBehaviour
+{
+    [SerializeField] private List<ShowcaseSequenceSO> sequences;
+
+    private void Start()
+    {
+        StartCoroutine(Run());
+    }
+
+    private IEnumerator Run()
+    {
+        while (true)
+        {
+            foreach (var seq in sequences)
+                yield return PlaySequence(seq);
+        }
+    }
+
+    private IEnumerator PlaySequence(ShowcaseSequenceSO seq)
+    {
+        var ctx = new MainMenuShowcaseContext();
+        ctx.Actors = new Dictionary<string, MenuActor>();
+        ctx.Runner = this;
+
+        foreach (var cmd in seq.commands)
+            yield return cmd.Execute(ctx);
+    }
+}
+
+
+// ==================================================
+// FILE: MenuActor.cs
+// ==================================================
+
+using DG.Tweening;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
+
+public class MenuActor : MonoBehaviour
+{
+    [SerializeField] private UnitVisualBridge unitVisualBridge;
+    
+    public IEnumerator MoveTo(Vector3 targetPosition, float duration)
+    {
+        yield return transform.DOMove(targetPosition, duration).WaitForCompletion();
+    }
+
+    public void Play(PlayerState playerState)
+    {
+        unitVisualBridge.PlayAnimation(playerState);
+    }
+
+    public void Face(Vector3 targetPosition)
+    {
+        if (targetPosition.x < transform.position.x)
+        {
+            transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+        }
+        else
+        {
+            transform.localScale = new Vector3(-(Mathf.Abs(transform.localScale.x)), transform.localScale.y, transform.localScale.z);
+        }
+    }
+}   
+
+
+// ==================================================
+// FILE: ShowcaseSequenceSO.cs
+// ==================================================
+
+using System.Collections.Generic;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/Sequence")]
+public class ShowcaseSequenceSO : ScriptableObject
+{
+    public List<ShowcaseCommandSO> commands;
+}
+
+
+// ==================================================
 // FILE: CharacterSelectionController.cs
 // ==================================================
 
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -1891,7 +2533,7 @@ using System.Linq;
 
 public class RewindManager : MonoBehaviour
 {
-    public static RewindManager Instance;
+    public static RewindManager Instance { get; private set; };
 
     [SerializeField] private int maxHistorySize = 100;
 
@@ -2189,6 +2831,7 @@ public abstract class AbilityBaseSO : ScriptableObject
         switch (targetType)
         {
             case TargetType.Enemy:
+                if (caster.ForcedUnitGridPosition != null && targetPosition != caster.ForcedUnitGridPosition) return false;
                 return targetObject is Unit enemy && enemy.UnitFaction != caster.UnitFaction;
 
             case TargetType.Ally:
@@ -2270,28 +2913,6 @@ public class BoostUnitAbilitySO : AbilityBaseSO
 
 
 // ==================================================
-// FILE: DefendAbilitySO.cs
-// ==================================================
-
-using UnityEngine;
-
-public class DefendAbilitySO : MonoBehaviour
-{
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-}
-
-
-// ==================================================
 // FILE: HealAbilitySO.cs
 // ==================================================
 
@@ -2323,7 +2944,7 @@ public class HealAbilitySO : AbilityBaseSO
                     unit.Heal(teamHealAmount);
                 }
             }
-            onAbilityInvoke.Invoke();
+            onAbilityInvoke?.Invoke();
 
             Debug.Log($"{caster.name} healed {targetUnit.name} for {healAmount} HP!");
 
@@ -2372,6 +2993,7 @@ public class HealAbilitySO : AbilityBaseSO
 // ==================================================
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -2382,6 +3004,10 @@ public class ProvokeAbilitySO : AbilityBaseSO
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
     {
         List<Vector3Int> reachableTiles = GetTilesInRange(targetPosition);
+
+        ProvokeVisualEffect highlight = Instantiate(abilityEffectPrefab, caster.transform.position, Quaternion.identity).GetComponent<ProvokeVisualEffect>();
+
+        highlight.Execute(caster.GridPosition, reachableTiles);
 
         foreach (var position in reachableTiles)
         {
@@ -2544,8 +3170,10 @@ public class AttackAbilitySO : AbilityBaseSO
 // FILE: BurnAttackAbilitySO.cs
 // ==================================================
 
+using Assets.Scripts.UI.Abilities_Visual_Effects;
 using DG.Tweening;
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -2559,6 +3187,12 @@ public class BurnAttackAbilitySO : AbilityBaseSO
 
         if (targetObject is Unit targetUnit)
         {
+
+            GameObject fireVisual = Instantiate(abilityEffectPrefab, GridManager.Instance.GridToWorld(targetPosition), Quaternion.identity);
+
+
+            fireVisual.transform.localScale = Vector3.zero;
+            fireVisual.transform.DOScale(Vector3.one, 0.5f);
             int damage = GetPower(caster);
 
             targetUnit.TakeDamage(damage, caster);
@@ -2568,6 +3202,7 @@ public class BurnAttackAbilitySO : AbilityBaseSO
                 targetUnit.TakeDamage(damage / 2, caster);
             });
 
+            fireVisual.GetComponent<FireBurnVisualEffect>().ExtinctFire();
         }
     }
 }
@@ -2581,7 +3216,6 @@ public class BurnAttackAbilitySO : AbilityBaseSO
 using DG.Tweening;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "FireballAttackAbilitySO", menuName = "Abilities/Fireball Attack Ability")]
@@ -2629,7 +3263,14 @@ public class FireballAttackAbilitySO : AbilityBaseSO
             {
                 Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
                 GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
-                Destroy(effect, 2f);
+                effect.GetComponentInChildren<Animator>().SetTrigger("collide");
+
+                effect.transform.DOScale(1.8f, 0.5f).SetEase(Ease.OutBack);
+
+                effect.GetComponentInChildren<SpriteRenderer>().DOFade(0, 1.5f).SetDelay(0.5f).OnComplete(() =>
+                {
+                    Destroy(effect);
+                });
             }
         });
     }
@@ -2647,8 +3288,8 @@ public class FireballAttackAbilitySO : AbilityBaseSO
 // ==================================================
 
 using DG.Tweening;
-using UnityEngine;
 using System;
+using UnityEngine;
 
 [CreateAssetMenu(menuName ="Abilities/Range Attack")]
 public class RangeAttackAbilitySO : AbilityBaseSO
@@ -2676,6 +3317,17 @@ public class RangeAttackAbilitySO : AbilityBaseSO
             Sequence attackSequence = DOTween.Sequence();
 
             GameObject projectileGameObject = Instantiate(projectile, caster.transform.position, Quaternion.identity);
+
+            Vector3 direction = caster.transform.position - targetWorldPosition;
+
+            if (direction.x > 0)
+            {
+                projectileGameObject.transform.localScale = new Vector3(-1, 1, 1);
+            }
+            else if (direction.x < 0)
+            {
+                projectileGameObject.transform.localScale = new Vector3(1, 1, 1);
+            }
 
             attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
             attackSequence.AppendCallback(() =>
@@ -2753,7 +3405,8 @@ public class ShieldBashSO : AbilityBaseSO
 
                 if (IsAttackStunning())
                 {
-                    targetUnit.ApplyEffect(EffectStatusType.Stunned, stunDuration);
+                    
+                    targetUnit.ApplyEffect(EffectStatusType.Stunned, stunDuration, null, abilityEffectPrefab);
                 }
 
                 caster.transform.DOJump(GridManager.Instance.GridToWorld(caster.GridPosition), 0.5f, 1, 0.3f);
@@ -2765,7 +3418,7 @@ public class ShieldBashSO : AbilityBaseSO
     {
         float chance = UnityEngine.Random.value;
 
-        return stunChance < chance;
+        return chance < stunChance;
     }
 }
 
@@ -2825,13 +3478,45 @@ public class TrapAbilitySO : AbilityBaseSO
 
 
 // ==================================================
+// FILE: AbilityActionBase.cs
+// ==================================================
+
+using System;
+using System.Collections;
+using UnityEngine;
+
+public abstract class AbilityActionBase : AIActionSO
+{
+    protected abstract AbilityBaseSO GetAbility();
+
+
+    public override bool CanExecute(Unit aiUnit)
+    {
+        AbilityBaseSO ability = GetAbility();
+        if (ability == null) return false;
+        return aiUnit.CanUseAbility(ability);
+    }
+}
+
+
+// ==================================================
 // FILE: AIActionSO.cs
 // ==================================================
 
 using System;
 using UnityEngine;
 
-
+public enum AIActionCategory
+{
+    Attack,
+    Move,
+    Flee,
+    Support,
+    AoE,
+    Teleport,
+    GroupUp,
+    Utility
+}
 public struct AIScoreData
 {
     public float score;
@@ -2840,9 +3525,154 @@ public struct AIScoreData
 }
 public abstract class AIActionSO : ScriptableObject
 {
+    public abstract AIActionCategory Category { get; }
     public abstract AIScoreData GetScoreAction(Unit aiUnit);
 
+    public virtual bool CanExecute(Unit aiUnit)
+    {
+        return true;
+    }
+
     public abstract void Execute(Unit aiUnit, object target, Action onComplete);  
+}
+
+
+// ==================================================
+// FILE: AIPersonalitySO.cs
+// ==================================================
+
+using UnityEngine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+
+/// <summary>
+/// Defines an enemy archetype by applying score multipliers to each action category.
+/// Assign different personalities to different enemy units in the Inspector to create
+/// varied behavior without writing any new code.
+///
+/// Example archetypes to configure:
+///   Aggressive  — Attack x2.0,  Flee x0.1,  Support x0.5
+///   Cowardly    — Flee  x2.0,   Attack x0.7, GroupUp x1.5
+///   Support     — Support x2.5, AoE x1.5,    Attack x0.6
+///   Tactical    — AoE x2.0,     Teleport x1.8, Attack x0.8
+/// </summary>
+/// 
+
+
+[CreateAssetMenu(fileName = "AIPersonalitySO", menuName = "AIPersonalitySO")]
+public class AIPersonalitySO: ScriptableObject
+{
+    [Serializable]
+    public struct CategoryWeight
+    {
+        public AIActionCategory category;
+        [Range(0f, 5f)] public float multiplier;
+    }
+
+    public List<CategoryWeight> categoryWeights = new List<CategoryWeight>();
+
+    [Range(0f, 1f)] public float fleeHealthTreshold = 0.35f;
+
+    [TextArea(2, 4)] public string archetypeDescription;
+
+    public float GetCategoryWeight(AIActionCategory category)
+    {
+        foreach (var categoryWeight in categoryWeights)
+        {
+            if (categoryWeight.category == category)
+            {
+                return categoryWeight.multiplier;
+            }
+        }
+        return 1f; // Default multiplier if category not found
+    }
+
+}
+
+
+// ==================================================
+// FILE: AoEAbilityAction.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>
+/// Wraps any AoE ability (Fireball, etc.) and scores the action
+/// by scanning every valid target tile and finding the position that hits the
+/// most enemies simultaneously.
+///
+/// Score: 0 if fewer than minTargetsToUse are hittable, otherwise baseScore + perTargetBonus per enemy.
+/// Example: hits 3 enemies > 80 + 3?50 = 230, which beats a single-target attack (100-200).
+/// 
+/// Works with any ability that implements GetAbilityRadiusTiles() — the default
+/// implementation returns only the target tile, so splash abilities must override it
+/// (FireballAttackAbilitySO already does this correctly).
+/// </summary>
+/// 
+[CreateAssetMenu(fileName = "AoEAbilityActionSO", menuName = "AI/Actions/AoE Ability Action")]
+public class AoEAbilityActionSO : AbilityActionBase
+{
+    public override AIActionCategory Category => AIActionCategory.AoE;
+    protected override AbilityBaseSO GetAbility() => aoeAbility;
+
+    [SerializeField] private AbilityBaseSO aoeAbility;
+
+    [Tooltip("Base score when the minimum number of targets are hit.")]
+    public float baseScore = 80f;
+
+    [Tooltip("Additional score per enemy caught in the blast.")]
+    public float perTargetBonus = 50f;
+
+    [Tooltip("Minimum enemies that must be hittable for the ability to be considered at all.")]
+    public int minTargetsToUse = 2;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData();
+
+        List<Vector3Int> tilesInRange = aoeAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        Vector3Int bestTile = default;
+        int bestEnemyCount = 0;
+
+        foreach (Vector3Int tile in tilesInRange)
+        {
+            if (!aoeAbility.IsValidTarget(aiUnit.GridPosition, tile, aiUnit)) continue;
+
+            // Count how many player units fall inside the blast radius at this tile
+            List<Vector3Int> blastArea = aoeAbility.GetAbilityRadiusTiles(tile);
+            int enemyCount = blastArea.Count(t =>
+                GridObjectRegistry.Instance.GetObjectAt(t) is Unit u &&
+                u.UnitFaction == Faction.Player);
+
+            if (enemyCount > bestEnemyCount)
+            {
+                bestEnemyCount = enemyCount;
+                bestTile = tile;
+            }
+        }
+
+        if (bestEnemyCount < minTargetsToUse) return scoreData;
+
+        scoreData.score = baseScore + bestEnemyCount * perTargetBonus;
+        scoreData.target = bestTile;
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        if (target is Vector3Int tile)
+        {
+            Debug.Log($"{aiUnit.name} fires AoE ability at {tile}");
+            aiUnit.UseAbility(aoeAbility, tile);
+        }
+        onComplete?.Invoke();
+    }
 }
 
 
@@ -2856,8 +3686,11 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 [CreateAssetMenu(fileName = "AttackActionSO", menuName = "AI/Actions/Attack Action")]
-public class AttackActionSO : AIActionSO
+public class AttackActionSO : AbilityActionBase
 {
+    public override AIActionCategory Category => AIActionCategory.Attack;   
+    protected override AbilityBaseSO GetAbility() => attackAbility;
+
     [SerializeField] private AbilityBaseSO attackAbility;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
@@ -2873,7 +3706,6 @@ public class AttackActionSO : AIActionSO
         {
             if (targetUnit == null)
             {
-                Debug.Log("YOU ARE FUCKING NOBODY");
                 continue;
             }
             if (attackAbility.IsValidTarget(aiUnit.GridPosition, targetUnit.GridPosition, aiUnit) && targetUnit.CurrentHealth < bestHealth)
@@ -2890,6 +3722,7 @@ public class AttackActionSO : AIActionSO
             scoreData.target = null;
             return scoreData;
         };
+
         if (attackAbility.IsValidTarget(aiUnit.GridPosition, bestTarget.GridPosition, aiUnit))
         {
             float healthPercentage = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
@@ -2937,10 +3770,576 @@ public class AttackActionSO : AIActionSO
 
 
 // ==================================================
+// FILE: BoostUnitActionSO.cs
+// ==================================================
+
+using System;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>
+/// Context-aware scoring for Boost Unit. The ability raises all stats, so its
+/// value is entirely time-dependent — the unit needs turns remaining to actually
+/// USE those stronger stats. Boosting at the end of a fight is wasteful.
+///
+/// Scoring logic:
+///
+///   Base:                flat reward for having any valid target in range
+///   Target is self:      prefer boosting the highest-damage unit; self-boost
+///                        is valid but less reliable without knowing damage output
+///   Enemies remaining:   more enemies alive = more turns of boosted stats ahead.
+///                        Core multiplier on the base score.
+///   Target HP is low:    penalise — a boosted unit that dies next turn contributed nothing
+///   Already boosted:     heavy penalty — stacking the same buff does nothing since
+///                        BoostUnitAbilitySO just adds on top of existing stats and
+///                        the Boosted status effect doesn't stack duration
+///   Caster is low HP:    penalise — better to flee or attack for a kill than buff
+///
+/// Score range: ~0 (wrong situation) to ~250 (early fight, many enemies, healthy target)
+/// This competes well with Attack (100-200) early in a fight but loses late.
+/// </summary>
+/// 
+
+[CreateAssetMenu(fileName = "BoostUnitActionSO", menuName = "AI/Actions/Boost Unit Action")]
+public class BoostUnitActionSO : AbilityActionBase
+{
+    public override AIActionCategory Category => AIActionCategory.Support;
+    protected override AbilityBaseSO GetAbility() => boostAbility;
+
+    [SerializeField] private AbilityBaseSO boostAbility;
+
+    [Header("Base Scoring")]
+    [Tooltip("Starting score before situational modifiers. Set below Attack's 100 baseline " +
+             "so buffing is a conditional priority, not an automatic opener.")]
+    public float baseScore = 60f;
+
+    [Tooltip("Multiplied by the number of enemies alive. Core value driver — more enemies " +
+             "means more turns where the boosted stats will matter.")]
+    public float perEnemyMultiplier = 20f;
+
+    [Header("Penalties")]
+    [Tooltip("HP% below which the target is likely to die before benefitting from the boost.")]
+    [Range(0f, 1f)] public float targetLowHpThreshold = 0.4f;
+    public float targetLowHpPenalty = 70f;
+
+    [Tooltip("Score multiplier when the target is already boosted. Near zero — re-buffing " +
+             "wastes the action since the effect is already active.")]
+    [Range(0f, 1f)] public float alreadyBoostedMultiplier = 0.05f;
+
+    [Tooltip("HP% below which the caster is too endangered to spend an action buffing.")]
+    [Range(0f, 1f)] public float casterLowHpThreshold = 0.3f;
+    public float casterLowHpPenalty = 80f;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData();
+
+        // Caster is too low HP — this action isn't worth the tempo loss
+        float casterHpPercent = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth;
+        if (casterHpPercent < casterLowHpThreshold) return scoreData;
+
+        Unit bestTarget = FindBestTarget(aiUnit);
+        if (bestTarget == null) return scoreData;
+
+        int aliveEnemies = TurnManager.Instance.GetAlivePlayerUnits().Count;
+        if (aliveEnemies == 0) return scoreData;
+
+        float score = baseScore + aliveEnemies * perEnemyMultiplier;
+
+        if (bestTarget.HasStatus(EffectStatusType.Boosted))
+        {
+            score *= alreadyBoostedMultiplier;
+
+            Unit unboostedTarget = FindBestTarget(aiUnit, excludeBoosted: true);
+            if (unboostedTarget != null)
+            {
+                bestTarget = unboostedTarget;
+                score = baseScore + aliveEnemies * perEnemyMultiplier; // reset
+            }
+        }
+
+        // PENALTY: Target is low HP — will likely die before using the boost
+        float targetHpPercent = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
+        if (targetHpPercent < targetLowHpThreshold) score -= targetLowHpPenalty;
+
+        if (score <= 0f) return scoreData;
+
+        scoreData.score = score;
+        scoreData.target = bestTarget;
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Unit targetUnit = target as Unit;
+        if (targetUnit == null) { onComplete?.Invoke(); return; }
+
+        Debug.Log($"{aiUnit.name} boosts {targetUnit.name}");
+        aiUnit.UseAbility(boostAbility, targetUnit.GridPosition);
+        onComplete?.Invoke();
+    }
+
+    private Unit FindBestTarget(Unit aiUnit, bool excludeBoosted = false)
+    {
+        return boostAbility.GetTilesInRange(aiUnit.GridPosition)
+            .Select(t => GridObjectRegistry.Instance.GetObjectAt(t) as Unit)
+            .Where(u => u != null &&
+                        u.UnitFaction == aiUnit.UnitFaction &&
+                        (!excludeBoosted || !u.HasStatus(EffectStatusType.Boosted)) &&
+                        boostAbility.IsValidTarget(aiUnit.GridPosition, u.GridPosition, aiUnit))
+            .OrderByDescending(u => u.CurrentHealth)
+            .FirstOrDefault();
+    }
+}
+
+
+// ==================================================
+// FILE: BurnAttackActionSO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>
+/// Context-aware scoring for Burn Attack. The ability deals immediate damage AND
+/// applies a Burned DoT — so its value is highest when the DoT will actually tick
+/// multiple times on a surviving target.
+///
+/// Scoring logic:
+///
+///   Base:               flat reward for having any valid target
+///   High HP target:     burn DoT pays off most against targets that will survive
+///                       long enough to take all the ticks
+///   Already burning:    heavy penalty — reapplying burn only refreshes duration,
+///                       the immediate damage alone doesn't justify choosing this
+///                       over a plain attack
+///   Low target HP:      penalty — target likely dies before DoT does anything;
+///                       a plain attack that secures the kill is better
+///   AI outnumbered:     small bonus — sustained DoT pressure is more valuable
+///                       when the AI team needs help thinning enemies over time
+///
+/// Score range: ~0 to ~260, competitive with AttackActionSO but only pulling ahead
+/// when the burn DoT will meaningfully contribute.
+/// </summary>
+/// 
+
+[CreateAssetMenu(fileName = "BurnAttackActionSO", menuName = "AI/Actions/Burn Attack Action")]
+public class BurnAttackActionSO : AbilityActionBase
+{
+    public override AIActionCategory Category => AIActionCategory.Attack;
+    protected override AbilityBaseSO GetAbility() => burnAttackAbility;
+
+    [SerializeField] private AbilityBaseSO burnAttackAbility;
+
+    [Header("Base Scoring")]
+    [Tooltip("Starting score when a valid target exists. Slightly below AttackActionSO's 100 " +
+             "baseline so Burn is a conditional upgrade, not always the default choice.")]
+    public float baseScore = 75f;
+
+    [Header("Situational Bonuses")]
+    [Tooltip("HP% threshold above which the target is considered 'high HP' — likely to survive " +
+             "long enough for the DoT to tick multiple times.")]
+    [Range(0f, 1f)] public float highHpThreshold = 0.55f;
+
+    [Tooltip("Bonus score when the target clears the highHpThreshold. This is the core value " +
+             "of burn — scale it up if burn DoT is high in your design.")]
+    public float highHpBonus = 80f;
+
+    [Tooltip("Additional bonus per DoT tick the target is likely to survive. Calculated as " +
+             "estimated surviving turns ? this value. Rewards burning very tanky targets.")]
+    public float perSurvivingTickBonus = 15f;
+
+    [Tooltip("Bonus per unit the AI team is outnumbered by. Sustained DoT is more valuable " +
+             "when there are many enemies to wear down over time.")]
+    public float outnumberedBonusPerUnit = 20f;
+
+    [Header("Penalties")]
+    [Tooltip("Score multiplier when the target is already burning. Near zero — re-burning " +
+             "only refreshes duration and wastes the action over a normal attack.")]
+    [Range(0f, 1f)] public float alreadyBurningMultiplier = 0.15f;
+
+    [Tooltip("HP% below which the target is unlikely to survive long enough for the DoT " +
+             "to be worthwhile. A plain finisher is better.")]
+    [Range(0f, 1f)] public float lowHpThreshold = 0.3f;
+
+    [Tooltip("Score subtracted when the target is below lowHpThreshold.")]
+    public float lowHpPenalty = 60f;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData();
+
+        Unit bestTarget = FindBestTarget(aiUnit);
+        if (bestTarget == null) return scoreData;
+
+        float score = baseScore;
+
+        float targetHpPercent = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
+
+        // PENALTY: Target is already burning — DoT adds nothing new
+        if (bestTarget.HasStatus(EffectStatusType.Burned))
+        {
+            score *= alreadyBurningMultiplier;
+
+
+            Unit alternativeTarget = FindBestNonBurningTarget(aiUnit);
+            if (alternativeTarget != null)
+            {
+                // Re-score using the non-burning target
+                bestTarget = alternativeTarget;
+                targetHpPercent = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
+                score = baseScore; // reset
+            }
+            else if (score <= 0f)
+            {
+                return scoreData;
+            }
+        }
+
+        // PENALTY: Target is low HP — likely to die before DoT ticks meaningfully
+        if (targetHpPercent < lowHpThreshold)
+            score -= lowHpPenalty;
+
+        // BONUS: Target is high HP — will survive to eat all burn ticks
+        if (targetHpPercent >= highHpThreshold)
+        {
+            score += highHpBonus;
+
+            // Additional bonus based on how many ticks the target will likely survive
+            // Rough estimate: each 10% HP above the low threshold = 1 surviving tick
+            int estimatedSurvivingTicks = Mathf.FloorToInt((targetHpPercent - lowHpThreshold) / 0.1f);
+            score += estimatedSurvivingTicks * perSurvivingTickBonus;
+        }
+
+        // BONUS: AI team is outnumbered — DoT helps chip down a crowd over time
+        int aliveEnemies = TurnManager.Instance.GetAlivePlayerUnits().Count;
+        int aliveAllies = TurnManager.Instance.GetAliveEnemyUnits().Count;
+        int deficit = aliveEnemies - aliveAllies;
+        if (deficit > 0)
+            score += deficit * outnumberedBonusPerUnit;
+
+        if (score <= 0f) return scoreData;
+
+        scoreData.score = score;
+        scoreData.target = bestTarget;
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Unit targetUnit = target as Unit;
+        if (targetUnit == null) { onComplete?.Invoke(); return; }
+
+        Debug.Log($"{aiUnit.name} uses Burn Attack on {targetUnit.name}");
+        aiUnit.UseAbility(burnAttackAbility, targetUnit.GridPosition);
+        onComplete?.Invoke();
+    }
+
+
+    private Unit FindBestNonBurningTarget(Unit aiUnit)
+    {
+        List<Vector3Int> tilesInRange = burnAttackAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        return tilesInRange
+            .Select(t => GridObjectRegistry.Instance.GetObjectAt(t) as Unit)
+            .Where(u => u != null &&
+                        u.UnitFaction == Faction.Player &&
+                        !u.HasStatus(EffectStatusType.Burned) &&
+                        burnAttackAbility.IsValidTarget(aiUnit.GridPosition, u.GridPosition, aiUnit))
+            .OrderByDescending(u => u.CurrentHealth)
+            .FirstOrDefault();
+    }
+
+    private Unit FindBestTarget(Unit aiUnit)
+    {
+        List<Vector3Int> tilesInRange = burnAttackAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        return tilesInRange
+            .Select(t => GridObjectRegistry.Instance.GetObjectAt(t) as Unit)
+            .Where(u => u != null &&
+                        u.UnitFaction == Faction.Player &&
+                        burnAttackAbility.IsValidTarget(aiUnit.GridPosition, u.GridPosition, aiUnit))
+            .OrderByDescending(u => u.CurrentHealth)
+            .FirstOrDefault();
+    }
+}
+
+
+// ==================================================
+// FILE: FleeActionSO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using UnityEngine;
+
+/// <summary>
+/// Causes the AI unit to retreat to the safest reachable tile when its HP drops
+/// below a configurable threshold. Score scales with how injured the unit is,
+/// so the more desperate the situation, the harder it fights to flee.
+/// 
+/// Score range: 0 (above threshold) to ~fleeBaseScore (near death)
+/// Typical base score of 150 means fleeing beats Move (25) but loses to Attack (100-200)
+/// unless the unit is critically low on HP — raise baseScore to override attacks.
+/// </summary>
+
+[CreateAssetMenu(fileName = "FleeActionSO", menuName = "AI/Actions/Flee Action")]
+public class FleeActionSO : AIActionSO
+{
+    public override AIActionCategory Category => AIActionCategory.Flee;
+
+    [Tooltip("HP percentage below which this action becomes valid (0 = never flee, 1 = always flee).")]
+    [Range(0f, 1f)] public float fleeHealthTreshold = 0.35f;
+
+    [Tooltip("Base score when at 0 HP. Actual score = baseScore * (1 - healthPercent). " +
+         "Set above 200 to override even high-value attacks when critically injured.")]
+    public float fleeBaseScore = 150f;
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData() { score = 0f, target = null };
+
+
+        float healthPercentage = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth;
+
+        if (healthPercentage >= fleeHealthTreshold) return scoreData;
+
+        Vector3Int safeTile = FindSafestReachableTile(aiUnit);
+
+        if (safeTile == aiUnit.GridPosition) return scoreData;
+
+        scoreData.score = fleeBaseScore * (1f - healthPercentage);
+        scoreData.target = safeTile;
+
+        return scoreData;
+    }
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Debug.Log($"{aiUnit.name} is fleeing!");
+        
+        if (target is Vector3Int safeTile)
+        {
+            Debug.Log($"{aiUnit.name} is fleeing to {safeTile}!");
+            aiUnit.MoveTo(safeTile, onComplete);
+        }
+        else
+        {
+            Debug.LogError("Invalid target for FleeActionSO. Expected Vector3Int.");
+            onComplete?.Invoke();
+        }
+    }
+
+    private Vector3Int FindSafestReachableTile(Unit aiUnit)
+    {
+        List<Unit> playerUnits = TurnManager.Instance.GetAlivePlayerUnits();
+        if (playerUnits.Count == 0) return aiUnit.GridPosition;
+        Unit closestPlayerUnit = playerUnits
+            .OrderBy(u => Vector3.Distance(u.GridPosition, aiUnit.GridPosition))
+            .First();
+        List<Vector3Int> reachableTiles = PathFinder.Instance.GetReachableTiles(
+            aiUnit.GridPosition,
+            aiUnit.MovementRange,
+            GridManager.Instance.IsValidPosition
+        );
+        if (reachableTiles.Count == 0) return aiUnit.GridPosition;
+        Vector3Int bestTile = reachableTiles
+            .OrderByDescending(t => Vector3.Distance(t, closestPlayerUnit.GridPosition))
+            .First();
+        return bestTile;
+    }
+
+    public override bool CanExecute(Unit aiUnit)
+    {
+        return aiUnit.MovedPerTurn < aiUnit.MoveAllowedPerTurn;
+    }
+}
+
+
+// ==================================================
+// FILE: GroupupActionSO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>
+/// Makes the AI unit reposition toward its nearest ally when it finds itself isolated.
+/// Useful for giving Support/Cowardly archetypes a fallback behavior that keeps
+/// the enemy team clustered together.
+///
+/// Score: 0 when allies are already nearby, baseScore (~40) when isolated.
+/// This is intentionally lower than Attack/Flee so grouped fighting is preferred,
+/// but the unit still retreats to allies when it has nothing else to do.
+///
+/// </summary>
+/// 
+
+[CreateAssetMenu(fileName = "GroupUpActionSO", menuName = "AI/Actions/Group Up Action")]
+public class GroupUpActionSO : AIActionSO
+{
+    public override AIActionCategory Category => AIActionCategory.GroupUp;
+
+    [Tooltip("Distance in grid tiles below which the unit considers itself 'grouped'. " +
+             "If any ally is within this range, the action scores 0.")]
+    public float allyProximityThreshold = 3f;
+
+    [Tooltip("Base score when isolated. Should be higher than Move (25) so this takes " +
+             "priority over chasing enemies when the unit is alone.")]
+    public float baseScore = 45f;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData();
+
+        if (HasNearbyAlly(aiUnit)) return scoreData;
+
+        Unit nearestAlly = FindNearestAlly(aiUnit);
+        if (nearestAlly == null) return scoreData;
+
+        scoreData.score = baseScore;
+        scoreData.target = nearestAlly;
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Unit allyUnit = target as Unit;
+        if (allyUnit == null) { onComplete?.Invoke(); return; }
+
+        List<Vector3Int> reachable = PathFinder.Instance.GetReachableTiles(
+            aiUnit.GridPosition,
+            aiUnit.MovementRange,
+            GridManager.Instance.IsValidPosition
+        );
+
+        if (reachable.Count == 0) { onComplete?.Invoke(); return; }
+
+        Vector3Int bestTile = reachable
+            .Where(t => t == aiUnit.GridPosition || GridObjectRegistry.Instance.GetObjectAt(t) == null)
+            .OrderBy(t => Vector3.Distance(t, allyUnit.transform.position))
+            .FirstOrDefault();
+
+        Debug.Log($"{aiUnit.name} is grouping up with {allyUnit.name}");
+        aiUnit.MoveTo(bestTile, onComplete);
+    }
+
+    private bool HasNearbyAlly(Unit aiUnit)
+    {
+        foreach (Unit ally in TurnManager.Instance.GetAliveEnemyUnits())
+        {
+            if (ally == aiUnit) continue;
+            if (Vector3.Distance(ally.GridPosition, aiUnit.GridPosition) <= allyProximityThreshold)
+                return true;
+        }
+        return false;
+    }
+
+    private Unit FindNearestAlly(Unit aiUnit)
+    {
+        List<Unit> allies = TurnManager.Instance.GetAliveEnemyUnits()
+            .Where(u => u != aiUnit)
+            .ToList();
+
+        if (allies.Count == 0) return null;
+
+        return allies
+            .OrderBy(u => Vector3.Distance(u.transform.position, aiUnit.transform.position))
+            .FirstOrDefault();
+    }
+
+    public override bool CanExecute(Unit aiUnit)
+    {
+        return aiUnit.MovedPerTurn < aiUnit.MoveAllowedPerTurn;
+    }
+}
+
+
+// ==================================================
+// FILE: HealallyActionSO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// Wraps HealAbilitySO (or any ally-targeting ability) and scores the action
+/// by finding the most critically injured friendly unit in range.
+///
+/// Score: 0 if no ally is below the healThreshold, otherwise baseScore + up to 100 bonus
+/// based on how injured they are. A near-dead ally scores ~190, making healing
+/// competitive with attacking a low-HP enemy.
+/// </summary>
+/// 
+
+[CreateAssetMenu(fileName = "HealAllyActionSO", menuName = "AI/Actions/Heal Ally Action")]
+public class HealAllyActionSO : AbilityActionBase
+{
+    public override AIActionCategory Category => AIActionCategory.Support;
+    protected override AbilityBaseSO GetAbility() => healAbility;
+
+    [SerializeField] private AbilityBaseSO healAbility;
+
+    [Tooltip("Only consider healing allies whose HP% is at or below this threshold.")]
+    [Range(0f, 1f)] public float healThreshold = 0.7f;
+
+    [Tooltip("Base score when a healable target is found. Scales up with injury severity.")]
+    public float baseScore = 90f;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData();
+
+        List<Vector3Int> tilesInRange = healAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        Unit bestTarget = null;
+        float lowestHealthPercent = healThreshold;
+
+        foreach (Vector3Int tile in tilesInRange)
+        {
+            if (!healAbility.IsValidTarget(aiUnit.GridPosition, tile, aiUnit)) continue;
+
+            if (GridObjectRegistry.Instance.GetObjectAt(tile) is Unit unit &&
+                unit.UnitFaction == aiUnit.UnitFaction)
+            {
+                float hp = (float)unit.CurrentHealth / unit.MaxHealth;
+                if (hp < lowestHealthPercent)
+                {
+                    lowestHealthPercent = hp;
+                    bestTarget = unit;
+                }
+            }
+        }
+
+        if (bestTarget == null) return scoreData;
+
+        // More injured ally = higher urgency
+        scoreData.score = baseScore + (1f - lowestHealthPercent) * 100f;
+        scoreData.target = bestTarget;
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Unit targetUnit = target as Unit;
+        if (targetUnit == null) { onComplete?.Invoke(); return; }
+
+        Debug.Log($"{aiUnit.name} heals {targetUnit.name}");
+        aiUnit.UseAbility(healAbility, targetUnit.GridPosition);
+        onComplete?.Invoke();
+    }
+}
+
+
+// ==================================================
 // FILE: MoveActionSO.cs
 // ==================================================
 
-using NUnit.Framework.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -2950,11 +4349,12 @@ using UnityEngine.Rendering;
 [CreateAssetMenu(fileName = "Move Action SO", menuName = "AI/Actions/Move Action")]
 public class MoveActionSO : AIActionSO
 {
+    public override AIActionCategory Category => AIActionCategory.Move;
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
         AIScoreData scoreData = new AIScoreData() { score = 0f, target = null };
 
-        Unit closestUnit = FindClosestPlayerUnit(aiUnit);
+        Unit closestUnit = GetMoveTarget(aiUnit);
 
         if (closestUnit == null) return scoreData;
 
@@ -2982,38 +4382,533 @@ public class MoveActionSO : AIActionSO
         bestTile = reachableTiles
             .OrderBy(t => Vector3.Distance(t, targetUnit.GridPosition))
             .First();
-        
+       
+        if (!aiUnit.CanMoveTo(bestTile)) { onComplete?.Invoke(); return;  }
 
         aiUnit.MoveTo(bestTile, onComplete);
     }
 
-    private List<Unit> FindPlayerUnits(Unit aiUnit)
+    private Unit GetMoveTarget(Unit aiUnit)
     {
-        List<Unit> units = TurnManager.Instance.GetPlayerUnits();
+        if(aiUnit.HasStatus(EffectStatusType.Provoked) && aiUnit.ForcedUnitGridPosition != null)
+        {
+            if (GridObjectRegistry.Instance.GetObjectAt((Vector3Int)aiUnit.ForcedUnitGridPosition) is Unit forcedUnit)
+                return forcedUnit;
+        }
 
-        return units;
-    }
-
-    private Unit FindClosestPlayerUnit(Unit aiUnit)
-    {
-        List<Unit> playerUnits = TurnManager.Instance.GetPlayerUnits();
+        List<Unit> playerUnits = TurnManager.Instance.GetAlivePlayerUnits();
         if (playerUnits.Count == 0) return null;
 
-        Unit closest = null;
-        float minDistance = float.MaxValue;
-
-        foreach (Unit playerUnit in playerUnits)
-        {
-            float distance = Vector3.Distance(aiUnit.transform.position, playerUnit.transform.position);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closest = playerUnit;
-            }
-        }
-        return closest;
+        return playerUnits
+            .OrderBy(u => Vector3.Distance(aiUnit.transform.position, u.transform.position))
+            .FirstOrDefault();
     }
 
+    public override bool CanExecute(Unit aiUnit)
+    {
+        return aiUnit.MovedPerTurn < aiUnit.MoveAllowedPerTurn;
+    }
+
+}
+
+
+// ==================================================
+// FILE: ProvokeAbilityActionSO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>
+/// Wraps ProvokeAbilitySO for use by AI units. Scores by counting how many
+/// player units are within the provoke range — more enemies forced to attack
+/// the caster = higher value.
+///
+/// Score: 0 if no enemies are in range, otherwise baseScore + perEnemyBonus per enemy.
+/// This is most powerful on tanky enemy units where drawing fire is intentional.
+/// Pair with high Support multiplier in a "Taunt Tank" personality.
+/// </summary>
+/// 
+[CreateAssetMenu(fileName = "ProvokeAbilityActionSO", menuName = "AI/Actions/Provoke Ability Action")]
+public class ProvokeAbilityActionSO : AbilityActionBase
+{
+    public override AIActionCategory Category => AIActionCategory.Utility;
+    protected override AbilityBaseSO GetAbility() => provokeAbility;
+
+    [SerializeField] private AbilityBaseSO provokeAbility;
+
+    [Tooltip("Base score when at least one enemy is in range.")]
+    public float baseScore = 70f;
+
+    [Tooltip("Additional score per enemy that will be provoked.")]
+    public float perEnemyBonus = 30f;
+
+    [Tooltip("Only consider provoking when HP is above this threshold. " +
+             "A low-HP unit shouldn't be drawing attention to itself.")]
+    [Range(0f, 1f)] public float minimumHealthPercent = 0.5f;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData();
+
+        float healthPercent = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth;
+        if (healthPercent < minimumHealthPercent) return scoreData;
+
+        List<Vector3Int> tilesInRange = provokeAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        int unprovokedEnemiesInRange = tilesInRange.Count(t =>
+            GridObjectRegistry.Instance.GetObjectAt(t) is Unit u &&
+            u.UnitFaction != aiUnit.UnitFaction && u.ForcedUnitGridPosition == null);
+
+        if (unprovokedEnemiesInRange == 0) return scoreData;
+
+        scoreData.score = baseScore + unprovokedEnemiesInRange * perEnemyBonus;
+        // Provoke radiates from the caster's position, so the "target" is the caster itself
+        scoreData.target = aiUnit.GridPosition;
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Debug.Log($"{aiUnit.name} uses Provoke!");
+        aiUnit.UseAbility(provokeAbility, aiUnit.GridPosition);
+        onComplete?.Invoke();
+    }
+}
+
+
+// ==================================================
+// FILE: ShieldBashActionSO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>
+/// Context-aware scoring for Shield Bash — an attack whose real value is the
+/// stun chance, not the raw damage. Scoring asks "is stunning THIS target right NOW
+/// actually worth it?" rather than just "is there someone in range?"
+///
+/// Scoring logic (cumulative bonuses on top of baseScore):
+///
+///   Base:             flat reward for having any valid target
+///   High HP target:   stun is most valuable against targets that would survive a
+///                     normal attack, since it prevents them acting next turn
+///   Outnumbered:      shutting down an attacker is worth more when the AI team is
+///                     taking more hits per round
+///   Already stunned:  penalise heavily — wasting a stun on a stunned target is pure loss
+///   Low own HP:       penalise — better to flee or attack for kill rather than stun
+///
+/// Total score range: ~0 to ~260, keeping it competitive with AttackActionSO (100-200)
+/// but only pulling ahead when stunning is actually the smart play.
+/// </summary>
+/// 
+
+[CreateAssetMenu(fileName = "ShieldBashActionSO", menuName = "AI/Actions/Shield Bash Action")]
+public class ShieldBashActionSO : AbilityActionBase
+{
+    public override AIActionCategory Category => AIActionCategory.Attack;
+    protected override AbilityBaseSO GetAbility() => shieldBashAbility;
+
+    [SerializeField] private AbilityBaseSO shieldBashAbility;
+
+    [Header("Base Scoring")]
+    [Tooltip("Starting score when a valid target exists. Should be lower than AttackActionSO's " +
+             "100 baseline so stun is a conditional upgrade, not a default preference.")]
+    public float baseScore = 80f;
+
+    [Header("Situational Bonuses")]
+    [Tooltip("Bonus when the target is above this HP% — stun is wasted on someone about to die.")]
+    [Range(0f, 1f)] public float highHpThreshold = 0.6f;
+    public float highHpBonus = 60f;
+
+    [Tooltip("Bonus per enemy unit that outnumbers the AI's team. " +
+             "More enemies alive = each stun is more valuable.")]
+    public float outnumberedBonusPerUnit = 25f;
+
+    [Header("Penalties")]
+    [Tooltip("Score multiplier applied when the target is already stunned. " +
+             "Near zero to make it essentially never chosen.")]
+    [Range(0f, 1f)] public float alreadyStunnedMultiplier = 0.05f;
+
+    [Tooltip("HP% below which the unit penalises using bash (should flee or kill instead).")]
+    [Range(0f, 1f)] public float lowOwnHpThreshold = 0.25f;
+    public float lowOwnHpPenalty = 50f;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData();
+
+        Unit bestTarget = FindBestTarget(aiUnit);
+        if (bestTarget == null) return scoreData;
+
+        float score = baseScore;
+
+        // BONUS: Target is high HP — still a threat next turn, stun is meaningful
+        float targetHpPercent = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
+        if (targetHpPercent >= highHpThreshold)
+            score += highHpBonus;
+
+        // BONUS: AI team is outnumbered — each disabled enemy counts more
+        int aliveEnemies = TurnManager.Instance.GetAlivePlayerUnits().Count;
+        int aliveAllies = TurnManager.Instance.GetAliveEnemyUnits().Count;
+        int deficit = aliveEnemies - aliveAllies;
+        if (deficit > 0)
+            score += deficit * outnumberedBonusPerUnit;
+
+        // PENALTY: Target is already stunned — pick something else
+        if (bestTarget.HasStatus(EffectStatusType.Stunned))
+            score *= alreadyStunnedMultiplier;
+
+        // PENALTY: AI unit is critically low — stun doesn't save it, aggression or flee does
+        float ownHpPercent = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth;
+        if (ownHpPercent < lowOwnHpThreshold)
+            score -= lowOwnHpPenalty;
+
+        if (score <= 0f) return scoreData;
+
+        scoreData.score = score;
+        scoreData.target = bestTarget;
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        Unit targetUnit = target as Unit;
+        if (targetUnit == null) { onComplete?.Invoke(); return; }
+
+        Debug.Log($"{aiUnit.name} uses Shield Bash on {targetUnit.name}");
+        aiUnit.UseAbility(shieldBashAbility, targetUnit.GridPosition);
+        onComplete?.Invoke();
+    }
+
+    private Unit FindBestTarget(Unit aiUnit)
+    {
+        List<Vector3Int> tilesInRange = shieldBashAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        return tilesInRange
+            .Select(t => GridObjectRegistry.Instance.GetObjectAt(t) as Unit)
+            .Where(u => u != null &&
+                        u.UnitFaction == Faction.Player &&
+                        shieldBashAbility.IsValidTarget(aiUnit.GridPosition, u.GridPosition, aiUnit))
+            .OrderByDescending(u => u.CurrentHealth)
+            .FirstOrDefault();
+    }
+}
+
+
+// ==================================================
+// FILE: TeleportAbilityActionSO.cs
+// ==================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>
+/// Wraps TeleportAbilitySO for AI use. Evaluates every valid teleport destination
+/// and scores based on how much it improves the AI's tactical position:
+///
+///   FLANK mode  (default):  favour tiles adjacent to the weakest enemy
+///   ESCAPE mode (low HP):   favour tiles far from all enemies, like a ranged flee
+///
+/// Score: 0 if teleporting doesn't improve position,
+///        baseScore + distanceGain * gainMultiplier when it does.
+/// </summary>
+/// 
+
+[CreateAssetMenu(fileName = "TeleportAbilityActionSO", menuName = "AI/Actions/Teleport Ability Action")]
+public class TeleportAbilityActionSO : AbilityActionBase
+{
+    public override AIActionCategory Category => AIActionCategory.Teleport;
+    protected override AbilityBaseSO GetAbility() => teleportAbility;
+
+    [SerializeField] private AbilityBaseSO teleportAbility;
+
+    [Tooltip("Base score when a beneficial teleport destination is found.")]
+    public float baseScore = 60f;
+
+    [Tooltip("Multiplied by the distance improvement to produce the full score.")]
+    public float gainMultiplier = 12f;
+
+    [Tooltip("HP percentage below which the unit teleports away from enemies (Escape) " +
+             "instead of toward them (Flank).")]
+    [Range(0f, 1f)] public float escapeHealthThreshold = 0.3f;
+
+    public override AIScoreData GetScoreAction(Unit aiUnit)
+    {
+        AIScoreData scoreData = new AIScoreData();
+
+        List<Unit> enemies = TurnManager.Instance.GetAlivePlayerUnits();
+        if (enemies.Count == 0) return scoreData;
+
+        List<Vector3Int> tilesInRange = teleportAbility.GetTilesInRange(aiUnit.GridPosition);
+
+        bool escapeMode = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth < escapeHealthThreshold;
+
+        Vector3Int bestTile = default;
+        float bestGain = 0f;
+
+        foreach (Vector3Int tile in tilesInRange)
+        {
+            if (!teleportAbility.IsValidTarget(aiUnit.GridPosition, tile, aiUnit)) continue;
+
+            float gain = escapeMode
+                ? EvaluateEscapeTile(tile, aiUnit, enemies)
+                : EvaluateFlankTile(tile, aiUnit, enemies);
+
+            if (gain > bestGain)
+            {
+                bestGain = gain;
+                bestTile = tile;
+            }
+        }
+
+        if (bestGain <= 0f) return scoreData; // Teleporting doesn't help
+
+        scoreData.score = baseScore + bestGain * gainMultiplier;
+        scoreData.target = bestTile;
+        return scoreData;
+    }
+
+    public override void Execute(Unit aiUnit, object target, Action onComplete)
+    {
+        if (target is Vector3Int tile)
+        {
+            Debug.Log($"{aiUnit.name} teleports to {tile}");
+            aiUnit.UseAbility(teleportAbility, tile);
+        }
+        onComplete?.Invoke();
+    }
+
+    private float EvaluateFlankTile(Vector3Int tile, Unit aiUnit, List<Unit> enemies)
+    {
+        Unit weakest = enemies.OrderBy(e => e.CurrentHealth).First();
+        float currentDist = Vector3.Distance(aiUnit.GridPosition, weakest.GridPosition);
+        float newDist = Vector3.Distance(tile, weakest.GridPosition);
+        return currentDist - newDist; // positive means we'd be getting closer
+    }
+
+    private float EvaluateEscapeTile(Vector3Int tile, Unit aiUnit, List<Unit> enemies)
+    {
+        float currentTotalDist = enemies.Sum(e => Vector3.Distance(aiUnit.GridPosition, e.GridPosition));
+        float newTotalDist = enemies.Sum(e => Vector3.Distance(tile, e.GridPosition));
+        return newTotalDist - currentTotalDist; // positive means we'd be further away
+    }
+}
+
+
+// ==================================================
+// FILE: DestroyActorCommandSO.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/Destroy")]
+public class DestroyActorCommandSO : ShowcaseCommandSO
+{
+    public string actor;
+    public override IEnumerator Execute(MainMenuShowcaseContext ctx)
+    {
+        Destroy(ctx.Actors[actor].gameObject);
+        ctx.Actors.Remove(actor);
+        yield break;
+    }
+}
+
+
+// ==================================================
+// FILE: FaceCommandSO.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/Face")]
+public class FaceCommandSO : ShowcaseCommandSO
+{
+    public string actor;
+    public Vector3 targetPosition; // face toward another actor
+    public override IEnumerator Execute(MainMenuShowcaseContext ctx)
+    {
+        ctx.Actors[actor].Face(targetPosition);
+        yield break;
+    }
+}
+
+
+// ==================================================
+// FILE: JumpAttackCommandSO.cs
+// ==================================================
+
+using DG.Tweening;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/JumpAttack")]
+public class JumpAttackCommandSO : ShowcaseCommandSO
+{
+    public string AttackerID;
+    public string TargetID;
+    public float JumpHeight;
+    public float Duration;
+    public override IEnumerator Execute(MainMenuShowcaseContext ctx)
+    {
+        var attacker = ctx.Actors[AttackerID];
+        var target = ctx.Actors[TargetID];
+
+        Vector3 originalPos = attacker.transform.position;
+        Vector3 dir = target.transform.position - attacker.transform.position;
+        Vector3 offset = new Vector3(dir.x > 0 ? -1.5f : 1.5f, 0, 0);
+
+        var seq = DOTween.Sequence();
+
+        seq.Append(attacker.transform.DOJump(target.transform.position + offset, JumpHeight, 1, Duration));
+
+        float attackMoment = Duration * 0.5f;
+        float takeDamageMoment = Duration * 0.7f;   
+
+        seq.InsertCallback(attackMoment, () => attacker.Play(PlayerState.ATTACK));
+        seq.InsertCallback(takeDamageMoment, () => target.Play(PlayerState.DAMAGED));
+
+        seq.AppendInterval(0.35f);
+        seq.Append(attacker.transform.DOJump(originalPos, JumpHeight, 1, Duration));
+
+        yield return seq.WaitForCompletion();
+    }
+}
+
+
+// ==================================================
+// FILE: MoveCommandSO.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/Move")]
+public class MoveCommandSO : ShowcaseCommandSO
+{
+    public string actor;
+    public Vector3 position;
+    public float duration = 0.6f;
+
+    public override IEnumerator Execute(MainMenuShowcaseContext ctx)
+    {
+        yield return ctx.Actors[actor].MoveTo(position, duration);
+    }
+}
+
+
+// ==================================================
+// FILE: ParallelCommandsSO.cs
+// ==================================================
+
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/Parallel")]
+public class ParallelCommandSO : ShowcaseCommandSO
+{
+    public List<ShowcaseCommandSO> commands;
+
+    public override IEnumerator Execute(MainMenuShowcaseContext ctx)
+    {
+        var coroutines = commands.Select(c => ctx.Runner.StartCoroutine(c.Execute(ctx))).ToList();
+        foreach (var co in coroutines)
+            yield return co;
+    }
+}
+
+
+// ==================================================
+// FILE: PlayAnimationCommandSO.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/PlayAnimation")]
+public class PlayAnimationCommandSO : ShowcaseCommandSO
+{
+    public string actor;
+    public PlayerState state;
+    public override IEnumerator Execute(MainMenuShowcaseContext ctx)
+    {
+        ctx.Actors[actor].Play(state);
+        yield break;
+    }
+}
+
+
+// ==================================================
+// FILE: ShowcaseCommandSO.cs
+// ==================================================
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
+
+public abstract class ShowcaseCommandSO : ScriptableObject
+{
+    public abstract IEnumerator Execute(MainMenuShowcaseContext ctx);
+}
+
+
+// ==================================================
+// FILE: SpawnCommandSO.cs
+// ==================================================
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/Spawn")]
+public class SpawnCommandSO : ShowcaseCommandSO
+{
+    public string ActorID;
+    public MenuActor prefab;
+    public Vector3 position;
+    public override IEnumerator Execute(MainMenuShowcaseContext ctx)
+    {
+        var actor = Instantiate(prefab, position, Quaternion.identity);
+        ctx.Actors.Add(ActorID, actor);
+        Debug.Log($"New Actor has been spawned: {ActorID}");
+        yield break;
+    }
+}   
+
+
+// ==================================================
+// FILE: WaitCommandSO.cs
+// ==================================================
+
+using System.Collections;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Showcase/Wait")]
+public class WaitCommandSO : ShowcaseCommandSO
+{
+    public float duration = 1f;
+    public override IEnumerator Execute(MainMenuShowcaseContext ctx)
+    {
+        yield return new WaitForSeconds(duration);
+    }
 }
 
 
@@ -3128,7 +5023,8 @@ public class AbilityButton : MonoBehaviour, IBeginDragHandler, IEndDragHandler, 
 
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+using DG.Tweening;
+using System.Linq;
 
 public class AbilityTargetingVisualizer : MonoBehaviour
 {
@@ -3145,6 +5041,12 @@ public class AbilityTargetingVisualizer : MonoBehaviour
 
     private HighlightManager _rangeHighlightManager;
     private List<GameObject> _targetHighlights = new();
+    private Tween pulseTween;
+
+    private Unit _pulsingUnit;
+    private Vector3 _originalScale;
+    private Dictionary<SpriteRenderer, Color> _originalColors = new();
+
 
     private void Awake()
     {
@@ -3204,6 +5106,48 @@ public class AbilityTargetingVisualizer : MonoBehaviour
             _targetHighlights.Clear();
         }
 
+        if (caster.ForcedUnitGridPosition != null)
+        {
+            IGridObject obj = GridObjectRegistry.Instance.GetObjectAt((Vector3Int)caster.ForcedUnitGridPosition);
+
+            if (obj is Unit unit)
+            {
+                if (_pulsingUnit != unit)
+                {
+                    StopPulse();
+
+                    _pulsingUnit = unit;
+                    _originalScale = unit.transform.localScale;
+                    _originalColors.Clear();
+
+                    foreach (var sr in unit.GetComponentsInChildren<SpriteRenderer>())
+                    {
+                        _originalColors[sr] = sr.color;
+                    }
+
+                    pulseTween = unit.transform
+                        .DOScale(_originalScale * 1.2f, 0.35f)
+                        .SetEase(Ease.OutQuad)
+                        .SetLoops(-1, LoopType.Yoyo)
+                        .SetId(_pulsingUnit); // allows safe global kill
+
+                    SpriteRenderer[] spriteRenderers = unit.GetComponentsInChildren<SpriteRenderer>();
+
+                    foreach (var sr in spriteRenderers)
+                    {
+                        sr.DOColor(Color.red, 0.35f)
+                          .SetLoops(-1, LoopType.Yoyo)
+                          .SetEase(Ease.InOutSine)
+                          .SetId(_pulsingUnit);
+                    }
+                }
+            }
+        }
+        else
+        {
+            StopPulse();
+        }
+
         List<Vector3Int> positions = abilityBaseSO.GetAbilityRadiusTiles(targetPosition);
 
         foreach (var position in positions)
@@ -3219,10 +5163,28 @@ public class AbilityTargetingVisualizer : MonoBehaviour
         }
     }
 
+    private void StopPulse()
+    {
+        if (_pulsingUnit != null)
+        {
+            DOTween.Kill(_pulsingUnit);
+            _pulsingUnit.transform.localScale = _originalScale;
+            foreach (var pair in _originalColors)
+            {
+                if (pair.Key != null)
+                    pair.Key.color = pair.Value;
+            }
+            _pulsingUnit = null;
+
+        }
+    }
+
+
     public void HideAbilityRange()
     {
         _rangeHighlightManager.ClearAllHighlights();
 
+        StopPulse();
         if (_targetHighlights?.Count != 0)
         {
             foreach (GameObject obj in _targetHighlights)
@@ -3403,6 +5365,156 @@ public class HpPopupText : MonoBehaviour
         transform.DOMoveY(transform.position.y + 1f, 1.5f);
         textMesh.DOFade(0, 2f).OnComplete(() => Destroy(gameObject));
 
+    }
+}
+
+
+// ==================================================
+// FILE: FireBurnVisualEffect.cs
+// ==================================================
+
+using UnityEngine;
+using System.Collections;
+
+namespace Assets.Scripts.UI.Abilities_Visual_Effects
+{
+	public class FireBurnVisualEffect: MonoBehaviour
+	{
+
+        public void ExtinctFire()
+        {
+            StartCoroutine(ExtintBurnVisual());
+        }
+        private IEnumerator ExtintBurnVisual()
+        {
+            float duration = 0.5f;
+            float t = 0f;
+
+            yield return new WaitForSeconds(duration);
+
+            while (t < duration)
+            {                
+                t += Time.deltaTime;
+
+                GetComponentInChildren<SpriteRenderer>().color = new Color(1f, 1f, 1f, Mathf.SmoothStep(1f, 0f, t / duration));
+
+                yield return null;
+            }
+
+            Destroy(gameObject);
+        }
+    }
+}
+
+
+// ==================================================
+// FILE: ProvokeVisualEffect.cs
+// ==================================================
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering.Universal;
+
+public class ProvokeVisualEffect : MonoBehaviour
+{
+    [SerializeField] private GameObject abilityHighlightTilePrefab;
+
+    [Header("Wave")]
+    [SerializeField] private float waveSpeed = 12f; // tiles per second
+
+    [Header("Timing")]
+    [SerializeField] private float fadeIn = 0.18f;
+    [SerializeField] private float hold = 0.25f;
+    [SerializeField] private float fadeOut = 0.35f;
+
+    [Header("Light")]
+    [SerializeField] private float maxIntensity = 20f;
+    [SerializeField] private Vector2 startScale = new Vector2(0f, 0f);
+    [SerializeField] private Vector2 endScale = new Vector2(2.3f, 1.2f);
+
+    private int runningTiles = 0;
+
+    public void Execute(Vector3Int casterPos, List<Vector3Int> reachableTiles)
+    {
+        runningTiles = reachableTiles.Count;
+        foreach (Vector3Int pos in reachableTiles)
+        {
+            if (pos == casterPos) continue;
+            GameObject tile = Instantiate(
+                abilityHighlightTilePrefab,
+                GridManager.Instance.GridToWorld(pos),
+                Quaternion.identity
+            );
+
+            float distance = Mathf.Abs(pos.x - casterPos.x) + Mathf.Abs(pos.y - casterPos.y);
+            float delay = distance / waveSpeed;
+
+            StartCoroutine(DoWaveTile(tile, delay));
+        }
+    }
+
+    private IEnumerator DoWaveTile(GameObject tile, float delay)
+    {
+        Light2D light = tile.GetComponentInChildren<Light2D>();
+        Transform tr = tile.transform;
+
+        if (light == null)
+        {
+            Destroy(tile);
+            yield break;
+        }
+
+        tr.localScale = startScale;
+        light.intensity = 0;
+
+        // --- wave propagation delay ---
+        yield return new WaitForSeconds(delay);
+
+        // --- fade in ---
+        float t = 0f;
+        while (t < fadeIn)
+        {
+            t += Time.deltaTime;
+            float k = t / fadeIn;
+
+            light.intensity = Mathf.Lerp(0, maxIntensity, k);
+
+            Vector2 scaleX = Vector3.one * Mathf.Lerp(startScale.x, endScale.x, k);
+            Vector3 scaleY = Vector3.one * Mathf.Lerp(startScale.y, endScale.y, k);
+            tr.localScale = new Vector3(scaleX.x, scaleY.y, 1);
+
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(hold);
+
+        // --- fade out ---
+        t = 0f;
+        while (t < fadeOut)
+        {
+            t += Time.deltaTime;
+            float k = t / fadeOut;
+
+            light.intensity = Mathf.Lerp(maxIntensity, 0, k);
+            Vector2 scaleX = Vector3.one * Mathf.Lerp(endScale.x, startScale.x, k);
+            Vector3 scaleY = Vector3.one * Mathf.Lerp(endScale.y, startScale.y, k);
+            tr.localScale = new Vector3(scaleX.x, scaleY.y, 1); 
+
+            yield return null;
+        }
+
+        FinishTile(tile);
+    }
+
+    private void FinishTile(GameObject tile)
+    {
+        if (tile) Destroy(tile);
+
+        runningTiles--;
+
+        if (runningTiles <= 0)
+            Destroy(gameObject); 
     }
 }
 
@@ -3617,6 +5729,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public static event Action<Unit, Vector3> OnAnyUnitStartMoving;
     public static event Action<Unit> OnAnyUnitFinishedMoving;
     public static event Action<Unit, AbilityBaseSO> OnAnyUnitUsedAbility;
+    public static event Action<Unit, EffectStatusType> OnAnyUnitGainedStatusEffect;
+    public static event Action<Unit, EffectStatusType> OnAnyUnitLostStatusEffect;
 
     [Header("Components")]
     [SerializeField] private HealthComponent healthComponent;
@@ -3685,6 +5799,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         get => movedPerTurn;
         set => movedPerTurn = value;
     }
+
+    public int MoveAllowedPerTurn => characterClassSO.movementAmountPerTurn;    
 
     private List<StatusEffect> activeEffects = new List<StatusEffect>();
     private Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new Dictionary<AbilityBaseSO, int>();
@@ -3760,7 +5876,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             healthComponent.OnDeath -= HandleDeath; 
         }
 
-        OnAnyUnitDied?.Invoke(this);
+        //OnAnyUnitDied?.Invoke(this);
     }
 
     public void RegisterSelf()
@@ -3804,7 +5920,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         if (intelligence) this.Intelligence = characterClassSO.intelligence;
         if (agility) this.Agility = characterClassSO.agility;
     }
-    public void ApplyEffect(EffectStatusType effectType, int duration, Action tickAction=null)
+    public void ApplyEffect(EffectStatusType effectType, int duration, Action tickAction = null, GameObject visualEffectPrefab = null)
     {
         var existing = activeEffects.Find(e => e.type == effectType);
 
@@ -3814,7 +5930,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         }
         else
         {
-            activeEffects.Add(new StatusEffect(effectType, duration, tickAction));
+            StatusEffect newEffect = new StatusEffect(effectType, duration, tickAction, visualEffectPrefab);
+            activeEffects.Add(newEffect);
             Debug.Log($"{name} is {effectType} for {duration} moves");
 
             if ((effectType == EffectStatusType.Stunned || effectType == EffectStatusType.Rooted) && IsMoving)
@@ -3824,6 +5941,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
                 movementComponent.MoveTo(GridManager.Instance.WorldToGrid(transform.position));
                 transform.position = GridManager.Instance.GridToWorld(GridPosition);
             }
+
+            OnAnyUnitGainedStatusEffect?.Invoke(this, effectType);
+            newEffect.InstantiateVisualEffect(this);
         }
     }
 
@@ -3836,6 +5956,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     {
         for (int i = activeEffects.Count-1; i >= 0; i--)
         {
+            StatusEffect currentEffect = activeEffects[i];
             activeEffects[i].Tick(this);
             if (activeEffects[i].duration < 0)
             {
@@ -3843,7 +5964,9 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
                 {
                     UnboostUnit();
                 }
+                activeEffects[i].RemoveVisualEffect(this);
                 activeEffects.RemoveAt(i);
+                OnAnyUnitLostStatusEffect?.Invoke(this, currentEffect.type);
             } 
         }
 
@@ -4037,6 +6160,8 @@ public class UnitAnimationController : MonoBehaviour
         Unit.OnAnyUnitStartMoving += Unit_OnAnyUnitStartMoving;
         Unit.OnAnyUnitFinishedMoving += Unit_OnAnyUnitFinishedMoving;
         Unit.OnAnyUnitUsedAbility += Unit_OnAnyUnitUsedAbility;
+        Unit.OnAnyUnitGainedStatusEffect += Unit_OnAnyUnitGainedStatusEffect;
+        Unit.OnAnyUnitLostStatusEffect += Unit_OnAnyUnitLostStatusEffect;
     }
 
     private void OnDestroy()
@@ -4046,6 +6171,8 @@ public class UnitAnimationController : MonoBehaviour
         Unit.OnAnyUnitStartMoving -= Unit_OnAnyUnitStartMoving;
         Unit.OnAnyUnitFinishedMoving -= Unit_OnAnyUnitFinishedMoving;
         Unit.OnAnyUnitUsedAbility -= Unit_OnAnyUnitUsedAbility;
+        Unit.OnAnyUnitGainedStatusEffect -= Unit_OnAnyUnitGainedStatusEffect;
+        Unit.OnAnyUnitLostStatusEffect -= Unit_OnAnyUnitLostStatusEffect;
     }
     private void Unit_OnAnyUnitUsedAbility(Unit unit, AbilityBaseSO ability)
     {
@@ -4070,6 +6197,28 @@ public class UnitAnimationController : MonoBehaviour
     private void Unit_OnAnyUnitTookDamage(Unit unit, int arg2, int arg3)
     {
         unit.GetUnitVisualBridge().TakeDamageAnimation();
+    }
+
+    private void Unit_OnAnyUnitLostStatusEffect(Unit unit, EffectStatusType effectType)
+    {
+        if (!unit.HasStatus(EffectStatusType.Stunned) && !unit.HasStatus(EffectStatusType.Rooted))
+        {
+            unit.GetUnitVisualBridge().StopDebuffAnimation();
+        }
+    }
+
+    private void Unit_OnAnyUnitGainedStatusEffect(Unit unit, EffectStatusType effectType)
+    {
+        switch (effectType)
+        {
+            case EffectStatusType.Stunned:
+                unit.GetUnitVisualBridge().StartDebuffAnimation();
+                break;
+
+            case EffectStatusType.Rooted:
+                unit.GetUnitVisualBridge().StartDebuffAnimation();
+                break;
+        }
     }
 
     private void Unit_OnAnyUnitDied(Unit unit)
@@ -4278,11 +6427,32 @@ public class UnitVisualBridge : MonoBehaviour
         _spumPrefabs.PlayAnimation(PlayerState.ATTACK, 0);
     }
 
+    public void StartDebuffAnimation()
+    {
+        _spumPrefabs.PlayAnimation(PlayerState.DEBUFF, 0);
+    }
+
+    public void StopDebuffAnimation()
+    {
+        _spumPrefabs.PlayAnimation(PlayerState.IDLE, 0);
+    }
+
     public void DeathAnimation(Action onComplete = null)
     {
         _spumPrefabs.PlayAnimation(PlayerState.DEATH, 0);
     }
 
+    public void PlayAnimation(PlayerState playerState)
+    {
+        try
+        {
+            _spumPrefabs.PlayAnimation(playerState, 0);
+        }
+        catch (Exception e)
+        {
+            _spumPrefabs.PlayAnimation(PlayerState.IDLE, 0);
+        }
+    }
     private void FaceCorrectDirection(Vector3 targetPosition)
     {
         Vector3 direction = targetPosition - transform.position;
@@ -4305,7 +6475,6 @@ public class UnitVisualBridge : MonoBehaviour
 
 using DG.Tweening;
 using System.Collections.Generic;
-using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 public class UnitWorldUIManager : MonoBehaviour

@@ -1,9 +1,8 @@
 using System;
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
-[RequireComponent(typeof(IMoveable))]
 public class MovementComponent : MonoBehaviour
 {
     [SerializeField] private int movementRange = 3;
@@ -12,6 +11,7 @@ public class MovementComponent : MonoBehaviour
     private IMoveable moveableObject;
     private bool isMoving;
     private Coroutine moveCoroutine;
+    private Action onMoveFailed;
 
     public bool IsMoving => isMoving;
     public int MovementRange => movementRange;
@@ -19,52 +19,75 @@ public class MovementComponent : MonoBehaviour
     private void Awake()
     {
         moveableObject = GetComponent<IMoveable>();
+
+        if (moveableObject == null)
+            Debug.LogError($"{nameof(MovementComponent)} on '{gameObject.name}' requires a component implementing IMoveable.");
     }
 
     public void Initialize(CharacterClassSO characterClassSO)
     {
-        movementRange = characterClassSO.movementRange; 
+        movementRange = characterClassSO.movementRange;
     }
 
     public bool CanMoveTo(Vector3Int gridPosition)
     {
         if (GridManager.Instance == null || PathFinder.Instance == null)
         {
-            Debug.LogWarning("Required managers not available for movement validation");
+            Debug.LogWarning("Required managers not available for movement validation.");
             return false;
         }
 
         if (!GridManager.Instance.IsValidPosition(gridPosition))
-        {
             return false;
-        }
 
-        return PathFinder.Instance.GetReachableTiles(moveableObject.GridPosition, movementRange, GridManager.Instance.IsValidPosition).Contains(gridPosition);
+        return PathFinder.Instance
+            .GetReachableTiles(moveableObject.GridPosition, movementRange, GridManager.Instance.IsValidPosition)
+            .Contains(gridPosition);
     }
 
-    public void MoveTo(Vector3Int gridPosition, Action onComplete = null)
+    /// <summary>
+    /// Starts movement. onComplete is called only when movement finishes successfully.
+    /// onFailed is called if movement cannot start (already moving, invalid position, no path).
+    /// </summary>
+    public void MoveTo(Vector3Int gridPosition, Action onComplete = null, Action onFailed = null)
     {
         if (isMoving || !CanMoveTo(gridPosition))
         {
-            onComplete?.Invoke();
+            onFailed?.Invoke();
             return;
         }
 
-        List<Vector3Int> path = PathFinder.Instance.GetPath(moveableObject.GridPosition, gridPosition, GridManager.Instance.IsValidPosition);
+        List<Vector3Int> path = PathFinder.Instance.GetPath(
+            moveableObject.GridPosition, gridPosition, GridManager.Instance.IsValidPosition);
 
         if (path.Count == 0)
         {
-            onComplete?.Invoke();
+            onFailed?.Invoke();
             return;
         }
 
+        onMoveFailed = onFailed;
         moveCoroutine = StartCoroutine(MoveAlongPath(path, onComplete));
     }
 
-    private IEnumerator MoveAlongPath(List<Vector3Int> path, Action onComplete = null)
+    public void Interrupt()
+    {
+        if (!isMoving) return;
+
+        if (moveCoroutine != null) StopCoroutine(moveCoroutine);
+
+        isMoving = false;
+
+        Action callback = onMoveFailed;
+        onMoveFailed = null;
+        callback?.Invoke();
+    }
+
+    private IEnumerator MoveAlongPath(List<Vector3Int> path, Action onComplete)
     {
         isMoving = true;
 
+        // Reserve the destination immediately so no other unit can claim it mid-animation.
         Vector3Int oldPosition = moveableObject.GridPosition;
         GridObjectRegistry.Instance.MoveObject(moveableObject, oldPosition, path[path.Count - 1]);
 
@@ -81,17 +104,12 @@ public class MovementComponent : MonoBehaviour
             transform.position = targetWorldPosition;
 
             if (moveableObject is Unit unit)
-            {
                 Unit.InvokeUnitEnteredTile(unit, path[i]);
-            }
         }
 
         isMoving = false;
         onComplete?.Invoke();
     }
 
-    public void SetMovingState(bool moving)
-    {
-        isMoving = moving;
-    }
+    public void SetMovingState(bool moving) => isMoving = moving;
 }

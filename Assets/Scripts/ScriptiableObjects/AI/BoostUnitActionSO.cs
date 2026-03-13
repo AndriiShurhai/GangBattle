@@ -36,24 +36,40 @@ public class BoostUnitActionSO : AbilityActionBase
     [Header("Base Scoring")]
     [Tooltip("Starting score before situational modifiers. Set below Attack's 100 baseline " +
              "so buffing is a conditional priority, not an automatic opener.")]
-    public float baseScore = 60f;
+    [UnityEngine.Serialization.FormerlySerializedAs("baseScore")]
+    [SerializeField] private float _baseScore = 60f;
+    public float BaseScore => _baseScore;
 
     [Tooltip("Multiplied by the number of enemies alive. Core value driver — more enemies " +
              "means more turns where the boosted stats will matter.")]
-    public float perEnemyMultiplier = 20f;
+    [UnityEngine.Serialization.FormerlySerializedAs("perEnemyMultiplier")]
+    [SerializeField] private float _perEnemyMultiplier = 20f;
+    public float PerEnemyMultiplier => _perEnemyMultiplier;
 
     [Header("Penalties")]
     [Tooltip("HP% below which the target is likely to die before benefitting from the boost.")]
-    [Range(0f, 1f)] public float targetLowHpThreshold = 0.4f;
-    public float targetLowHpPenalty = 70f;
+    [UnityEngine.Serialization.FormerlySerializedAs("targetLowHpThreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _targetLowHpThreshold = 0.4f;
+    public float TargetLowHpThreshold => _targetLowHpThreshold;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("targetLowHpPenalty")]
+    [SerializeField] private float _targetLowHpPenalty = 70f;
+    public float TargetLowHpPenalty => _targetLowHpPenalty;
 
     [Tooltip("Score multiplier when the target is already boosted. Near zero — re-buffing " +
              "wastes the action since the effect is already active.")]
-    [Range(0f, 1f)] public float alreadyBoostedMultiplier = 0.05f;
+    [UnityEngine.Serialization.FormerlySerializedAs("alreadyBoostedMultiplier")]
+    [SerializeField] [Range(0f, 1f)] private float _alreadyBoostedMultiplier = 0.05f;
+    public float AlreadyBoostedMultiplier => _alreadyBoostedMultiplier;
 
     [Tooltip("HP% below which the caster is too endangered to spend an action buffing.")]
-    [Range(0f, 1f)] public float casterLowHpThreshold = 0.3f;
-    public float casterLowHpPenalty = 80f;
+    [UnityEngine.Serialization.FormerlySerializedAs("casterLowHpThreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _casterLowHpThreshold = 0.3f;
+    public float CasterLowHpThreshold => _casterLowHpThreshold;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("casterLowHpPenalty")]
+    [SerializeField] private float _casterLowHpPenalty = 80f;
+    public float CasterLowHpPenalty => _casterLowHpPenalty;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
@@ -61,7 +77,7 @@ public class BoostUnitActionSO : AbilityActionBase
 
         // Caster is too low HP — this action isn't worth the tempo loss
         float casterHpPercent = (float)aiUnit.CurrentHealth / aiUnit.MaxHealth;
-        if (casterHpPercent < casterLowHpThreshold) return scoreData;
+        if (casterHpPercent < CasterLowHpThreshold) return scoreData;
 
         Unit bestTarget = FindBestTarget(aiUnit);
         if (bestTarget == null) return scoreData;
@@ -69,23 +85,23 @@ public class BoostUnitActionSO : AbilityActionBase
         int aliveEnemies = TurnManager.Instance.GetAlivePlayerUnits().Count;
         if (aliveEnemies == 0) return scoreData;
 
-        float score = baseScore + aliveEnemies * perEnemyMultiplier;
+        float score = BaseScore + aliveEnemies * PerEnemyMultiplier;
 
         if (bestTarget.HasStatus(EffectStatusType.Boosted))
         {
-            score *= alreadyBoostedMultiplier;
+            score *= AlreadyBoostedMultiplier;
 
             Unit unboostedTarget = FindBestTarget(aiUnit, excludeBoosted: true);
             if (unboostedTarget != null)
             {
                 bestTarget = unboostedTarget;
-                score = baseScore + aliveEnemies * perEnemyMultiplier; // reset
+                score = BaseScore + aliveEnemies * PerEnemyMultiplier; // reset
             }
         }
 
         // PENALTY: Target is low HP — will likely die before using the boost
         float targetHpPercent = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
-        if (targetHpPercent < targetLowHpThreshold) score -= targetLowHpPenalty;
+        if (targetHpPercent < TargetLowHpThreshold) score -= TargetLowHpPenalty;
 
         if (score <= 0f) return scoreData;
 

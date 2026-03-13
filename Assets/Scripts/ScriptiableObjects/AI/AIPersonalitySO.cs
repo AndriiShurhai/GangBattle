@@ -28,15 +28,22 @@ public class AIPersonalitySO: ScriptableObject
         [Range(0f, 5f)] public float multiplier;
     }
 
-    public List<CategoryWeight> categoryWeights = new List<CategoryWeight>();
+    [UnityEngine.Serialization.FormerlySerializedAs("categoryWeights")]
+    [SerializeField] private List<CategoryWeight> _categoryWeights = new List<CategoryWeight>();
+    public IReadOnlyList<CategoryWeight> CategoryWeights => _categoryWeights;
 
-    [Range(0f, 1f)] public float fleeHealthTreshold = 0.35f;
+    [UnityEngine.Serialization.FormerlySerializedAs("fleeHealthTreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _fleeHealthTreshold = 0.35f;
+    public float FleeHealthTreshold => _fleeHealthTreshold;
 
-    [TextArea(2, 4)] public string archetypeDescription;
+    [TextArea(2, 4)]
+    [UnityEngine.Serialization.FormerlySerializedAs("archetypeDescription")]
+    [SerializeField] private string _archetypeDescription;
+    public string ArchetypeDescription => _archetypeDescription;
 
     public float GetCategoryWeight(AIActionCategory category)
     {
-        foreach (var categoryWeight in categoryWeights)
+        foreach (var categoryWeight in _categoryWeights)
         {
             if (categoryWeight.category == category)
             {

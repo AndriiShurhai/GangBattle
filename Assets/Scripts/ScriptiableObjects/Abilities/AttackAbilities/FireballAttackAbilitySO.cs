@@ -1,15 +1,22 @@
 using DG.Tweening;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "FireballAttackAbilitySO", menuName = "Abilities/Fireball Attack Ability")]
 public class FireballAttackAbilitySO : AbilityBaseSO
 {
-    public GameObject projectile;
-    public int explosionRadius = 1;
-    public float coefficent = 1f;
+    [UnityEngine.Serialization.FormerlySerializedAs("projectile")]
+    [SerializeField] private GameObject _projectile;
+    public GameObject Projectile => _projectile;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("explosionRadius")]
+    [SerializeField] private int _explosionRadius = 1;
+    public int ExplosionRadius => _explosionRadius;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("coefficent")]
+    [SerializeField] private float _coefficent = 1f;
+    public float Coefficent => _coefficent;
 
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null)
     {
@@ -18,7 +25,7 @@ public class FireballAttackAbilitySO : AbilityBaseSO
 
         List<Unit> unitsInRange = new List<Unit>();
 
-        List<Vector3Int> area = RangeFinder.GetSquareRange(targetPosition, explosionRadius);
+        List<Vector3Int> area = RangeFinder.GetSquareRange(targetPosition, ExplosionRadius);
         foreach (Vector3Int position in area)
         {
             if (!IsValidTarget(caster.GridPosition, position, caster)) continue;
@@ -30,7 +37,7 @@ public class FireballAttackAbilitySO : AbilityBaseSO
 
         Sequence attackSequence = DOTween.Sequence();
 
-        GameObject projectileGameObject = Instantiate(projectile, caster.transform.position, Quaternion.identity);
+        GameObject projectileGameObject = Instantiate(Projectile, caster.transform.position, Quaternion.identity);
 
         attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
         attackSequence.AppendCallback(() =>
@@ -45,10 +52,10 @@ public class FireballAttackAbilitySO : AbilityBaseSO
 
             Camera.main.transform.DOShakePosition(0.5f, 0.5f);
             // Spawn effect if available
-            if (abilityEffectPrefab != null)
+            if (AbilityEffectPrefab != null)
             {
                 Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
-                GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                GameObject effect = Instantiate(AbilityEffectPrefab, worldPos, Quaternion.identity);
                 effect.GetComponentInChildren<Animator>().SetTrigger("collide");
 
                 effect.transform.DOScale(1.8f, 0.5f).SetEase(Ease.OutBack);
@@ -63,7 +70,7 @@ public class FireballAttackAbilitySO : AbilityBaseSO
 
     public override List<Vector3Int> GetAbilityRadiusTiles(Vector3Int targetPosition)
     {
-        return RangeFinder.GetSquareRange(targetPosition, explosionRadius);
+        return RangeFinder.GetSquareRange(targetPosition, ExplosionRadius);
     }
   
 }

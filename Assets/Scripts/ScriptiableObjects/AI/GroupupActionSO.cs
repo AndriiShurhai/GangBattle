@@ -22,11 +22,15 @@ public class GroupUpActionSO : AIActionSO
 
     [Tooltip("Distance in grid tiles below which the unit considers itself 'grouped'. " +
              "If any ally is within this range, the action scores 0.")]
-    public float allyProximityThreshold = 3f;
+    [UnityEngine.Serialization.FormerlySerializedAs("allyProximityThreshold")]
+    [SerializeField] private float _allyProximityThreshold = 3f;
+    public float AllyProximityThreshold => _allyProximityThreshold;
 
     [Tooltip("Base score when isolated. Should be higher than Move (25) so this takes " +
              "priority over chasing enemies when the unit is alone.")]
-    public float baseScore = 45f;
+    [UnityEngine.Serialization.FormerlySerializedAs("baseScore")]
+    [SerializeField] private float _baseScore = 45f;
+    public float BaseScore => _baseScore;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
@@ -37,7 +41,7 @@ public class GroupUpActionSO : AIActionSO
         Unit nearestAlly = FindNearestAlly(aiUnit);
         if (nearestAlly == null) return scoreData;
 
-        scoreData.score = baseScore;
+        scoreData.score = BaseScore;
         scoreData.target = nearestAlly;
         return scoreData;
     }
@@ -69,7 +73,7 @@ public class GroupUpActionSO : AIActionSO
         foreach (Unit ally in TurnManager.Instance.GetAliveEnemyUnits())
         {
             if (ally == aiUnit) continue;
-            if (Vector3.Distance(ally.GridPosition, aiUnit.GridPosition) <= allyProximityThreshold)
+            if (Vector3.Distance(ally.GridPosition, aiUnit.GridPosition) <= AllyProximityThreshold)
                 return true;
         }
         return false;

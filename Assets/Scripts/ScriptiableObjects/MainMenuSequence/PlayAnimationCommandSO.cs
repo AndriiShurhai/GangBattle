@@ -1,14 +1,19 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Showcase/PlayAnimation")]
 public class PlayAnimationCommandSO : ShowcaseCommandSO
 {
-    public string actor;
-    public PlayerState state;
+    [FormerlySerializedAs("actor")]
+    [SerializeField] private string _actorId;
+
+    [FormerlySerializedAs("state")]
+    [SerializeField] private PlayerState _state;
+
     public override IEnumerator Execute(MainMenuShowcaseContext ctx)
     {
-        ctx.Actors[actor].Play(state);
+        ctx.Actors[_actorId].Play(_state);
         yield break;
     }
 }

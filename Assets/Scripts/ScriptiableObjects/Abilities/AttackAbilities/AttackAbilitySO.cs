@@ -9,7 +9,17 @@ public class AttackAbilitySO : AbilityBaseSO
 {
 
     [Header("Attack Settings")]
-    public bool canAttackDiagonally = true;
+    [UnityEngine.Serialization.FormerlySerializedAs("canAttackDiagonally")]
+    [SerializeField] private bool _canAttackDiagonally = true;
+    public bool CanAttackDiagonally => _canAttackDiagonally;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("jumpHeight")]
+    [SerializeField] private float _jumpHeight = 0.5f;
+    public float JumpHeight => _jumpHeight;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("jumpDuration")]
+    [SerializeField] private float _jumpDuration = 0.3f;
+    public float JumpDuration => _jumpDuration;
 
     private void Awake()
     {
@@ -20,10 +30,6 @@ public class AttackAbilitySO : AbilityBaseSO
 
         if (targetObject is Unit targetUnit)
         {
-            // TODO: Play attack animation
-            // TODO: Show damage numbers
-            // TODO: Play sound effect
-
             Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
             Vector3 dir = (targetWorldPosition - caster.transform.position).normalized;
 
@@ -31,7 +37,7 @@ public class AttackAbilitySO : AbilityBaseSO
 
             Sequence attackSequence = DOTween.Sequence();
 
-            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, 0.5f, 1, 0.3f));
+            attackSequence.Append(caster.transform.DOJump(targetWorldPosition, JumpHeight, 1, JumpDuration));
             attackSequence.AppendCallback(() =>
             {
                 onAbilityInvoke?.Invoke();
@@ -39,15 +45,15 @@ public class AttackAbilitySO : AbilityBaseSO
                 Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
 
                 // Spawn effect if available
-                if (abilityEffectPrefab != null)
+                if (AbilityEffectPrefab != null)
                 {
                     Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
-                    GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                    GameObject effect = Instantiate(AbilityEffectPrefab, worldPos, Quaternion.identity);
                     Destroy(effect, 2f);
                 }
             });
 
-            attackSequence.Append(caster.transform.DOJump(caster.transform.position, 0.5f, 1, 0.3f));
+            attackSequence.Append(caster.transform.DOJump(caster.transform.position, JumpHeight, 1, JumpDuration));
         }
         else
         {
@@ -66,7 +72,7 @@ public class AttackAbilitySO : AbilityBaseSO
             return false;
         }
 
-        if (!canAttackDiagonally)
+        if (!CanAttackDiagonally)
         {
             int dx = Mathf.Abs(targetPosition.x - casterPosition.x);
             int dy = Mathf.Abs(targetPosition.y - casterPosition.y);

@@ -1,21 +1,27 @@
 ﻿using DG.Tweening;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Showcase/JumpAttack")]
 public class JumpAttackCommandSO : ShowcaseCommandSO
 {
-    public string AttackerID;
-    public string TargetID;
-    public float JumpHeight;
-    public float Duration;
+    [FormerlySerializedAs("AttackerID")]
+    [SerializeField] private string _attackerId;
+
+    [FormerlySerializedAs("TargetID")]
+    [SerializeField] private string _targetId;
+
+    [FormerlySerializedAs("JumpHeight")]
+    [SerializeField] private float _jumpHeight;
+
+    [FormerlySerializedAs("Duration")]
+    [SerializeField] private float _duration;
+
     public override IEnumerator Execute(MainMenuShowcaseContext ctx)
     {
-        var attacker = ctx.Actors[AttackerID];
-        var target = ctx.Actors[TargetID];
+        var attacker = ctx.Actors[_attackerId];
+        var target = ctx.Actors[_targetId];
 
         Vector3 originalPos = attacker.transform.position;
         Vector3 dir = target.transform.position - attacker.transform.position;
@@ -23,16 +29,16 @@ public class JumpAttackCommandSO : ShowcaseCommandSO
 
         var seq = DOTween.Sequence();
 
-        seq.Append(attacker.transform.DOJump(target.transform.position + offset, JumpHeight, 1, Duration));
+        seq.Append(attacker.transform.DOJump(target.transform.position + offset, _jumpHeight, 1, _duration));
 
-        float attackMoment = Duration * 0.5f;
-        float takeDamageMoment = Duration * 0.7f;   
+        float attackMoment = _duration * 0.5f;
+        float takeDamageMoment = _duration * 0.7f;   
 
         seq.InsertCallback(attackMoment, () => attacker.Play(PlayerState.ATTACK));
         seq.InsertCallback(takeDamageMoment, () => target.Play(PlayerState.DAMAGED));
 
         seq.AppendInterval(0.35f);
-        seq.Append(attacker.transform.DOJump(originalPos, JumpHeight, 1, Duration));
+        seq.Append(attacker.transform.DOJump(originalPos, _jumpHeight, 1, _duration));
 
         yield return seq.WaitForCompletion();
     }

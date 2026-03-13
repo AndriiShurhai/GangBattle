@@ -5,8 +5,13 @@ using UnityEngine;
 public class HealAbilitySO : AbilityBaseSO
 {
     [Header("Heal Settings")]
-    public bool canHealSelf = true;
-    public float coefficent = 1.5f;
+    [UnityEngine.Serialization.FormerlySerializedAs("canHealSelf")]
+    [SerializeField] private bool _canHealSelf = true;
+    public bool CanHealSelf => _canHealSelf;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("coefficent")]
+    [SerializeField] private float _coefficent = 1.5f;
+    public float Coefficent => _coefficent;
 
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
@@ -26,14 +31,14 @@ public class HealAbilitySO : AbilityBaseSO
                     unit.Heal(teamHealAmount);
                 }
             }
-            onAbilityInvoke.Invoke();
+            onAbilityInvoke?.Invoke();
 
             Debug.Log($"{caster.name} healed {targetUnit.name} for {healAmount} HP!");
 
-            if (abilityEffectPrefab != null)
+            if (AbilityEffectPrefab != null)
             {
                 Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
-                GameObject effect = Instantiate(abilityEffectPrefab, worldPos, Quaternion.identity);
+                GameObject effect = Instantiate(AbilityEffectPrefab, worldPos, Quaternion.identity);
                 Destroy(effect, 2f);
             }
         }
@@ -52,7 +57,7 @@ public class HealAbilitySO : AbilityBaseSO
         if (!(targetObject is Unit targetUnit))
             return false;
 
-        if (!canHealSelf && targetUnit == caster)
+        if (!CanHealSelf && targetUnit == caster)
             return false;
 
         if (targetUnit.CurrentHealth <= 0)
@@ -60,7 +65,7 @@ public class HealAbilitySO : AbilityBaseSO
 
 
         // TODO: Add team check - only heal allies
-        if (targetType == TargetType.Ally && targetUnit.UnitFaction != caster.UnitFaction)
+        if (TypeOfTarget == TargetType.Ally && targetUnit.UnitFaction != caster.UnitFaction)
         {
             return false;
         }

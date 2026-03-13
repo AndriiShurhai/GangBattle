@@ -26,10 +26,6 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-    }
-
     #region Coordinate Conversion
     public Vector3 GridToWorld(Vector3Int gridPosition)
     {

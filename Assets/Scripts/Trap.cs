@@ -13,6 +13,7 @@ public class Trap : MonoBehaviour, IGridObject, IRewindable
 {
     [SerializeField] private EffectStatusType effectStatusType = EffectStatusType.None;
     [SerializeField] private int abilityDuration = 2;
+    [SerializeField] private float destroyDelay = 0.8f;
 
     private Vector3Int gridPosition;
     private int damage;
@@ -152,7 +153,7 @@ public class Trap : MonoBehaviour, IGridObject, IRewindable
 
     private IEnumerator DestroyTrap()
     {
-        yield return new WaitForSeconds(0.8f);
+        yield return new WaitForSeconds(destroyDelay);
         isActive = false; 
         gameObject.SetActive(false);
         TrapRegistry.Instance.UnregisterTrap(this);

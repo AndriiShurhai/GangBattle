@@ -223,7 +223,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &7575013801290610783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -254,6 +254,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HpPopupText
   textMesh: {fileID: 3616783581962713767}
+  moveYOffset: 1
+  moveYDuration: 1.5
+  fadeDuration: 2
 --- !u!1 &6656786719754672661
 GameObject:
   m_ObjectHideFlags: 0

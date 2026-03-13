@@ -1,6 +1,5 @@
 using UnityEngine;
 using System;
-using Unity.VisualScripting;
 public enum EffectStatusType
 {
     None,
@@ -50,6 +49,12 @@ public class StatusEffect
             }
         }
     }
+
+    /// <summary>
+    /// Returns a deep copy of this effect with the same type, duration, tickAction, and visualEffectPrefab.
+    /// Use when capturing snapshots so that subsequent Tick() calls do not mutate stored snapshots.
+    /// </summary>
+    public StatusEffect Clone() => new StatusEffect(type, duration, tickAction, visualEffectPrefab);
 
     public void Tick(Unit unit)
     {

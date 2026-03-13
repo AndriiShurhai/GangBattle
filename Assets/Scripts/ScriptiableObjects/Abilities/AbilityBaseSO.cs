@@ -13,23 +13,53 @@ public enum StatType
 public abstract class AbilityBaseSO : ScriptableObject
 {
     [Header("Basic Information")]
-    public string abilityName;
-    public Sprite abilityIcon;
-    [TextArea] public string abilityDescription;
-    public int howMuchCanBeUsed = 1;
+    [UnityEngine.Serialization.FormerlySerializedAs("abilityName")]
+    [SerializeField] private string _abilityName;
+    public string AbilityName => _abilityName;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("abilityIcon")]
+    [SerializeField] private Sprite _abilityIcon;
+    public Sprite AbilityIcon => _abilityIcon;
+
+    [TextArea]
+    [UnityEngine.Serialization.FormerlySerializedAs("abilityDescription")]
+    [SerializeField] private string _abilityDescription;
+    public string AbilityDescription => _abilityDescription;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("howMuchCanBeUsed")]
+    [SerializeField] private int _maxUses = 1;
+    public int MaxUses => _maxUses;
 
     [Header("Range Settings")]
-    public int range = 3;
-    public RangeType rangeType = RangeType.Square;
-    public TargetType targetType = TargetType.Enemy;
+    [UnityEngine.Serialization.FormerlySerializedAs("range")]
+    [SerializeField] private int _range = 3;
+    public int Range => _range;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("rangeType")]
+    [SerializeField] private RangeType _typeOfRange = RangeType.Square;
+    public RangeType TypeOfRange => _typeOfRange;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("targetType")]
+    [SerializeField] private TargetType _typeOfTarget = TargetType.Enemy;
+    public TargetType TypeOfTarget => _typeOfTarget;
 
     [Header("Visual")]
-    public Color rangePreviewColor = new Color(1f, 0f, 0f, 0.3f);
-    public GameObject abilityEffectPrefab;
+    [UnityEngine.Serialization.FormerlySerializedAs("rangePreviewColor")]
+    [SerializeField] private Color _rangePreviewColor = new Color(1f, 0f, 0f, 0.3f);
+    public Color RangePreviewColor => _rangePreviewColor;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("abilityEffectPrefab")]
+    [SerializeField] private GameObject _abilityEffectPrefab;
+    public GameObject AbilityEffectPrefab => _abilityEffectPrefab;
 
     [Header("Scaling")]
-    public float coefficient = 1f;
-    public StatType scalingType;
+    [UnityEngine.Serialization.FormerlySerializedAs("coefficient")]
+    [SerializeField] private float _coefficient = 1f;
+    public float Coefficient => _coefficient;
+
+    [UnityEngine.Serialization.FormerlySerializedAs("scalingType")]
+    [SerializeField] private StatType _typeOfScaling;
+    public StatType TypeOfScaling => _typeOfScaling;
     public enum RangeType
     {
         Square, // all tiles within range
@@ -50,16 +80,16 @@ public abstract class AbilityBaseSO : ScriptableObject
 
     protected int GetPower(Unit unit)
     {
-        switch (scalingType)
+        switch (TypeOfScaling)
         {
             case StatType.Strength:
-                return Mathf.RoundToInt(unit.Strength * coefficient);
+                return Mathf.RoundToInt(unit.Strength * Coefficient);
 
             case StatType.Intelligence:
-                return Mathf.RoundToInt(unit.Intelligence * coefficient);
+                return Mathf.RoundToInt(unit.Intelligence * Coefficient);
 
             case StatType.Agility:
-                return Mathf.RoundToInt(unit.Agility * coefficient);
+                return Mathf.RoundToInt(unit.Agility * Coefficient);
             default:
                 return 0;
         }
@@ -68,26 +98,26 @@ public abstract class AbilityBaseSO : ScriptableObject
     {
         List<Vector3Int> tiles = new List<Vector3Int>();
 
-        switch (rangeType)
+        switch (TypeOfRange)
         {
             case RangeType.Square:
-                tiles = RangeFinder.GetSquareRange(casterPosition, range);
+                tiles = RangeFinder.GetSquareRange(casterPosition, Range);
                 break;
 
             case RangeType.Diamond:
-                tiles = RangeFinder.GetDiamondRange(casterPosition, range);
+                tiles = RangeFinder.GetDiamondRange(casterPosition, Range);
                 break;
 
             case RangeType.Cross:
-                tiles = RangeFinder.GetCrossRange(casterPosition, range);
+                tiles = RangeFinder.GetCrossRange(casterPosition, Range);
                 break;
 
             case RangeType.Line:
-                tiles = RangeFinder.GetLineRange(casterPosition, range);
+                tiles = RangeFinder.GetLineRange(casterPosition, Range);
                 break;
 
             case RangeType.Circle:
-                tiles = RangeFinder.GetCircleRange(casterPosition, range);
+                tiles = RangeFinder.GetCircleRange(casterPosition, Range);
                 break;
         }
 
@@ -101,14 +131,14 @@ public abstract class AbilityBaseSO : ScriptableObject
             return false;
         }
 
-        if (!HasLineOfSight(casterPosition, targetPosition))
+        if (!GridUtility.HasLineOfSight(casterPosition, targetPosition))
         {
             return false;
         }
 
         IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
 
-        switch (targetType)
+        switch (TypeOfTarget)
         {
             case TargetType.Enemy:
                 if (caster.ForcedUnitGridPosition != null && targetPosition != caster.ForcedUnitGridPosition) return false;
@@ -128,24 +158,6 @@ public abstract class AbilityBaseSO : ScriptableObject
         }
 
         return false;
-    }
-
-    private bool HasLineOfSight(Vector3Int casterPosition, Vector3Int targetPositoin)
-    {
-        Vector3 start = GridManager.Instance.GridToWorld(casterPosition);
-        Vector3 end = GridManager.Instance.GridToWorld(targetPositoin);
-
-        Vector3 direction = (end - start).normalized;
-
-        float distance = Vector3.Distance(start, end);
-        LayerMask obstacleLayer = LayerMask.GetMask("Obstacle");
-
-        if (Physics2D.Raycast(start, direction, distance, obstacleLayer))
-        {
-            return false;
-        }
-
-        return true;
     }
 
     public abstract void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke = null);

@@ -37,36 +37,52 @@ public class BurnAttackActionSO : AbilityActionBase
     [Header("Base Scoring")]
     [Tooltip("Starting score when a valid target exists. Slightly below AttackActionSO's 100 " +
              "baseline so Burn is a conditional upgrade, not always the default choice.")]
-    public float baseScore = 75f;
+    [UnityEngine.Serialization.FormerlySerializedAs("baseScore")]
+    [SerializeField] private float _baseScore = 75f;
+    public float BaseScore => _baseScore;
 
     [Header("Situational Bonuses")]
     [Tooltip("HP% threshold above which the target is considered 'high HP' — likely to survive " +
              "long enough for the DoT to tick multiple times.")]
-    [Range(0f, 1f)] public float highHpThreshold = 0.55f;
+    [UnityEngine.Serialization.FormerlySerializedAs("highHpThreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _highHpThreshold = 0.55f;
+    public float HighHpThreshold => _highHpThreshold;
 
     [Tooltip("Bonus score when the target clears the highHpThreshold. This is the core value " +
              "of burn — scale it up if burn DoT is high in your design.")]
-    public float highHpBonus = 80f;
+    [UnityEngine.Serialization.FormerlySerializedAs("highHpBonus")]
+    [SerializeField] private float _highHpBonus = 80f;
+    public float HighHpBonus => _highHpBonus;
 
     [Tooltip("Additional bonus per DoT tick the target is likely to survive. Calculated as " +
              "estimated surviving turns × this value. Rewards burning very tanky targets.")]
-    public float perSurvivingTickBonus = 15f;
+    [UnityEngine.Serialization.FormerlySerializedAs("perSurvivingTickBonus")]
+    [SerializeField] private float _perSurvivingTickBonus = 15f;
+    public float PerSurvivingTickBonus => _perSurvivingTickBonus;
 
     [Tooltip("Bonus per unit the AI team is outnumbered by. Sustained DoT is more valuable " +
              "when there are many enemies to wear down over time.")]
-    public float outnumberedBonusPerUnit = 20f;
+    [UnityEngine.Serialization.FormerlySerializedAs("outnumberedBonusPerUnit")]
+    [SerializeField] private float _outnumberedBonusPerUnit = 20f;
+    public float OutnumberedBonusPerUnit => _outnumberedBonusPerUnit;
 
     [Header("Penalties")]
     [Tooltip("Score multiplier when the target is already burning. Near zero — re-burning " +
              "only refreshes duration and wastes the action over a normal attack.")]
-    [Range(0f, 1f)] public float alreadyBurningMultiplier = 0.15f;
+    [UnityEngine.Serialization.FormerlySerializedAs("alreadyBurningMultiplier")]
+    [SerializeField] [Range(0f, 1f)] private float _alreadyBurningMultiplier = 0.15f;
+    public float AlreadyBurningMultiplier => _alreadyBurningMultiplier;
 
     [Tooltip("HP% below which the target is unlikely to survive long enough for the DoT " +
              "to be worthwhile. A plain finisher is better.")]
-    [Range(0f, 1f)] public float lowHpThreshold = 0.3f;
+    [UnityEngine.Serialization.FormerlySerializedAs("lowHpThreshold")]
+    [SerializeField] [Range(0f, 1f)] private float _lowHpThreshold = 0.3f;
+    public float LowHpThreshold => _lowHpThreshold;
 
     [Tooltip("Score subtracted when the target is below lowHpThreshold.")]
-    public float lowHpPenalty = 60f;
+    [UnityEngine.Serialization.FormerlySerializedAs("lowHpPenalty")]
+    [SerializeField] private float _lowHpPenalty = 60f;
+    public float LowHpPenalty => _lowHpPenalty;
 
     public override AIScoreData GetScoreAction(Unit aiUnit)
     {
@@ -75,14 +91,14 @@ public class BurnAttackActionSO : AbilityActionBase
         Unit bestTarget = FindBestTarget(aiUnit);
         if (bestTarget == null) return scoreData;
 
-        float score = baseScore;
+        float score = BaseScore;
 
         float targetHpPercent = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
 
         // PENALTY: Target is already burning — DoT adds nothing new
         if (bestTarget.HasStatus(EffectStatusType.Burned))
         {
-            score *= alreadyBurningMultiplier;
+            score *= AlreadyBurningMultiplier;
 
 
             Unit alternativeTarget = FindBestNonBurningTarget(aiUnit);
@@ -91,7 +107,7 @@ public class BurnAttackActionSO : AbilityActionBase
                 // Re-score using the non-burning target
                 bestTarget = alternativeTarget;
                 targetHpPercent = (float)bestTarget.CurrentHealth / bestTarget.MaxHealth;
-                score = baseScore; // reset
+                score = BaseScore; // reset
             }
             else if (score <= 0f)
             {
@@ -100,18 +116,18 @@ public class BurnAttackActionSO : AbilityActionBase
         }
 
         // PENALTY: Target is low HP — likely to die before DoT ticks meaningfully
-        if (targetHpPercent < lowHpThreshold)
-            score -= lowHpPenalty;
+        if (targetHpPercent < LowHpThreshold)
+            score -= LowHpPenalty;
 
         // BONUS: Target is high HP — will survive to eat all burn ticks
-        if (targetHpPercent >= highHpThreshold)
+        if (targetHpPercent >= HighHpThreshold)
         {
-            score += highHpBonus;
+            score += HighHpBonus;
 
             // Additional bonus based on how many ticks the target will likely survive
             // Rough estimate: each 10% HP above the low threshold = 1 surviving tick
-            int estimatedSurvivingTicks = Mathf.FloorToInt((targetHpPercent - lowHpThreshold) / 0.1f);
-            score += estimatedSurvivingTicks * perSurvivingTickBonus;
+            int estimatedSurvivingTicks = Mathf.FloorToInt((targetHpPercent - LowHpThreshold) / 0.1f);
+            score += estimatedSurvivingTicks * PerSurvivingTickBonus;
         }
 
         // BONUS: AI team is outnumbered — DoT helps chip down a crowd over time
@@ -119,7 +135,7 @@ public class BurnAttackActionSO : AbilityActionBase
         int aliveAllies = TurnManager.Instance.GetAliveEnemyUnits().Count;
         int deficit = aliveEnemies - aliveAllies;
         if (deficit > 0)
-            score += deficit * outnumberedBonusPerUnit;
+            score += deficit * OutnumberedBonusPerUnit;
 
         if (score <= 0f) return scoreData;
 

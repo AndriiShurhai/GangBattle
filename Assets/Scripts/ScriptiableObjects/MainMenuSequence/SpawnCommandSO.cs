@@ -1,20 +1,24 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Showcase/Spawn")]
 public class SpawnCommandSO : ShowcaseCommandSO
 {
-    public string ActorID;
-    public MenuActor prefab;
-    public Vector3 position;
+    [FormerlySerializedAs("ActorID")]
+    [SerializeField] private string _actorId;
+
+    [FormerlySerializedAs("prefab")]
+    [SerializeField] private MenuActor _prefab;
+
+    [FormerlySerializedAs("position")]
+    [SerializeField] private Vector3 _position;
+
     public override IEnumerator Execute(MainMenuShowcaseContext ctx)
     {
-        var actor = Instantiate(prefab, position, Quaternion.identity);
-        ctx.Actors.Add(ActorID, actor);
-        Debug.Log($"New Actor has been spawned: {ActorID}");
+        var actor = Instantiate(_prefab, _position, Quaternion.identity);
+        ctx.Actors.Add(_actorId, actor);
+        Debug.Log($"New Actor has been spawned: {_actorId}");
         yield break;
     }
-}   
+}
