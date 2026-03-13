@@ -47,10 +47,17 @@ public class UnitStatusEffectComponent : MonoBehaviour
     public bool Has(EffectStatusType effectType) => activeEffects.Exists(e => e.type == effectType);
 
     /// <summary>
-    /// Ticks all active effects and removes expired ones. Call once per turn.
+    /// Returns a deep copy of the active effects list safe to store in a rewind snapshot.
+    /// Each <see cref="StatusEffect"/> is cloned so that subsequent <see cref="UpdateAll"/> ticks
+    /// do not mutate the stored snapshot durations.
     /// </summary>
-    /// <summary>Returns a shallow copy of active effects safe to store in a snapshot.</summary>
-    public List<StatusEffect> CaptureEffects() => new List<StatusEffect>(activeEffects);
+    public List<StatusEffect> CaptureEffects()
+    {
+        var snapshot = new List<StatusEffect>(activeEffects.Count);
+        foreach (var effect in activeEffects)
+            snapshot.Add(effect.Clone());
+        return snapshot;
+    }
 
     /// <summary>
     /// Restores effects from a snapshot. Cleans up current visuals first.
