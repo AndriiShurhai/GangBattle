@@ -60,10 +60,16 @@ public class AIBrain : MonoBehaviour
             Debug.Log($"{aiUnit.name} has no validActions to take");
             onComplete?.Invoke();
         }
-
         else if (bestScoreData.action != null && bestScoreData.score < minimumScoreToAct)
         {
             Debug.Log($"{aiUnit.name} has all actions score below the threshold");
+            onComplete?.Invoke();
+        }
+        else
+        {
+            // Covers cases where no actions are scoreable or all are below the threshold,
+            // and ScoreBestAction returned a default/empty AIScoreData.
+            Debug.Log($"{aiUnit.name} cannot act this turn (no executable actions or scores below threshold).");
             onComplete?.Invoke();
         }
     }
