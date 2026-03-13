@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using DG.Tweening;
+using UnityEngine.Rendering.Universal;
 public class HighlightManager
 {
     private float highlightAnimDuration = 0.3f;
@@ -35,12 +36,28 @@ public class HighlightManager
 
     public void ClearAllHighlights()
     {
-        foreach (GameObject highlight in  _activeHighlights)
+        foreach (GameObject highlight in _activeHighlights)
         {
             if (highlight != null)
             {
                 Sequence destroy = DOTween.Sequence();
+
                 destroy.Append(highlight.transform.DOScale(0f, highlightAnimDuration));
+
+                foreach (var child in highlight.GetComponentsInChildren<SpriteRenderer>())
+                {
+                    destroy.Join(child.DOColor(new Color(1f, 1f, 1f, 0f), highlightAnimDuration));
+                }
+
+                foreach (var light in highlight.GetComponentsInChildren<Light2D>())
+                {
+                    destroy.Join(DOTween.To(
+                        () => light.intensity,
+                        x => light.intensity = x,
+                        0f,
+                        highlightAnimDuration));
+                }
+
                 destroy.AppendCallback(() =>
                 {
                     Object.Destroy(highlight);

@@ -1,15 +1,21 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Showcase/Move")]
 public class MoveCommandSO : ShowcaseCommandSO
 {
-    public string actor;
-    public Vector3 position;
-    public float duration = 0.6f;
+    [FormerlySerializedAs("actor")]
+    [SerializeField] private string _actorId;
+
+    [FormerlySerializedAs("position")]
+    [SerializeField] private Vector3 _position;
+
+    [FormerlySerializedAs("duration")]
+    [SerializeField] private float _duration = 0.6f;
 
     public override IEnumerator Execute(MainMenuShowcaseContext ctx)
     {
-        yield return ctx.Actors[actor].MoveTo(position, duration);
+        yield return ctx.Actors[_actorId].MoveTo(_position, _duration);
     }
 }

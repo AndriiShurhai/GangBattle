@@ -1,14 +1,19 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Showcase/Face")]
 public class FaceCommandSO : ShowcaseCommandSO
 {
-    public string actor;
-    public Vector3 targetPosition; // face toward another actor
+    [FormerlySerializedAs("actor")]
+    [SerializeField] private string _actorId;
+
+    [FormerlySerializedAs("targetPosition")]
+    [SerializeField] private Vector3 _targetPosition; // face toward another actor
+
     public override IEnumerator Execute(MainMenuShowcaseContext ctx)
     {
-        ctx.Actors[actor].Face(targetPosition);
+        ctx.Actors[_actorId].Face(_targetPosition);
         yield break;
     }
 }
