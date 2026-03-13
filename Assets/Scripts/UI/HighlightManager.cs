@@ -12,9 +12,6 @@ public class HighlightManager
     private readonly Queue<GameObject> _highlightPool = new Queue<GameObject>();
     private readonly List<GameObject> _activeHighlights = new List<GameObject>();
     private readonly Vector3 _originalScale;
-   
-    private float _defaultLightIntensity;
-    private Dictionary<Light2D, float> _originalLightIntensity = new();
 
     public HighlightManager(GameObject highlightPrefab, Transform container)
     {
@@ -101,11 +98,6 @@ public class HighlightManager
         else
         {
             obj = Object.Instantiate(_highlightPrefab, _container);
-
-            foreach (var light in obj.GetComponentsInChildren<Light2D>())
-            {
-                _originalLightIntensity[light] = light.intensity;
-            }
         }
 
         return obj;
