@@ -42,8 +42,7 @@ public class UnitWorldUIManager : MonoBehaviour
     {
         if (activeHealthBars.TryGetValue(unit, out UnitHealthUI healthUI))
         {
-            healthBarPrefab.SetActive(false);
-            //Destroy(healthUI.gameObject);
+            Destroy(healthUI.gameObject);
             activeHealthBars.Remove(unit);
         }
     }
