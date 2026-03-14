@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4efb16dd3e11b6d4b9f1b36160375ff5, type: 3}
   m_Name: Entry
   m_EditorClassIdentifier: Assembly-CSharp::ParallelCommandSO
-  commands:
+  _commands:
   - {fileID: 11400000, guid: 9407eaa91412bdf4d9ae24d9fb9fe6c8, type: 2}
   - {fileID: 11400000, guid: f09b6e37ced40a84faa07c1a3d46ae78, type: 2}

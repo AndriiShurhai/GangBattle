@@ -282,12 +282,26 @@ public class TurnManager : MonoBehaviour, IRewindable
         EndTurn();
     }
 
-    private void EndGame()
+    private void EndGame(bool playerWon)
     {
         StopAllCoroutines();
         characterSelectionController.ClearSelection();
         characterSelectionController.gameObject.SetActive(false);
-        // TODO: show victory/defeat screen
+
+        if (playerWon)
+        {
+            GameOverScreenUI.Instance.ShowGameOverScreenCompletedLevel(
+                enemiesDestroyed: allEnemyUnits.Count - enemyUnits.Count,
+                unitsAlive: playerUnits.Count,
+                timeTaken: currentTurn 
+            );
+            Debug.Log("Player wins the level!");
+        }
+        else
+        {
+            GameOverScreenUI.Instance.ShowGameOverScreenFailedLevel();
+            Debug.Log("Enemies win the level!");
+        }
     }
 
     // ── Unit Events ───────────────────────────────────────────────────────────
@@ -303,7 +317,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             {
                 Debug.Log("Enemies win.");
                 isGameOver = true;
-                EndGame();
+                EndGame(false);
             }
         }
         else if (enemyUnits.Contains(unit))
@@ -313,7 +327,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             {
                 Debug.Log("Player wins.");
                 isGameOver = true;
-                EndGame();
+                EndGame(true);
             }
         }
     }
@@ -322,6 +336,10 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     public List<Unit> GetPlayerUnits() => playerUnits;
     public List<Unit> GetEnemyUnits() => enemyUnits;
+
+    public List<Unit> GetAllEnemyUnits() => allEnemyUnits;
+
+    public List<Unit> GetAllPlayerUnits() => allPlayerUnits;
 
     public List<Unit> GetAllUnits()
     {
@@ -332,4 +350,9 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     public List<Unit> GetAlivePlayerUnits() => playerUnits.Where(u => u.IsAlive).ToList();
     public List<Unit> GetAliveEnemyUnits() => enemyUnits.Where(u => u.IsAlive).ToList();
+
+    internal int GetBestTimeForLevel()
+    {
+        return 100;
+    }
 }

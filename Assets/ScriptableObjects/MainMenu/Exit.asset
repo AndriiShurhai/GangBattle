@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4efb16dd3e11b6d4b9f1b36160375ff5, type: 3}
   m_Name: Exit
   m_EditorClassIdentifier: Assembly-CSharp::ParallelCommandSO
-  commands:
+  _commands:
   - {fileID: 11400000, guid: 77822aa9bf7757741900f117233d9145, type: 2}
   - {fileID: 11400000, guid: 7885ae49d99298b40887c6c1ac170c43, type: 2}
   - {fileID: 11400000, guid: dc7806364c626c441a249c8230ce6ffb, type: 2}
