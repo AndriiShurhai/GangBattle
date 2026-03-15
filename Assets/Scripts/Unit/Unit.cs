@@ -304,6 +304,11 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     // ── Abilities ─────────────────────────────────────────────────────────────
     public bool CanUseAbility(AbilityBaseSO abilitySO)
     {
+        if (IsMoving)
+        {
+            Debug.Log("Unit is currently moving");
+            return false;
+        }
         if (HasStatus(EffectStatusType.Stunned))
         {
             Debug.Log($"Ability blocked: unit is Stunned. [{abilitySO.name}]");
