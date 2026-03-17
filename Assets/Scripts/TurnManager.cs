@@ -15,8 +15,26 @@ public class TurnManagerSnapshotState
     public List<string> aliveEnemyUnitIds;
 }
 
+public struct VictoryScreenData
+{
+    // Raw counts for the stat display
+    public int EnemiesDestroyed;
+    public int TotalEnemies;
+    public int UnitsAlive;
+    public int TotalPlayerUnits;
+    public int TimeTaken;
+    public int BestTime;
+
+    // Star conditions — evaluated by TurnManager
+    public bool StarEnemies;
+    public bool StarUnits;
+    public bool StarTime;
+}
+
 public class TurnManager : MonoBehaviour, IRewindable
 {
+    public event Action OnLevelCompleted;
+    public event Action OnLevelFailed;
     public static TurnManager Instance { get; private set; }
 
     [SerializeField] private List<Transform> playersPositions;
@@ -29,6 +47,8 @@ public class TurnManager : MonoBehaviour, IRewindable
     [SerializeField] private Button endPlayerTurnButton;
     [SerializeField] private float enemyPreTurnDelay = 0.3f;
     [SerializeField] private float enemyPostTurnDelay = 0.5f;
+
+    [SerializeField] private int bestTimeTurns = 10;
 
     public string RewindID => id.ID;
 
@@ -45,7 +65,7 @@ public class TurnManager : MonoBehaviour, IRewindable
     private void Awake()
     {
         if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        else { Destroy(gameObject); return; }
 
         endPlayerTurnButton.onClick.AddListener(EndTurn);
         id = GetComponent<RewindableID>();
@@ -60,7 +80,6 @@ public class TurnManager : MonoBehaviour, IRewindable
             Unit enemyScript = Instantiate(enemyUnits[i].gameObject).GetComponent<Unit>();
             enemyScript.Initialize();
             enemyScript.PlaceUnit(enemiesPositions[i].position);
-
             enemyUnits[i] = enemyScript;
             allEnemyUnits.Add(enemyScript);
         }
@@ -70,7 +89,6 @@ public class TurnManager : MonoBehaviour, IRewindable
             Unit playerScript = Instantiate(playerUnits[i].gameObject).GetComponent<Unit>();
             playerScript.Initialize();
             playerScript.PlaceUnit(playersPositions[i].position);
-
             playerUnits[i] = playerScript;
             allPlayerUnits.Add(playerScript);
         }
@@ -80,8 +98,6 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         StartPlayerTurn();
     }
-
-    // ── Rewind ────────────────────────────────────────────────────────────────
 
     public void RegisterSelf() => RewindManager.Instance.RegisterRewindable(this);
 
@@ -138,41 +154,22 @@ public class TurnManager : MonoBehaviour, IRewindable
     public void RewindOneStep()
     {
         CharacterSelectionController.Instance.ClearSelection();
-        if (currentTurn < 0)
-        {
-            Debug.Log("Already at the beginning, cannot rewind.");
-            return;
-        }
+        if (currentTurn < 0) { Debug.Log("Already at the beginning, cannot rewind."); return; }
 
         var availableTurns = RewindManager.Instance.GetAvailableTurns();
+        if (availableTurns.Count == 0) { Debug.Log("No snapshots available to rewind."); return; }
 
-        if (availableTurns.Count == 0)
-        {
-            Debug.Log("No snapshots available to rewind.");
-            return;
-        }
-
-        // Dictionary keys have no guaranteed order — sort descending to find the closest previous turn.
         availableTurns.Sort((a, b) => b.CompareTo(a));
 
         int targetTurn = -1;
         foreach (int turn in availableTurns)
         {
-            if (turn < currentTurn)
-            {
-                targetTurn = turn;
-                break;
-            }
+            if (turn < currentTurn) { targetTurn = turn; break; }
         }
 
-        if (targetTurn == -1)
-        {
-            Debug.Log("No previous snapshot found.");
-            return;
-        }
+        if (targetTurn == -1) { Debug.Log("No previous snapshot found."); return; }
 
         Debug.Log($"Rewinding from turn {currentTurn} to turn {targetTurn}.");
-
         StopAllCoroutines();
         StopAllEnemyCoroutines();
         RewindManager.Instance.RewindTo(targetTurn);
@@ -182,7 +179,6 @@ public class TurnManager : MonoBehaviour, IRewindable
     {
         Debug.Log($"Resetting current turn {currentTurn}.");
         CharacterSelectionController.Instance.ClearSelection();
-
         StopAllCoroutines();
         StopAllEnemyCoroutines();
         RewindManager.Instance.RewindTo(currentTurn);
@@ -197,7 +193,6 @@ public class TurnManager : MonoBehaviour, IRewindable
             unit.StopAllCoroutines();
         }
     }
-    // ── Turn Flow ─────────────────────────────────────────────────────────────
 
     public void StartPlayerTurn()
     {
@@ -240,8 +235,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     public void EndTurn()
     {
-        List<Trap> traps = new List<Trap>(TrapRegistry.Instance.GetTraps());
-        foreach (Trap trap in traps)
+        foreach (Trap trap in new List<Trap>(TrapRegistry.Instance.GetTraps()))
             trap.DecreaseDuration();
 
         if (currentState == TurnState.PlayerTurn)
@@ -249,7 +243,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             endPlayerTurnButton.gameObject.SetActive(false);
             StartEnemyTurn();
         }
-        else if (currentState == TurnState.EnemyTurn)
+        else
         {
             endPlayerTurnButton.gameObject.SetActive(true);
             StartPlayerTurn();
@@ -290,21 +284,47 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         if (playerWon)
         {
-            GameOverScreenUI.Instance.ShowGameOverScreenCompletedLevel(
-                enemiesDestroyed: allEnemyUnits.Count - enemyUnits.Count,
-                unitsAlive: playerUnits.Count,
-                timeTaken: currentTurn 
-            );
+            int enemiesDestroyed = allEnemyUnits.Count - enemyUnits.Count;
+            int unitsAlive = playerUnits.Count;
+
+            GameOverScreenUI.Instance.ShowVictoryScreen(new VictoryScreenData
+            {
+                EnemiesDestroyed = enemiesDestroyed,
+                TotalEnemies = allEnemyUnits.Count,
+                UnitsAlive = unitsAlive,
+                TotalPlayerUnits = allPlayerUnits.Count,
+                TimeTaken = currentTurn,
+                BestTime = bestTimeTurns,
+                StarEnemies = enemiesDestroyed == allEnemyUnits.Count,
+                StarUnits = unitsAlive == allPlayerUnits.Count,
+                StarTime = currentTurn <= bestTimeTurns
+            });
+
+            OnLevelCompleted?.Invoke();
             Debug.Log("Player wins the level!");
         }
         else
         {
-            GameOverScreenUI.Instance.ShowGameOverScreenFailedLevel();
+            GameOverScreenUI.Instance.ShowDefeatScreen();
+            OnLevelFailed?.Invoke();
             Debug.Log("Enemies win the level!");
         }
     }
+    public int CalculateStarsEarned()
+    {
+        bool starEnemies = (allEnemyUnits.Count - enemyUnits.Count) == allEnemyUnits.Count;
+        bool starUnits = playerUnits.Count == allPlayerUnits.Count;
+        bool starTime = currentTurn <= bestTimeTurns;
 
-    // ── Unit Events ───────────────────────────────────────────────────────────
+        int stars = 0;
+        if (starEnemies) stars++;
+        if (starUnits) stars++;
+        if (starTime) stars++;
+        return stars;
+    }
+
+    public int GetBestTimeForLevel() => bestTimeTurns;
+
 
     private void Unit_OnUnitDied(Unit unit)
     {
@@ -315,7 +335,6 @@ public class TurnManager : MonoBehaviour, IRewindable
             playerUnits.Remove(unit);
             if (playerUnits.Count == 0)
             {
-                Debug.Log("Enemies win.");
                 isGameOver = true;
                 EndGame(false);
             }
@@ -325,20 +344,15 @@ public class TurnManager : MonoBehaviour, IRewindable
             enemyUnits.Remove(unit);
             if (enemyUnits.Count == 0)
             {
-                Debug.Log("Player wins.");
                 isGameOver = true;
                 EndGame(true);
             }
         }
     }
 
-    // ── Accessors ─────────────────────────────────────────────────────────────
-
     public List<Unit> GetPlayerUnits() => playerUnits;
     public List<Unit> GetEnemyUnits() => enemyUnits;
-
     public List<Unit> GetAllEnemyUnits() => allEnemyUnits;
-
     public List<Unit> GetAllPlayerUnits() => allPlayerUnits;
 
     public List<Unit> GetAllUnits()
@@ -350,9 +364,4 @@ public class TurnManager : MonoBehaviour, IRewindable
 
     public List<Unit> GetAlivePlayerUnits() => playerUnits.Where(u => u.IsAlive).ToList();
     public List<Unit> GetAliveEnemyUnits() => enemyUnits.Where(u => u.IsAlive).ToList();
-
-    internal int GetBestTimeForLevel()
-    {
-        return 100;
-    }
 }

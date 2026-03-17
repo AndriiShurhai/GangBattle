@@ -14,6 +14,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/Blood Castle.unity
+    guid: 410b68894afec214a9c4280b3612e105
+  - enabled: 1
+    path: Assets/Scenes/Forest.unity
+    guid: 7f643553fbbd18948ade09c34990f30b
+  - enabled: 1
+    path: Assets/Scenes/Graveyard.unity
+    guid: ca01aa7f9172a324c8ce2cb1edbae15b
+  - enabled: 1
+    path: Assets/Scenes/Vampire Outside.unity
+    guid: 29532c72a722263428df2af9e165862c
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f,
       type: 2}

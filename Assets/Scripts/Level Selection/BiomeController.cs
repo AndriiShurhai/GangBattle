@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,6 +10,7 @@ public class BiomeController : MonoBehaviour,
 {
     [Header("Identity")]
     public string biomName;
+    public RegionController regionController;
 
     [Header("Visuals")]
     [Tooltip("Automatically assigned if left empty")]
@@ -17,7 +19,7 @@ public class BiomeController : MonoBehaviour,
     [Tooltip("SpriteRenderer used to visualize the biome region")]
     public SpriteRenderer regionSpriteRenderer;
 
-    [Tooltip("SpriteRender with logical bounds to zoom in")]
+    [Tooltip("SpriteRenderer with logical bounds to zoom in")]
     public SpriteRenderer zoomSpriteRenderer;
 
     [Tooltip("Scale multiplier when hovered")]
@@ -40,24 +42,21 @@ public class BiomeController : MonoBehaviour,
     public float unhoverDuration = 0.15f;
 
     [Header("Level Nodes")]
-    [Tooltip("Parent transform containing level nodes for this biom")]
+    [Tooltip("Parent transform containing level nodes for this biome")]
     public Transform levelNodesParent;
 
-    [HideInInspector]public Bounds worldBounds;
+    [HideInInspector] public Bounds worldBounds;
 
     private Vector3 originalScale;
     private Color originalColor;
     private float pulseTime;
-    Coroutine coroutine;
+    private Coroutine coroutine;
 
-    private void Reset()
-    {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-    }
+    private void Reset() => spriteRenderer = GetComponent<SpriteRenderer>();
 
     private void Awake()
     {
-        if (spriteRenderer == null) spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
 
         originalScale = transform.localScale;
         originalColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
@@ -83,43 +82,36 @@ public class BiomeController : MonoBehaviour,
             return;
         }
 
+        // Reset visual state immediately before the zoom transition takes over.
         transform.localScale = originalScale;
         if (spriteRenderer != null) spriteRenderer.color = originalColor;
-        if (coroutine != null) StopCoroutine(coroutine);
-        coroutine = null;
+        if (coroutine != null) { StopCoroutine(coroutine); coroutine = null; }
+
         Debug.Log($"Clicked on biome: {biomName}");
         MapManager.Instance.RequestZoomToBiome(this);
-
     }
 
     public void UpdateBounds()
     {
         if (zoomSpriteRenderer != null)
-        {
             worldBounds = zoomSpriteRenderer.bounds;
-        }
     }
 
-    public SpriteRenderer GetRegionSpriteRenderer()
-    {
-        return regionSpriteRenderer;
-    }
+    public SpriteRenderer GetRegionSpriteRenderer() => regionSpriteRenderer;
+
     private IEnumerator PulseHighlight()
     {
         pulseTime = 0f;
 
         while (true)
         {
-            Debug.Log("Pulsing");
             pulseTime += Time.deltaTime;
 
             float pulse = 1f + Mathf.Sin(pulseTime * pulseSpeed) * hoverPulse;
             transform.localScale = originalScale * (hoverScale * pulse);
 
             if (spriteRenderer != null)
-            {
                 spriteRenderer.color = Color.Lerp(spriteRenderer.color, highlightColor, highlightBlendSpeed);
-            }
 
             yield return null;
         }
@@ -137,9 +129,7 @@ public class BiomeController : MonoBehaviour,
             float t = Mathf.Clamp01(elapsed / unhoverDuration);
             transform.localScale = Vector3.Lerp(fromScale, originalScale, t);
             if (spriteRenderer != null)
-            {
                 spriteRenderer.color = Color.Lerp(fromColor, originalColor, t);
-            }
             yield return null;
         }
 
@@ -147,14 +137,10 @@ public class BiomeController : MonoBehaviour,
         if (spriteRenderer != null) spriteRenderer.color = originalColor;
         coroutine = null;
     }
+
     private void SetCoroutine(IEnumerator routine)
     {
-        if (coroutine != null)
-        {
-            StopCoroutine(coroutine);
-            coroutine = null;
-        }
-
-        coroutine = StartCoroutine(routine);        
+        if (coroutine != null) { StopCoroutine(coroutine); coroutine = null; }
+        coroutine = StartCoroutine(routine);
     }
 }

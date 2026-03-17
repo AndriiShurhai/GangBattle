@@ -366,8 +366,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -63.261375, y: 7.0289307}
+  m_SizeDelta: {x: 393.6282, y: 238.9883}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &375220055
 MonoBehaviour:
@@ -1401,6 +1401,7 @@ GameObject:
   - component: {fileID: 1735236865}
   - component: {fileID: 1735236864}
   - component: {fileID: 1735236863}
+  - component: {fileID: 1735236868}
   m_Layer: 0
   m_Name: FadeCanvas
   m_TagString: Untagged
@@ -1449,12 +1450,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 2139, y: 1518}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.52
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -1477,11 +1478,11 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 132
+  m_SortingOrder: 701
   m_TargetDisplay: 0
 --- !u!224 &1735236867
 RectTransform:
@@ -1503,6 +1504,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!210 &1735236868
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1735236862}
+  m_Enabled: 1
+  m_SortingLayerID: 324148957
+  m_SortingLayer: 6
+  m_SortingOrder: 1091
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
 --- !u!1001 &1928326530
 PrefabInstance:
   m_ObjectHideFlags: 0

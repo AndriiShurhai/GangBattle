@@ -34,6 +34,7 @@ public class MapManager : MonoBehaviour
 
     public enum ZoomState { World, Transitioning, Biome }
     public ZoomState CurrentState { get; private set; } = ZoomState.World;
+    public BiomeController ActiveBiome => activeBiome;
 
     private BiomeController activeBiome;
 
@@ -41,13 +42,12 @@ public class MapManager : MonoBehaviour
     private float worldOrthographicSize;
     private Coroutine transition;
 
+    private Button _returnButton;
+    private Image _returnButtonImage;
+
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
 
         if (mainCamera == null) mainCamera = Camera.main;
@@ -55,8 +55,11 @@ public class MapManager : MonoBehaviour
         worldCameraPosition = mainCamera.transform.position;
         worldOrthographicSize = mainCamera.orthographicSize;
 
-        returnFromRegionButton.GetComponent<Button>().onClick.AddListener(() => ZoomOut());
-        returnFromRegionButton.GetComponent<Button>().interactable = false;
+        _returnButton = returnFromRegionButton.GetComponent<Button>();
+        _returnButtonImage = returnFromRegionButton.GetComponent<Image>();
+
+        _returnButton.onClick.AddListener(ZoomOut);
+        _returnButton.interactable = false;
     }
 
     public void RequestZoomToBiome(BiomeController biome)
@@ -79,36 +82,32 @@ public class MapManager : MonoBehaviour
     {
         CurrentState = ZoomState.Transitioning;
 
-        Coroutine camZoom = StartCoroutine(LerpCamera(
-            new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y, mainCamera.transform.position.z),
+        yield return StartCoroutine(LerpCamera(
+            new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y,
+                        mainCamera.transform.position.z),
             CalculateOrthographicSize(activeBiome.worldBounds),
             zoomDuration
         ));
 
-        yield return camZoom;
+        SpriteRenderer regionRenderer = activeBiome.GetRegionSpriteRenderer();
 
-        Coroutine fadeRegion = StartCoroutine(
-            FadeSprite(activeBiome.GetRegionSpriteRenderer(), 1f, 0.3f)
-        );
+        StartCoroutine(FadeSprite(regionRenderer, 1f, 0.3f));
+
+        foreach (LevelNode level in activeBiome.regionController.GetLevelsInRegion())
+            if (!level.IsLocked) StartCoroutine(FadeSprite(level.SpriteRenderer, 1f, fadeDuration));
 
         Coroutine regionZoom = StartCoroutine(LerpCamera(
-            new Vector3(activeBiome.GetRegionSpriteRenderer().bounds.center.x, activeBiome.GetRegionSpriteRenderer().bounds.center.y, mainCamera.transform.position.z),
-            CalculateOrthographicSize(activeBiome.GetRegionSpriteRenderer().bounds),
+            new Vector3(regionRenderer.bounds.center.x, regionRenderer.bounds.center.y,
+                        mainCamera.transform.position.z),
+            CalculateOrthographicSize(regionRenderer.bounds),
             zoomDuration
         ));
 
-        yield return fadeRegion;
+        _returnButton.interactable = true;
+        StartCoroutine(FadeImage(_returnButtonImage, 1f, fadeDuration));
+        StartCoroutine(FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 0f, fadeDuration));
 
-        Coroutine fadeBiome = StartCoroutine(
-            FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 0f, fadeDuration)
-        );
-
-        returnFromRegionButton.GetComponent<Button>().interactable = true;    
-        Coroutine fadeReturnButton = StartCoroutine(
-            FadeImage(returnFromRegionButton.GetComponent<Image>(), 1f, fadeDuration)
-        );
-
-        yield return regionZoom;    
+        yield return regionZoom;
 
         CurrentState = ZoomState.Biome;
     }
@@ -117,36 +116,23 @@ public class MapManager : MonoBehaviour
     {
         CurrentState = ZoomState.Transitioning;
 
-        Coroutine camZoom = StartCoroutine(LerpCamera(
-           new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y, mainCamera.transform.position.z),
-           CalculateOrthographicSize(activeBiome.worldBounds),
-           zoomDuration
-       ));
-
-        yield return camZoom;
-
-
-        Coroutine fadeRegion = StartCoroutine(
-            FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, 0.3f)
-        );
-
-        returnFromRegionButton.GetComponent<Button>().interactable = false;
-
-        Coroutine fadeReturnButton = StartCoroutine(
-            FadeImage(returnFromRegionButton.GetComponent<Image>(), 0f, fadeDuration)
-        );
-
-        Coroutine biomeZoom = StartCoroutine(LerpCamera(
-            worldCameraPosition,
-            worldOrthographicSize,
+        yield return StartCoroutine(LerpCamera(
+            new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y,
+                        mainCamera.transform.position.z),
+            CalculateOrthographicSize(activeBiome.worldBounds),
             zoomDuration
         ));
 
-        Coroutine fadeBiome = StartCoroutine(
-            FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration)
-        );
-        yield return fadeRegion;
+        StartCoroutine(FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, 0.3f));
 
+        foreach (LevelNode level in activeBiome.regionController.GetLevelsInRegion())
+            StartCoroutine(FadeSprite(level.SpriteRenderer, 0f, 0.3f));
+
+        _returnButton.interactable = false;
+        StartCoroutine(FadeImage(_returnButtonImage, 0f, fadeDuration));
+
+        StartCoroutine(LerpCamera(worldCameraPosition, worldOrthographicSize, zoomDuration));
+        yield return StartCoroutine(FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration));
 
         activeBiome = null;
         CurrentState = ZoomState.World;
@@ -160,8 +146,7 @@ public class MapManager : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float progress = elapsed / duration;
-            float t = zoomCurve.Evaluate(progress);
+            float t = zoomCurve.Evaluate(elapsed / duration);
             mainCamera.transform.position = Vector3.LerpUnclamped(startPosition, targetPosition, t);
             mainCamera.orthographicSize = Mathf.LerpUnclamped(startSize, targetSize, t);
             yield return null;
@@ -171,38 +156,34 @@ public class MapManager : MonoBehaviour
         mainCamera.orthographicSize = targetSize;
     }
 
-    private IEnumerator FadeSprite(SpriteRenderer spriteRenderer, float targetAlpha, float duration)
+    private IEnumerator FadeSprite(SpriteRenderer sr, float targetAlpha, float duration)
     {
-        Color startColor = spriteRenderer.color;
-        Color targetColor = new Color(startColor.r, startColor.g, startColor.b, targetAlpha);
-
+        Color start = sr.color;
+        Color end = new Color(start.r, start.g, start.b, targetAlpha);
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            spriteRenderer.color = Color.Lerp(startColor, targetColor, Mathf.Clamp01(elapsed / duration));
+            sr.color = Color.Lerp(start, end, Mathf.Clamp01(elapsed / duration));
             yield return null;
         }
-
-        spriteRenderer.color = targetColor;
+        sr.color = end;
     }
 
     private IEnumerator FadeImage(Image image, float targetAlpha, float duration)
     {
-        Color startColor = image.color;
-        Color targetColor = new Color(startColor.r, startColor.g, startColor.b, targetAlpha);
-
+        Color start = image.color;
+        Color end = new Color(start.r, start.g, start.b, targetAlpha);
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            image.color = Color.Lerp(startColor, targetColor, Mathf.Clamp01(elapsed / duration));
+            image.color = Color.Lerp(start, end, Mathf.Clamp01(elapsed / duration));
             yield return null;
         }
-
-        image.color = targetColor;
+        image.color = end;
     }
 
     private float CalculateOrthographicSize(Bounds bounds)
