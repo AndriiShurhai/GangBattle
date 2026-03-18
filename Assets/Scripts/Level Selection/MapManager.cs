@@ -94,7 +94,22 @@ public class MapManager : MonoBehaviour
         StartCoroutine(FadeSprite(regionRenderer, 1f, 0.3f));
 
         foreach (LevelNode level in activeBiome.regionController.GetLevelsInRegion())
-            if (!level.IsLocked) StartCoroutine(FadeSprite(level.SpriteRenderer, 1f, fadeDuration));
+        {
+            if (!level.IsLocked)
+            {
+                if (level.GetCurrentStarsContainer() == null)
+                {
+                    Debug.LogWarning($"Level {level.LevelName} has no stars container assigned. Skipping fade-in for stars.");
+                    StartCoroutine(FadeSprite(level.SpriteRenderer, 1f, fadeDuration));
+                    continue;
+                }
+                foreach (SpriteRenderer star in level.GetCurrentStarsContainer().GetComponentsInChildren<SpriteRenderer>())
+                    StartCoroutine(FadeSprite(star, 1f, fadeDuration));
+
+                StartCoroutine(FadeSprite(level.SpriteRenderer, 1f, fadeDuration));
+            }
+            
+        }
 
         Coroutine regionZoom = StartCoroutine(LerpCamera(
             new Vector3(regionRenderer.bounds.center.x, regionRenderer.bounds.center.y,
@@ -116,6 +131,20 @@ public class MapManager : MonoBehaviour
     {
         CurrentState = ZoomState.Transitioning;
 
+        foreach (LevelNode level in activeBiome.regionController.GetLevelsInRegion())
+        {
+            if (level.GetCurrentStarsContainer() == null)
+            {
+                yield return StartCoroutine(FadeSprite(level.SpriteRenderer, 0f, 0.2f));
+                continue;
+            }
+
+            foreach (SpriteRenderer star in level.GetCurrentStarsContainer().GetComponentsInChildren<SpriteRenderer>())
+                StartCoroutine(FadeSprite(star, 0f, 0.2f));
+
+            yield return StartCoroutine(FadeSprite(level.SpriteRenderer, 0f, 0.2f));
+        }
+
         yield return StartCoroutine(LerpCamera(
             new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y,
                         mainCamera.transform.position.z),
@@ -124,9 +153,6 @@ public class MapManager : MonoBehaviour
         ));
 
         StartCoroutine(FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, 0.3f));
-
-        foreach (LevelNode level in activeBiome.regionController.GetLevelsInRegion())
-            StartCoroutine(FadeSprite(level.SpriteRenderer, 0f, 0.3f));
 
         _returnButton.interactable = false;
         StartCoroutine(FadeImage(_returnButtonImage, 0f, fadeDuration));
