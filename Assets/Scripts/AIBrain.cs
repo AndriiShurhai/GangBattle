@@ -17,7 +17,7 @@ public class AIBrain : MonoBehaviour
 
     [SerializeField] private float actionDelay = 1f;
 
-
+    public AIPersonalitySO Personality => personality;
 
     private Unit aiUnit;
 

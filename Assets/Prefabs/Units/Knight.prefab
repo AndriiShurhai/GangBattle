@@ -90,6 +90,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
+      propertyPath: unitName
+      value: Knight
+      objectReference: {fileID: 0}
+    - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
       propertyPath: spriteRenderer
       value: 
       objectReference: {fileID: 0}
@@ -281,7 +286,7 @@ PrefabInstance:
     - target: {fileID: 8666698584206950567, guid: dba443a66548243fe806dd91db6511af,
         type: 3}
       propertyPath: m_SortingLayer
-      value: 5
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 8666698584206950567, guid: dba443a66548243fe806dd91db6511af,
         type: 3}

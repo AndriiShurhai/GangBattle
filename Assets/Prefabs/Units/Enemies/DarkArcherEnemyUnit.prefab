@@ -18,6 +18,11 @@ PrefabInstance:
       propertyPath: _spumPrefabs
       value: 
       objectReference: {fileID: 6223512566715325497}
+    - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
+        type: 3}
+      propertyPath: unitName
+      value: Dark Archer
+      objectReference: {fileID: 0}
     - target: {fileID: 5984428788446614864, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
       propertyPath: m_IsActive

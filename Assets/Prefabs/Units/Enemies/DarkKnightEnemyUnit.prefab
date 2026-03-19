@@ -50,6 +50,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
+      propertyPath: unitName
+      value: Dark Knight
+      objectReference: {fileID: 0}
+    - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
+        type: 3}
       propertyPath: characterClassSO
       value: 
       objectReference: {fileID: 11400000, guid: 13663e3ade80e3644ae7837bc99cc3c1,

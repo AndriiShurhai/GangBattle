@@ -35,6 +35,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 {
     public event Action OnLevelCompleted;
     public event Action OnLevelFailed;
+    public event Action OnUnitsInitialized;
     public static TurnManager Instance { get; private set; }
 
     [SerializeField] private List<Transform> playersPositions;
@@ -96,6 +97,7 @@ public class TurnManager : MonoBehaviour, IRewindable
         foreach (var unit in allPlayerUnits) unit.OnUnitDied += Unit_OnUnitDied;
         foreach (var unit in allEnemyUnits) unit.OnUnitDied += Unit_OnUnitDied;
 
+        OnUnitsInitialized?.Invoke();
         StartPlayerTurn();
     }
 

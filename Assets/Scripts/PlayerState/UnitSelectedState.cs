@@ -4,7 +4,6 @@ public class UnitSelectedState : IPlayerState
 {
     private readonly CharacterSelectionController _controller;
     private readonly Unit _selectedUnit;
-
     public UnitSelectedState(CharacterSelectionController controller, Unit selectedUnit)
     {
         _controller = controller;

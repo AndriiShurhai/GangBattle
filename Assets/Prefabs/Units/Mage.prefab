@@ -16,7 +16,7 @@ PrefabInstance:
     - target: {fileID: 5668706011649911397, guid: ec58634b610c94022b27f39f0cee941e,
         type: 3}
       propertyPath: m_SortingLayer
-      value: 5
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 5668706011649911397, guid: ec58634b610c94022b27f39f0cee941e,
         type: 3}
@@ -233,6 +233,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
+      propertyPath: unitName
+      value: Mage
       objectReference: {fileID: 0}
     - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}

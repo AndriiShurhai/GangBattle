@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterClassSO
   className: 
   description: 
-  classIcon: {fileID: 0}
+  classIconPrefab: {fileID: 8589827967827661866, guid: 389c510d536f70b44815e95d630ad331,
+    type: 3}
   maxHealth: 10
   movementRange: 2
   movementAmountPerTurn: 2

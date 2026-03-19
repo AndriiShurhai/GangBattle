@@ -7,7 +7,7 @@ public class CharacterClassSO : ScriptableObject
     [Header("Class Information")]
     public string className;
     [TextArea] public string description;
-    public Sprite classIcon;
+    public GameObject classIconPrefab;
 
     [Header("Base Stats")]
     public int maxHealth = 100;

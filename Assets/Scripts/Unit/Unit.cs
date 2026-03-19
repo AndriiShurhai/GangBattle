@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.UI;
 
 public class UnitSnapshotState
 {
@@ -38,6 +39,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public static event Action<Unit, EffectStatusType> OnAnyUnitGainedStatusEffect;
     public static event Action<Unit, EffectStatusType> OnAnyUnitLostStatusEffect;
 
+    public string unitName;
     // ── Instance events ──────────────────────────────────────────────────────
     public event Action<Unit> OnUnitDied;
     public event Action OnUnitMadeAction;
@@ -69,6 +71,8 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     private readonly Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new();
 
     // ── Public accessors ─────────────────────────────────────────────────────
+    public string UnitName => unitName;
+    public GameObject ClassIcon => characterClassSO.classIconPrefab;
     public List<AbilityBaseSO> Abilities => characterClassSO.abilities;
     public int CurrentHealth => healthComponent.CurrentHealth;
     public int MaxHealth => healthComponent.MaxHealth;

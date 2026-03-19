@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   className: Archer
   description: 
-  classIcon: {fileID: 5902650331669622779, guid: 848bc3c193b31c7489b3ad483cc4a824,
+  classIconPrefab: {fileID: 3202212105711622201, guid: 977e4ca4d9843024ca94e857baf47306,
     type: 3}
   maxHealth: 1
   movementRange: 2

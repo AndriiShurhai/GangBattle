@@ -85,6 +85,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
+      propertyPath: unitName
+      value: Healer
+      objectReference: {fileID: 0}
+    - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+        type: 3}
       propertyPath: characterClassSO
       value: 
       objectReference: {fileID: 11400000, guid: 005752cea88a56d4c99aa08e1613cfa5,

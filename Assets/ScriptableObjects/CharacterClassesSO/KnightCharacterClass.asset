@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   className: 
   description: 
-  classIcon: {fileID: 0}
+  classIconPrefab: {fileID: 8424007942362487267, guid: 29800a87a9b749742a5455a6783442ac,
+    type: 3}
   maxHealth: 1
   movementRange: 2
   movementAmountPerTurn: 2

@@ -49,6 +49,11 @@ PrefabInstance:
       objectReference: {fileID: 3963712412280802779}
     - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
+      propertyPath: unitName
+      value: Dark Mage
+      objectReference: {fileID: 0}
+    - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
+        type: 3}
       propertyPath: characterClassSO
       value: 
       objectReference: {fileID: 11400000, guid: 42bce3726a15bb7428f798bf3884b99b,
@@ -140,7 +145,7 @@ PrefabInstance:
     - target: {fileID: 4456812989396493189, guid: cdf58f088f9ff419b85fa0917cdf4bf8,
         type: 3}
       propertyPath: m_SortingLayer
-      value: 5
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 4456812989396493189, guid: cdf58f088f9ff419b85fa0917cdf4bf8,
         type: 3}
