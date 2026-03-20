@@ -12,10 +12,13 @@ public class UnitIconInfoUI : MonoBehaviour, IPointerClickHandler
     {
         this.unit = unit;
         this.statsDisplay = statsDisplay;
+        Debug.Log($"Initialized UnitIconInfoUI for unit: {unit.UnitName}");
     }
     public void OnPointerClick(PointerEventData eventData)
     {
         statsDisplay.Initialize(unit.gameObject);
+        statsDisplay.Hide();
         statsDisplay.ShowForUnit(unit);
+        Debug.Log($"Clicked on unit icon: {unit.UnitName}");
     }
 }

@@ -8,15 +8,24 @@ public class PlayerCharacterInfoManager : MonoBehaviour
     [SerializeField] private List<GameObject> teamIconsUI;
     [SerializeField] private List<GameObject> unitIconsPlaceHolders;
 
-    private void Start()
+    private void Awake()
     {
-        TurnManager.Instance.OnUnitsInitialized += SetupUnits;
+        TurnManager.OnUnitsInitialized += SetupUnits;
+        Debug.Log("PlayerCharacterInfoManager subscribed to OnUnitsInitialized event.");
+    }
+
+    private void OnDestroy()
+    {
+        TurnManager.OnUnitsInitialized -= SetupUnits;
+        Debug.Log("PlayerCharacterInfoManager unsubscribed from OnUnitsInitialized event.");
+
     }
 
     public void SetupUnits()
     {
         List<Unit> playerUnits = TurnManager.Instance.GetPlayerUnits();
 
+        Debug.Log($"Setting up player character info UI for {playerUnits.Count} units.");
         for (int i = 0; i < teamIconsUI.Count; i++)
         {
             GameObject teamUnitIcon = Instantiate(playerUnits[i].ClassIcon, teamIconsUI[i].transform.parent);

@@ -40,6 +40,7 @@ public class UnitStatsUI : MonoBehaviour
 
     [Header("Abilities")]
     [SerializeField] private List<GameObject> abilityIcons;
+    [SerializeField] private AbilityInfoUI abilityInfoDisplay;
 
     [Header("Animation Settings")]
     [SerializeField] private float showDuration = 0.3f;
@@ -49,7 +50,8 @@ public class UnitStatsUI : MonoBehaviour
     [SerializeField] private AnimationCurve showCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
     [SerializeField] private AnimationCurve hpBarCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    // Cached stat values
+    public bool IsVisible => isVisible; 
+
     private int currentHealth;
     private int maxHealth;
     private int intelligence;
@@ -59,18 +61,12 @@ public class UnitStatsUI : MonoBehaviour
     private List<AbilityBaseSO> abilities;
     private GameObject currentUnitIcon;
 
-    // Animation state
     private CanvasGroup mainCanvasGroup;
     private Coroutine visibilityCoroutine;
     private Coroutine hpBarCoroutine;
     private bool isVisible;
 
-    // Child panels in animation order (header → stats → abilities)
     private GameObject[] animatedPanels;
-
-    // ─────────────────────────────────────────
-    //  Lifecycle
-    // ─────────────────────────────────────────
 
     private void Awake()
     {
@@ -80,7 +76,6 @@ public class UnitStatsUI : MonoBehaviour
 
         animatedPanels = new[] { headerBackgroundPanel, statsBackgroundPanel, abilitiesPanel };
 
-        // Ensure every animated panel has a CanvasGroup
         foreach (var panel in animatedPanels)
             if (panel != null && panel.GetComponent<CanvasGroup>() == null)
                 panel.AddComponent<CanvasGroup>();
@@ -91,7 +86,6 @@ public class UnitStatsUI : MonoBehaviour
 
     private void OnEnable()
     {
-        // Subscribe to unit events if the unit is already assigned
         if (unit != null)
             SubscribeToUnitEvents();
     }
@@ -102,15 +96,12 @@ public class UnitStatsUI : MonoBehaviour
             UnsubscribeFromUnitEvents();
     }
 
-    // ─────────────────────────────────────────
-    //  Public API
-    // ─────────────────────────────────────────
-
-    /// <summary>Bind a new unit and show the panel.</summary>
     public void ShowForUnit(Unit targetUnit, GameObject targetObject = null)
     {
         if (unit != null)
             UnsubscribeFromUnitEvents();
+
+        abilityInfoDisplay?.ForceHide();
 
         unit = targetUnit;
         unitObject = targetObject != null ? targetObject : targetUnit.gameObject;
@@ -136,13 +127,14 @@ public class UnitStatsUI : MonoBehaviour
         if (!isVisible) return;
         isVisible = false;
 
+        abilityInfoDisplay?.ForceHide();
+
         if (visibilityCoroutine != null) StopCoroutine(visibilityCoroutine);
         visibilityCoroutine = StartCoroutine(AnimateHide());
     }
 
     public void Toggle() { if (isVisible) Hide(); else Show(); }
 
-    /// <summary>Refresh only the HP bar (e.g. called from a damage event).</summary>
     public void UpdateHealth(int newCurrent, int newMax)
     {
         currentHealth = newCurrent;
@@ -150,10 +142,6 @@ public class UnitStatsUI : MonoBehaviour
         AnimateHPBar(currentHealth, maxHealth);
         hpAmountText.text = $"{currentHealth} / {maxHealth}";
     }
-
-    // ─────────────────────────────────────────
-    //  Initialization
-    // ─────────────────────────────────────────
 
     private void InitializeFromUnit()
     {
@@ -173,7 +161,6 @@ public class UnitStatsUI : MonoBehaviour
         Debug.Log($"UnitStatsUI: Unit agility is {unit.Agility}");
 
 
-        // AIBrain personality is optional
         var brain = unitObject.GetComponent<AIBrain>();
         behaviourType = brain != null && brain.Personality != null ? brain.Personality?.ToString() : "SIMPLE";
     }
@@ -192,23 +179,19 @@ public class UnitStatsUI : MonoBehaviour
 
     private void RefreshAllUI()
     {
-        // Name
         if (unitNameText != null)
             unitNameText.text = unit.UnitName;
 
-        // Stats
         SetStatText(intelligenceAmountText, intelligence);
         SetStatText(strengthAmountText, strength);
         SetStatText(agilityAmountText, agility);
         if (behaviourTypeText != null)
             behaviourTypeText.text = behaviourType;
 
-        // HP bar (instant on first show, then animate on updates)
         float ratio = maxHealth > 0 ? (float)currentHealth / maxHealth : 0f;
         hpBarFillImage.fillAmount = ratio;
         hpAmountText.text = $"{currentHealth} / {maxHealth}";
 
-        // Ability icons
         RefreshAbilityIcons();
 
         RefreshUnitIcon();
@@ -241,22 +224,23 @@ public class UnitStatsUI : MonoBehaviour
 
             if (!hasAbility) continue;
 
-            // Set icon sprite if the slot has an Image component
             var img = abilityIcons[i].GetComponentInChildren<Image>();
             if (img != null && abilities[i].AbilityIcon != null)
                 img.sprite = abilities[i].AbilityIcon;
 
-            // Set tooltip / label if present
             var label = abilityIcons[i].GetComponentInChildren<TextMeshProUGUI>();
             if (label != null)
                 label.text = abilities[i].AbilityName;
+
+            if (abilityInfoDisplay == null) continue;
+
+            var clickHandler = abilityIcons[i].GetComponent<AbilityIconUI>();
+            if (clickHandler == null)
+                clickHandler = abilityIcons[i].AddComponent<AbilityIconUI>();
+
+            clickHandler.Initialize(abilities[i], abilityInfoDisplay);
         }
     }
-
-    // ─────────────────────────────────────────
-    //  Event Subscriptions
-    // ─────────────────────────────────────────
-
     private void SubscribeToUnitEvents()
     {
         Unit.OnAnyUnitTookDamage += OnHealthChanged;
@@ -284,13 +268,8 @@ public class UnitStatsUI : MonoBehaviour
         StartCoroutine(HideAfterDelay(1.2f));
     }
 
-    // ─────────────────────────────────────────
-    //  Animations
-    // ─────────────────────────────────────────
-
     private IEnumerator AnimateShow()
     {
-        // Reset all panel states
         mainCanvasGroup.alpha = 0f;
         foreach (var panel in animatedPanels)
         {
@@ -300,10 +279,8 @@ public class UnitStatsUI : MonoBehaviour
             panel.transform.localScale = new Vector3(1f, 0.85f, 1f);
         }
 
-        // Fade in the root panel quickly
         yield return FadeCanvasGroup(mainCanvasGroup, 0f, 1f, showDuration * 0.4f);
 
-        // Stagger-reveal each child panel
         for (int i = 0; i < animatedPanels.Length; i++)
         {
             if (animatedPanels[i] == null) continue;
@@ -313,7 +290,6 @@ public class UnitStatsUI : MonoBehaviour
             StartCoroutine(RevealPanel(animatedPanels[i], showDuration));
         }
 
-        // Animate HP bar once panels are visible
         yield return new WaitForSeconds(showDuration * 0.5f);
         float targetRatio = maxHealth > 0 ? (float)currentHealth / maxHealth : 0f;
         AnimateHPBar(targetRatio);
@@ -321,7 +297,6 @@ public class UnitStatsUI : MonoBehaviour
 
     private IEnumerator AnimateHide()
     {
-        // Collapse panels in reverse order
         for (int i = animatedPanels.Length - 1; i >= 0; i--)
         {
             if (animatedPanels[i] == null) continue;
@@ -377,8 +352,6 @@ public class UnitStatsUI : MonoBehaviour
         if (hpBarCoroutine != null) StopCoroutine(hpBarCoroutine);
         hpBarCoroutine = StartCoroutine(AnimateHPBarCoroutine(targetRatio));
     }
-
-    /// <summary>Convenience overload that recalculates the ratio.</summary>
     private void AnimateHPBar(int current, int max)
         => AnimateHPBar(max > 0 ? (float)current / max : 0f);
 
@@ -419,10 +392,6 @@ public class UnitStatsUI : MonoBehaviour
         yield return new WaitForSeconds(delay);
         Hide();
     }
-
-    // ─────────────────────────────────────────
-    //  Helpers
-    // ─────────────────────────────────────────
 
     private static void SetStatText(TextMeshProUGUI label, int value)
     {
