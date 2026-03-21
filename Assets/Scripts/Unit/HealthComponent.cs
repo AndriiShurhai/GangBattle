@@ -49,6 +49,7 @@ public class HealthComponent : MonoBehaviour
     private void Die()
     {
         Debug.Log($"{gameObject.name} has died");
+        StopAllCoroutines();
         OnDeath?.Invoke();
     }
 

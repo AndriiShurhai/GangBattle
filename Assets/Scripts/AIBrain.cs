@@ -50,10 +50,23 @@ public class AIBrain : MonoBehaviour
 
         AIScoreData bestScoreData = ScoreBestAction();
 
-        if (bestScoreData.action != null && bestScoreData.score >= minimumScoreToAct)
+        if (bestScoreData.action != null && bestScoreData.score >= minimumScoreToAct && gameObject.activeSelf)
         {
             Debug.Log($"{aiUnit.name} executes {bestScoreData.action.name} with score {bestScoreData.score}");
-            bestScoreData.action.Execute(aiUnit, bestScoreData.target, () => StartCoroutine(ExecuteNextAction(onComplete, actionsTaken + 1)));
+            try
+            {
+                bestScoreData.action.Execute(aiUnit, bestScoreData.target, () =>
+                {
+                    if (gameObject != null && gameObject.activeSelf)
+                        StartCoroutine(ExecuteNextAction(onComplete, actionsTaken + 1));
+                    else
+                        onComplete?.Invoke(); // Let the turn system clean up normally
+                });
+            }
+            catch (Exception e)
+            {
+                onComplete?.Invoke();
+            }
         }
         else if (bestScoreData.action == null && bestScoreData.score >= minimumScoreToAct)
         {

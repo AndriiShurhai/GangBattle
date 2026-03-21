@@ -5,8 +5,6 @@ public class CharacterSelectionController : MonoBehaviour
 {
     public static CharacterSelectionController Instance { get; private set; }
 
-    [SerializeField] private UnitStatsUI unitStatsUIPrefab;
-
     private Camera mainCamera;
     private Unit selectedUnit;
 

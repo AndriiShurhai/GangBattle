@@ -12,19 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39a6ace76dbcfa74bae721310d5a70c7, type: 3}
   m_Name: FireballAttackSO
   m_EditorClassIdentifier: Assembly-CSharp::FireballAttackAbilitySO
-  abilityName: 
-  abilityIcon: {fileID: 21300000, guid: 7241a8635d5e1fb438bdfa78f5ac7cf4, type: 3}
-  abilityDescription: 
-  howMuchCanBeUsed: 1
-  range: 8
-  rangeType: 1
-  targetType: 4
-  rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 4056738770057841054, guid: b14b363fa4bf8bc439abb5c8547d68d1,
+  _abilityName: 
+  _abilityIcon: {fileID: 21300000, guid: 7241a8635d5e1fb438bdfa78f5ac7cf4, type: 3}
+  _abilityDescription: 
+  _maxUses: 1
+  _range: 8
+  _hasLineOfSightRequirement: 1
+  _typeOfRange: 1
+  _typeOfTarget: 4
+  _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  _abilityEffectPrefab: {fileID: 4056738770057841054, guid: b14b363fa4bf8bc439abb5c8547d68d1,
     type: 3}
-  coefficient: 1
-  scalingType: 1
-  projectile: {fileID: 4056738770057841054, guid: d2f28eebcf0042f4d99d5fe92514b0e4,
+  _coefficient: 1
+  _typeOfScaling: 1
+  _projectile: {fileID: 4056738770057841054, guid: d2f28eebcf0042f4d99d5fe92514b0e4,
     type: 3}
-  explosionRadius: 1
-  coefficent: 1
+  _explosionRadius: 1
+  _coefficent: 1

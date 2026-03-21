@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using Unity.VisualScripting;
 
 
 public enum StatType
@@ -33,6 +34,7 @@ public abstract class AbilityBaseSO : ScriptableObject
     [Header("Range Settings")]
     [UnityEngine.Serialization.FormerlySerializedAs("range")]
     [SerializeField] private int _range = 3;
+    [SerializeField] private bool _hasLineOfSightRequirement = false;    
     public int Range => _range;
 
     [UnityEngine.Serialization.FormerlySerializedAs("rangeType")]
@@ -130,8 +132,8 @@ public abstract class AbilityBaseSO : ScriptableObject
         {
             return false;
         }
-
-        if (!GridUtility.HasLineOfSight(casterPosition, targetPosition))
+       
+        if (_hasLineOfSightRequirement && !GridUtility.HasLineOfSight(casterPosition, targetPosition))
         {
             return false;
         }
