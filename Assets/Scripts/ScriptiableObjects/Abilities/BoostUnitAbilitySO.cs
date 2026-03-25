@@ -19,6 +19,13 @@ public class BoostUnitAbilitySO : AbilityBaseSO
 
             unit.BoostUnit(strengthBosst, intelligenceBoost, agilityBoost); 
             unit.ApplyEffect(EffectStatusType.Boosted, Duration);
+
+            if (AbilityEffectPrefab != null)
+            {
+                Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
+                GameObject effect = Instantiate(AbilityEffectPrefab, worldPos, Quaternion.identity);
+                Destroy(effect, 2f);
+            }
             onAbilityInvoke?.Invoke();
         }
     }

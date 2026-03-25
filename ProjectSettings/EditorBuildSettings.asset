@@ -12,20 +12,35 @@ EditorBuildSettings:
     path: Assets/Scenes/LevelSelection.unity
     guid: bc6fc73305688a24ea1b3886c7bf74a0
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 8c9cfa26abfee488c85f1582747f6a02
-  - enabled: 1
-    path: Assets/Scenes/Blood Castle.unity
-    guid: 410b68894afec214a9c4280b3612e105
-  - enabled: 1
-    path: Assets/Scenes/Forest.unity
+    path: Assets/Scenes/Forest Levels/Forest Level 1.unity
     guid: 7f643553fbbd18948ade09c34990f30b
   - enabled: 1
-    path: Assets/Scenes/Graveyard.unity
+    path: Assets/Scenes/Forest Levels/Forest Level 2.unity
+    guid: c7360738f926a6947992b4c3cfb912f3
+  - enabled: 1
+    path: Assets/Scenes/Forest Levels/Forest Level 3.unity
+    guid: 77fbd40d8e43e854f8254be3eb6d4e33
+  - enabled: 1
+    path: Assets/Scenes/Graveyard Levels/Graveyard Level 1.unity
+    guid: 292b89b4d790fc74db449d5c3ecd6580
+  - enabled: 1
+    path: Assets/Scenes/Graveyard Levels/Graveyard Level 2.unity
+    guid: 6c1429740a13f204da77342bd995e05c
+  - enabled: 1
+    path: Assets/Scenes/Graveyard Levels/Graveyard Level 3.unity
     guid: ca01aa7f9172a324c8ce2cb1edbae15b
   - enabled: 1
-    path: Assets/Scenes/Vampire Outside.unity
+    path: Assets/Scenes/Vampire Levels/Vampire Level 1.unity
+    guid: da847455ee8592242b24414c5ecc0c1f
+  - enabled: 1
+    path: Assets/Scenes/Vampire Levels/Vampire Level 2.unity
     guid: 29532c72a722263428df2af9e165862c
+  - enabled: 1
+    path: Assets/Scenes/Vampire Levels/Vampire Level 3.unity
+    guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/Blood Castle Levels/Blood Castle.unity
+    guid: 410b68894afec214a9c4280b3612e105
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f,
       type: 2}

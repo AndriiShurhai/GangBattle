@@ -83,6 +83,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb2d0fee9ffcbb240995d46fdd5c452a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  unitName: 
   healthComponent: {fileID: 429967286947534935}
   movementComponent: {fileID: 308900601190229545}
   statusEffectComponent: {fileID: -8697893973832488387}
@@ -217,7 +218,12 @@ PrefabInstance:
     - target: {fileID: 4286797380925567462, guid: 420c9e2d4f8084ea68e81a6ff465b947,
         type: 3}
       propertyPath: m_SortingLayer
-      value: 5
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4286797380925567462, guid: 420c9e2d4f8084ea68e81a6ff465b947,
+        type: 3}
+      propertyPath: m_SortingOrder
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4286797380925567462, guid: 420c9e2d4f8084ea68e81a6ff465b947,
         type: 3}

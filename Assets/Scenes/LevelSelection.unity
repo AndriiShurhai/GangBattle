@@ -145,7 +145,7 @@ PrefabInstance:
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
       propertyPath: _sceneName
-      value: Forest
+      value: Forest Level 1
       objectReference: {fileID: 0}
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
@@ -1179,6 +1179,11 @@ PrefabInstance:
         type: 3}
       propertyPath: _levelName
       value: Third Level
+      objectReference: {fileID: 0}
+    - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
+        type: 3}
+      propertyPath: _sceneName
+      value: Graveyard Level 3
       objectReference: {fileID: 0}
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
@@ -2260,7 +2265,7 @@ PrefabInstance:
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
       propertyPath: _sceneName
-      value: Vampire Outside
+      value: Vampire Level 1
       objectReference: {fileID: 0}
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
@@ -2496,7 +2501,7 @@ PrefabInstance:
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
       propertyPath: _sceneName
-      value: Forest
+      value: Forest Level 3
       objectReference: {fileID: 0}
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
@@ -2873,7 +2878,7 @@ PrefabInstance:
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
       propertyPath: _sceneName
-      value: Forest
+      value: Forest Level 2
       objectReference: {fileID: 0}
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
@@ -3739,6 +3744,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
+      propertyPath: _sceneName
+      value: Graveyard Level 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
+        type: 3}
       propertyPath: _levelIndex
       value: 1
       objectReference: {fileID: 0}
@@ -3954,7 +3964,7 @@ PrefabInstance:
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
       propertyPath: _sceneName
-      value: Vampire Outside
+      value: Vampire Level 2
       objectReference: {fileID: 0}
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
@@ -4239,7 +4249,7 @@ PrefabInstance:
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
       propertyPath: _sceneName
-      value: SampleScene
+      value: Vampire Level 3
       objectReference: {fileID: 0}
     - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}
@@ -4956,6 +4966,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: First Level node
+      objectReference: {fileID: 0}
+    - target: {fileID: 4893644191465620071, guid: 557d3b39537fd9c42b83c2769d4723bf,
+        type: 3}
+      propertyPath: _sceneName
+      value: Graveyard Level 1
       objectReference: {fileID: 0}
     - target: {fileID: 4940565264521820212, guid: 557d3b39537fd9c42b83c2769d4723bf,
         type: 3}

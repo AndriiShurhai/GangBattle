@@ -16,12 +16,12 @@ MonoBehaviour:
   description: 
   classIconPrefab: {fileID: 8424007942362487267, guid: 29800a87a9b749742a5455a6783442ac,
     type: 3}
-  maxHealth: 1
-  movementRange: 2
+  maxHealth: 110
+  movementRange: 1
   movementAmountPerTurn: 2
-  strength: 10
-  intelligence: 10
-  agility: 10
+  strength: 18
+  intelligence: 6
+  agility: 6
   abilities:
   - {fileID: 11400000, guid: 9b64640e2f8dd3844a9b831414490ff5, type: 2}
   - {fileID: 11400000, guid: c4ddfec96b45aaa45a1a621f26d2d165, type: 2}

@@ -35,6 +35,7 @@ public class AIBrain : MonoBehaviour
             onComplete?.Invoke();
             return;
         }
+        StartCoroutine(aiUnit.HighlightUnit(true));
         StartCoroutine(ExecuteNextAction(onComplete, 0));
     }
     private IEnumerator ExecuteNextAction(Action onComplete, int actionsTaken)
@@ -65,17 +66,20 @@ public class AIBrain : MonoBehaviour
             }
             catch (Exception e)
             {
+                StartCoroutine(aiUnit.HighlightUnit(false));
                 onComplete?.Invoke();
             }
         }
         else if (bestScoreData.action == null && bestScoreData.score >= minimumScoreToAct)
         {
             Debug.Log($"{aiUnit.name} has no validActions to take");
+            StartCoroutine(aiUnit.HighlightUnit(false));
             onComplete?.Invoke();
         }
         else if (bestScoreData.action != null && bestScoreData.score < minimumScoreToAct)
         {
             Debug.Log($"{aiUnit.name} has all actions score below the threshold");
+            StartCoroutine(aiUnit.HighlightUnit(false));
             onComplete?.Invoke();
         }
         else
@@ -83,6 +87,7 @@ public class AIBrain : MonoBehaviour
             // Covers cases where no actions are scoreable or all are below the threshold,
             // and ScoreBestAction returned a default/empty AIScoreData.
             Debug.Log($"{aiUnit.name} cannot act this turn (no executable actions or scores below threshold).");
+            StartCoroutine(aiUnit.HighlightUnit(false));
             onComplete?.Invoke();
         }
     }

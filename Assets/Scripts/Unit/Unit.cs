@@ -4,6 +4,8 @@ using System.Linq;
 using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
+using UnityEngine.Rendering.Universal;
+using System.Collections;
 
 public class UnitSnapshotState
 {
@@ -69,6 +71,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     private RewindableID id;
     private readonly UnitRewindComponent rewindComponent = new();
     private readonly Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn = new();
+    private Light2D highlightLight;
 
     // ── Public accessors ─────────────────────────────────────────────────────
     public string UnitName => unitName;
@@ -129,6 +132,18 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         id = gameObject.AddComponent<RewindableID>();
         rewindComponent.Initialize(this);
         RegisterSelf();
+
+        if (GetComponentInChildren<Light2D>() != null)
+            highlightLight = GetComponentInChildren<Light2D>();
+        else
+        {
+            GameObject go = Instantiate(new GameObject("HighlightLight"), transform);
+            go.AddComponent<Light2D>();
+
+            highlightLight = go.GetComponent<Light2D>();
+            highlightLight.intensity = 12f;
+            highlightLight.gameObject.SetActive(false);
+        }
     }
 
     public void PlaceUnit(Vector3 position)
@@ -165,6 +180,40 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
         if (healthComponent != null)
             healthComponent.OnDeath -= HandleDeath;
+    }
+
+    public IEnumerator HighlightUnit(bool show)
+    {
+        float fadeDuration = 0.3f;  
+        if (show)
+        {
+            highlightLight.gameObject.SetActive(true);
+            float t = 0;
+            Color targetColor = highlightLight.color;
+            targetColor.a = 0f;
+
+            while (t < fadeDuration)
+            {
+                t += Time.deltaTime;
+                targetColor.a = Mathf.Lerp(targetColor.a, 1f, t/fadeDuration);
+                highlightLight.color = targetColor;
+                yield return null;
+            }
+        }
+        else
+        {
+            float t = 0;
+            Color targetColor = highlightLight.color;
+            targetColor.a = 1f;
+            while (t < fadeDuration)
+            {
+                t += Time.deltaTime;
+                targetColor.a = Mathf.Lerp(targetColor.a, 0f, t/fadeDuration);
+                highlightLight.color = targetColor;
+                yield return null;
+            }
+            highlightLight.gameObject.SetActive(false);
+        }
     }
 
     // ── Rewind ───────────────────────────────────────────────────────────────

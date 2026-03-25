@@ -29,6 +29,12 @@ public class HealAbilitySO : AbilityBaseSO
                 if (unit != targetUnit)
                 {
                     unit.Heal(teamHealAmount);
+                    if (AbilityEffectPrefab != null)
+                    {
+                        Vector3 worldPos = GridManager.Instance.GridToWorld(unit.GridPosition);
+                        GameObject effect = Instantiate(AbilityEffectPrefab, worldPos, Quaternion.identity);
+                        Destroy(effect, 2f);
+                    }
                 }
             }
             onAbilityInvoke?.Invoke();

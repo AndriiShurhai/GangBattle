@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86d37e4dafda5804e940ba04df1d9ca8, type: 3}
+  m_Name: DarkSkeletonKnight
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterClassSO
+  className: Dark Knight
+  description: 
+  classIconPrefab: {fileID: 8589827967827661866, guid: 2a821f65c2b24984ab24dd7b8318cab6,
+    type: 3}
+  maxHealth: 110
+  movementRange: 1
+  movementAmountPerTurn: 2
+  strength: 18
+  intelligence: 6
+  agility: 6
+  abilities:
+  - {fileID: 11400000, guid: 9b64640e2f8dd3844a9b831414490ff5, type: 2}
+  - {fileID: 11400000, guid: dbe3eca4b35355142af627291f64d1b3, type: 2}
+  - {fileID: 11400000, guid: c4ddfec96b45aaa45a1a621f26d2d165, type: 2}

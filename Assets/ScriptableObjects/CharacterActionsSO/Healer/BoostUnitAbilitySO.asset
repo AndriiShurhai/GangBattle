@@ -12,15 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71ba88295095400418bba0fef5826792, type: 3}
   m_Name: BoostUnitAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::BoostUnitAbilitySO
-  abilityName: 
-  abilityIcon: {fileID: 21300000, guid: 3488b33dd528c2c44953de75a09d3ee4, type: 3}
-  abilityDescription: 
-  howMuchCanBeUsed: 1
-  range: 3
-  rangeType: 0
-  targetType: 1
-  rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 0}
-  coefficient: 1
-  scalingType: 1
-  duration: 2
+  _abilityName: 
+  _abilityIcon: {fileID: 21300000, guid: 3488b33dd528c2c44953de75a09d3ee4, type: 3}
+  _abilityDescription: 
+  _maxUses: 1
+  _range: 3
+  _hasLineOfSightRequirement: 0
+  _typeOfRange: 0
+  _typeOfTarget: 1
+  _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  _abilityEffectPrefab: {fileID: 92377299893284421, guid: 5898c51c0a2fb8f4e8d2b5dcbe8145fb,
+    type: 3}
+  _coefficient: 1
+  _typeOfScaling: 1
+  _duration: 2
