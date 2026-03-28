@@ -37,6 +37,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     public static event Action<Unit, int, int> OnAnyUnitHealed;
     public static event Action<Unit, Vector3> OnAnyUnitStartMoving;
     public static event Action<Unit> OnAnyUnitFinishedMoving;
+    public static event Action<Unit, AbilityBaseSO> OnAnyUnitCastingAbility;
     public static event Action<Unit, AbilityBaseSO> OnAnyUnitUsedAbility;
     public static event Action<Unit, EffectStatusType> OnAnyUnitGainedStatusEffect;
     public static event Action<Unit, EffectStatusType> OnAnyUnitLostStatusEffect;
@@ -404,6 +405,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             return;
         }
 
+        OnAnyUnitCastingAbility?.Invoke(this, abilitySO);
         abilitySO.Execute(this, targetPosition, () => OnAnyUnitUsedAbility?.Invoke(this, abilitySO));
         usedAbilitiesAmountPerTurn[abilitySO]++;
         OnUnitMadeAction?.Invoke();

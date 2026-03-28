@@ -50,6 +50,11 @@ public abstract class AbilityBaseSO : ScriptableObject
     [SerializeField] private Color _rangePreviewColor = new Color(1f, 0f, 0f, 0.3f);
     public Color RangePreviewColor => _rangePreviewColor;
 
+    [SerializeField] private string _sfxOnCast;
+    [SerializeField] private string _sfxOnUse;
+    public string SfxOnUse => _sfxOnUse;
+    public string SfxOnCast => _sfxOnCast;
+
     [UnityEngine.Serialization.FormerlySerializedAs("abilityEffectPrefab")]
     [SerializeField] private GameObject _abilityEffectPrefab;
     public GameObject AbilityEffectPrefab => _abilityEffectPrefab;

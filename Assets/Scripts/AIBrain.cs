@@ -46,6 +46,7 @@ public class AIBrain : MonoBehaviour
         {
             Debug.Log($"{aiUnit.name} reached max actions per turn ({maxActionsPerTurn})");
             onComplete?.Invoke();
+            StartCoroutine(aiUnit.HighlightUnit(false));
             yield break;
         }
 
@@ -61,7 +62,10 @@ public class AIBrain : MonoBehaviour
                     if (gameObject != null && gameObject.activeSelf)
                         StartCoroutine(ExecuteNextAction(onComplete, actionsTaken + 1));
                     else
+                    {
+                        StartCoroutine(aiUnit.HighlightUnit(false));
                         onComplete?.Invoke(); // Let the turn system clean up normally
+                    }
                 });
             }
             catch (Exception e)

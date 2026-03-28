@@ -12,16 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 161d8dd266a3848468e54ca1a3381d7b, type: 3}
   m_Name: ProvokeAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::ProvokeAbilitySO
-  abilityName: 
-  abilityIcon: {fileID: 21300000, guid: 45483fed0e4221d4c8f7bd6b92baf04e, type: 3}
-  abilityDescription: 
-  howMuchCanBeUsed: 1
-  range: 3
-  rangeType: 4
-  targetType: 2
-  rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 3288473931565564141, guid: cf1bf399daff1384eb94326ccd182117,
+  _abilityName: 
+  _abilityIcon: {fileID: 21300000, guid: 45483fed0e4221d4c8f7bd6b92baf04e, type: 3}
+  _abilityDescription: 
+  _maxUses: 1
+  _range: 3
+  _hasLineOfSightRequirement: 0
+  _typeOfRange: 4
+  _typeOfTarget: 2
+  _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  _sfxOnCast: sfx_unit_provoke_cast
+  _sfxOnUse: sfx_unit_provoke
+  _abilityEffectPrefab: {fileID: 3288473931565564141, guid: cf1bf399daff1384eb94326ccd182117,
     type: 3}
-  coefficient: 1
-  scalingType: 0
-  provokeDuration: 2
+  _coefficient: 1
+  _typeOfScaling: 0
+  _provokeDuration: 2

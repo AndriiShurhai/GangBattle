@@ -31,6 +31,8 @@ public class ShieldBashSO : AbilityBaseSO
             caster.transform.DOJump(GridManager.Instance.GridToWorld(position), JumpHeight, 1, JumpDuration).OnComplete(() =>
             {
                 targetUnit.TakeDamage(damage, caster);
+                onComplete?.Invoke();
+
 
                 if (IsAttackStunning())
                 {
@@ -39,8 +41,6 @@ public class ShieldBashSO : AbilityBaseSO
                 }
                 caster.transform.DOJump(GridManager.Instance.GridToWorld(caster.GridPosition), JumpHeight, 1, JumpDuration);
             });
-
-            onComplete?.Invoke();
         }
     }
 

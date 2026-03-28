@@ -21,6 +21,8 @@ MonoBehaviour:
   _typeOfRange: 0
   _typeOfTarget: 1
   _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  _sfxOnCast: sfx_unit_heal_cast
+  _sfxOnUse: sfx_unit_heal
   _abilityEffectPrefab: {fileID: 7406598114064435579, guid: b31bb5df211696f4fbc2c071768cdf9a,
     type: 3}
   _coefficient: 1
