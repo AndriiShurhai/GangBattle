@@ -19,6 +19,13 @@ public class CharacterInfoManagerUI : MonoBehaviour
         GameInput.Instance.OnClickAction += GameInput_OnClickAction;
     }
 
+    public void OnDestroy()
+    {
+        if (GameInput.Instance != null)
+        {
+            GameInput.Instance.OnClickAction -= GameInput_OnClickAction;
+        }
+    }
     private void GameInput_OnClickAction(Vector2 mousePosition)
     {
         bool overUI = IsPointerOverUI(mousePosition);
@@ -62,9 +69,5 @@ public class CharacterInfoManagerUI : MonoBehaviour
         List<RaycastResult> results = new List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, results);
         return results.Count > 0;
-    }
-
-    private void OnDestroy()
-    {
     }
 }

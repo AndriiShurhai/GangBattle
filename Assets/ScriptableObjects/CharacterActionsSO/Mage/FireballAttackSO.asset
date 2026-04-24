@@ -21,6 +21,8 @@ MonoBehaviour:
   _typeOfRange: 1
   _typeOfTarget: 4
   _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  _sfxOnCast: sfx_ability_fireball_cast
+  _sfxOnUse: 
   _abilityEffectPrefab: {fileID: 4056738770057841054, guid: b14b363fa4bf8bc439abb5c8547d68d1,
     type: 3}
   _coefficient: 1

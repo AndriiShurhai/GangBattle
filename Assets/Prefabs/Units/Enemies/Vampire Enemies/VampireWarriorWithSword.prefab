@@ -432,6 +432,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: SPUM_20240911215639069
       objectReference: {fileID: 0}
+    - target: {fileID: 1602142203238409577, guid: 363f4ea61d089418baa625dcea51b38f,
+        type: 3}
+      propertyPath: m_SortingLayer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1602142203238409577, guid: 363f4ea61d089418baa625dcea51b38f,
+        type: 3}
+      propertyPath: m_SortingOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1602142203238409577, guid: 363f4ea61d089418baa625dcea51b38f,
+        type: 3}
+      propertyPath: m_SortingLayerID
+      value: -105541197
+      objectReference: {fileID: 0}
     - target: {fileID: 2472941675193290123, guid: 363f4ea61d089418baa625dcea51b38f,
         type: 3}
       propertyPath: m_Pivot.x

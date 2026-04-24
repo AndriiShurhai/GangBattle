@@ -88,6 +88,8 @@ public class UnitAudio : MonoBehaviour
         bool isPlayer = unit.UnitFaction == Faction.Player;
         string sfx = isPlayer ? sfxPlayerDeath : sfxEnemyDeath;
 
+        AudioManager.Instance.StopSFX(sfxUnitMove);
+
         AudioManager.Instance.PlaySFXAtPosition(sfx, unit.transform.position);
     }
 
@@ -113,14 +115,18 @@ public class UnitAudio : MonoBehaviour
     {
         if (AudioManager.Instance == null) return;
 
+        Debug.Log("Unit casting an ability");
         string sfx = !string.IsNullOrEmpty(ability.SfxOnCast)
             ? ability.SfxOnCast
             : sfxAbilityFallback;
+
+        AudioManager.Instance.PlaySFXAtPosition(sfx, unit.transform.position);
     }
     private void HandleUnitUsedAbility(Unit unit, AbilityBaseSO ability)
     {
         if (AudioManager.Instance == null) return;
 
+        Debug.Log("Unit using an ability");
         // Use the SFX set on the ScriptableObject; fall back to the generic one
         string sfx = !string.IsNullOrEmpty(ability.SfxOnUse)
             ? ability.SfxOnUse

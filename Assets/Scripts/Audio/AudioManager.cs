@@ -266,7 +266,7 @@ public class AudioManager : MonoBehaviour
         sfxSource.clip = clip;
         sfxSource.volume = volume * sfxVolume * masterVolume;
         sfxSource.pitch = pitch;
-        sfxSource.loop = loop; // FIX 2: Actually tell the AudioSource to loop!
+        sfxSource.loop = loop; 
         sfxSource.Play();
 
         if (enableDebugLogs) Debug.Log($"[AudioManager] SFX played: {clip.name}");
@@ -389,6 +389,19 @@ public class AudioManager : MonoBehaviour
 
         // 3. Clean up the active list
         activeSfxSources.RemoveWhere(s => !s.isPlaying);
+    }
+
+
+    public void PauseAllSFX()
+    {
+        foreach (AudioSource source in activeSfxSources)
+            source.Pause();
+    }
+
+    public void ResumeAllSFX()
+    {
+        foreach (AudioSource source in activeSfxSources)
+            source.UnPause();
     }
 
     public bool IsSFXPlaying(string name)

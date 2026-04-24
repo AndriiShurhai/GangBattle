@@ -41,6 +41,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Blood Castle Levels/Blood Castle.unity
     guid: 410b68894afec214a9c4280b3612e105
+  - enabled: 1
+    path: Assets/Scenes/Blood Castle Levels/Blood Castle 1.unity
+    guid: 99cb0245d46ae124eaeab360a98abba3
+  - enabled: 1
+    path: Assets/Scenes/Blood Castle Levels/Blood Castle 2.unity
+    guid: 9f057ca2c7d03ee4ba4ed94a9db97129
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f,
       type: 2}

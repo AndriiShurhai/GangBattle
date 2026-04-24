@@ -22,6 +22,7 @@ public class AbilityInfoUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI maxUsesText;
     [SerializeField] private TextMeshProUGUI scalingStatText;
     [SerializeField] private TextMeshProUGUI coefficientText;
+    [SerializeField] private TextMeshProUGUI powerText;
 
     [Header("Animation Settings")]
     [SerializeField] private float showDuration = 0.25f;
@@ -124,6 +125,7 @@ public class AbilityInfoUI : MonoBehaviour
         bool hasScaling = currentAbility.TypeOfScaling != StatType.None;
         SetText(scalingStatText, hasScaling ? FormatEnum(currentAbility.TypeOfScaling.ToString()) : "—");
         SetText(coefficientText, hasScaling ? $"×{currentAbility.Coefficient:0.##}" : "—");
+
     }
     private IEnumerator AnimateShow()
     {

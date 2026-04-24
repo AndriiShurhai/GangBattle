@@ -22,7 +22,7 @@ MonoBehaviour:
   _typeOfTarget: 2
   _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   _sfxOnCast: sfx_unit_provoke_cast
-  _sfxOnUse: sfx_unit_provoke
+  _sfxOnUse: sfx_unit_provoke_cast
   _abilityEffectPrefab: {fileID: 3288473931565564141, guid: cf1bf399daff1384eb94326ccd182117,
     type: 3}
   _coefficient: 1

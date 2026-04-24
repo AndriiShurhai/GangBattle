@@ -44,13 +44,13 @@ PrefabInstance:
     - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
       propertyPath: unitName
-      value: Vampire Archer
+      value: Blood Archer
       objectReference: {fileID: 0}
     - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
       propertyPath: characterClassSO
       value: 
-      objectReference: {fileID: 11400000, guid: 8a28fd4d6e1bf1d48a79a7618e51fbfe,
+      objectReference: {fileID: 11400000, guid: 4883f272d0cf47b47aaa4c5b1a8bf434,
         type: 2}
     - target: {fileID: 5984428788446614864, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
@@ -190,6 +190,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Color.r
       value: 0.5245282
+      objectReference: {fileID: 0}
+    - target: {fileID: 3038388168461630869, guid: 097f8c9082bd04da1b89678f92e3e995,
+        type: 3}
+      propertyPath: m_SortingLayer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3038388168461630869, guid: 097f8c9082bd04da1b89678f92e3e995,
+        type: 3}
+      propertyPath: m_SortingOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3038388168461630869, guid: 097f8c9082bd04da1b89678f92e3e995,
+        type: 3}
+      propertyPath: m_SortingLayerID
+      value: -105541197
       objectReference: {fileID: 0}
     - target: {fileID: 3546287865611931131, guid: 097f8c9082bd04da1b89678f92e3e995,
         type: 3}

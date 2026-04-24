@@ -116,7 +116,7 @@ PrefabInstance:
     - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
       propertyPath: unitName
-      value: Vampire Warrior
+      value: Blood Knight
       objectReference: {fileID: 0}
     - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
@@ -127,7 +127,7 @@ PrefabInstance:
         type: 3}
       propertyPath: characterClassSO
       value: 
-      objectReference: {fileID: 11400000, guid: 3b5ffbbb7ed67664693c5f8be2790e01,
+      objectReference: {fileID: 11400000, guid: f27bc1e20493a4c4fa5b336296ec16f5,
         type: 2}
     - target: {fileID: 7593816541869817367, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
         type: 3}
@@ -364,6 +364,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Color.r
       value: 0.7735849
+      objectReference: {fileID: 0}
+    - target: {fileID: 7127610363663143255, guid: 29a9bea320db74862816289bc063641d,
+        type: 3}
+      propertyPath: m_SortingLayer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7127610363663143255, guid: 29a9bea320db74862816289bc063641d,
+        type: 3}
+      propertyPath: m_SortingOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7127610363663143255, guid: 29a9bea320db74862816289bc063641d,
+        type: 3}
+      propertyPath: m_SortingLayerID
+      value: -105541197
       objectReference: {fileID: 0}
     - target: {fileID: 7324175444466830243, guid: 29a9bea320db74862816289bc063641d,
         type: 3}

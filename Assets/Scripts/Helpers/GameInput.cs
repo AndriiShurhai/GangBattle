@@ -42,10 +42,12 @@ public class GameInput : MonoBehaviour
         inputAction.Player.Interact.performed += Interact_performed;
         inputAction.Player.Pause.performed += Pause_performed;
         inputAction.Player.Click.performed += Click_performed;
+        DontDestroyOnLoad(gameObject);
     }
 
     private void OnDestroy()
     {
+        if (inputAction == null) return;
         inputAction.Player.Interact.performed -= Interact_performed;
         inputAction.Player.Pause.performed -= Pause_performed;
         inputAction.Player.Click.performed -= Click_performed;

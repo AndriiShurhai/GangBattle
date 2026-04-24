@@ -50,13 +50,13 @@ PrefabInstance:
     - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
       propertyPath: unitName
-      value: Vampire Mage
+      value: Blood Mage
       objectReference: {fileID: 0}
     - target: {fileID: 5442779907496803850, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
       propertyPath: characterClassSO
       value: 
-      objectReference: {fileID: 11400000, guid: 2a0cbcd37e8bfae4a99450840013b131,
+      objectReference: {fileID: 11400000, guid: e82caebd711190d4fb33231fcb46bc43,
         type: 2}
     - target: {fileID: 5984428788446614864, guid: 36d879e4bdc8717488fbbf0b67ee8c2c,
         type: 3}
@@ -206,6 +206,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Color.r
       value: 0.83396226
+      objectReference: {fileID: 0}
+    - target: {fileID: 5668706011649911397, guid: ec58634b610c94022b27f39f0cee941e,
+        type: 3}
+      propertyPath: m_SortingLayer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5668706011649911397, guid: ec58634b610c94022b27f39f0cee941e,
+        type: 3}
+      propertyPath: m_SortingOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5668706011649911397, guid: ec58634b610c94022b27f39f0cee941e,
+        type: 3}
+      propertyPath: m_SortingLayerID
+      value: 324148957
       objectReference: {fileID: 0}
     - target: {fileID: 6264956538256009423, guid: ec58634b610c94022b27f39f0cee941e,
         type: 3}

@@ -12959,6 +12959,10 @@ MonoBehaviour:
   enemyPreTurnDelay: 0.3
   enemyPostTurnDelay: 0.5
   bestTimeTurns: 10
+  entryOffscreenOffset: 14
+  entrySpeed: 6
+  entryStaggerDelay: 0.15
+  entryPostDelay: 0.4
 --- !u!1 &857534160
 GameObject:
   m_ObjectHideFlags: 0
@@ -13654,50 +13658,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
---- !u!1 &903945174
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 903945176}
-  - component: {fileID: 903945175}
-  m_Layer: 0
-  m_Name: GameInput
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &903945175
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 903945174}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 36541797326b7744bb06f7488eda7f46, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &903945176
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 903945174}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -5.34577, y: -3.83516, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1845657992}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &911008448
 GameObject:
   m_ObjectHideFlags: 0
@@ -14945,6 +14905,8 @@ MonoBehaviour:
   _starPopDuration: 0.35
   _shakeCount: 8
   _shakeMagnitude: 18
+  _sfxStarEarned: sfx_star_earned
+  _sfxCountUp: sfx_count
 --- !u!4 &1035399143
 Transform:
   m_ObjectHideFlags: 0
@@ -19955,6 +19917,10 @@ MonoBehaviour:
   enemyPreTurnDelay: 0.3
   enemyPostTurnDelay: 0.5
   bestTimeTurns: 10
+  entryOffscreenOffset: 14
+  entrySpeed: 6
+  entryStaggerDelay: 0.15
+  entryPostDelay: 0.4
 --- !u!4 &1432973249
 Transform:
   m_ObjectHideFlags: 0
@@ -23842,7 +23808,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 903945176}
   - {fileID: 1655297849}
   - {fileID: 243988951}
   - {fileID: 964768718}
@@ -26743,6 +26708,7 @@ MonoBehaviour:
   maxUsesText: {fileID: 556351443}
   scalingStatText: {fileID: 18412463}
   coefficientText: {fileID: 1282750836}
+  powerText: {fileID: 0}
   showDuration: 0.25
   hideDuration: 0.18
   staggerDelay: 0.05

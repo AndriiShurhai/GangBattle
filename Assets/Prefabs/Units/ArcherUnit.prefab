@@ -304,9 +304,8 @@ PrefabInstance:
         type: 3}
       propertyPath: unitVisualBridge
       value: 
-      objectReference: {fileID: -2040729001439632973}
-    m_RemovedComponents:
-    - {fileID: 4330967019706475394, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
+      objectReference: {fileID: 1671425339016065411}
+    m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 8498542111770854543, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
     - {fileID: 350821985727654844, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
@@ -315,31 +314,20 @@ PrefabInstance:
         type: 3}
       insertIndex: 0
       addedObject: {fileID: 69082841472164562}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2799951583245248084, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: -2040729001439632973}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915, type: 3}
---- !u!1 &1005387737387955285 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2799951583245248084, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
+--- !u!114 &1671425339016065411 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4330967019706475394, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,
     type: 3}
   m_PrefabInstance: {fileID: 3109937798466687489}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &-2040729001439632973
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1005387737387955285}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa39933a5d3649c4d967a9b1d4e8eb53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UnitVisualBridge
-  _spumPrefabs: {fileID: 7442701274365459956}
 --- !u!4 &8828501199428235305 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5885523993207595560, guid: 5fe6ddd2cb425e949be7cbe2e1e0d915,

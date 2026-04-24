@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,6 +6,12 @@ using UnityEngine.UI;
 public class MapManager : MonoBehaviour
 {
     public static MapManager Instance { get; private set; }
+
+    /// <summary>Fired when the camera finishes zooming into a biome.</summary>
+    public static event Action<BiomeController> OnBiomeZoomedIn;
+
+    /// <summary>Fired when the camera finishes zooming back out to world view.</summary>
+    public static event Action OnBiomeZoomedOut;
 
     [Header("Camera")]
     [Tooltip("Main 2D orthographic camera")]
@@ -31,6 +38,10 @@ public class MapManager : MonoBehaviour
     [Header("UI")]
     [Tooltip("Button to return from biome view to world view")]
     public GameObject returnFromRegionButton;
+    [Tooltip("Settings button")]
+    public GameObject optionsButton;
+    [Tooltip("Option Panel")]
+    public GameObject optionsPanel;
 
     public enum ZoomState { World, Transitioning, Biome }
     public ZoomState CurrentState { get; private set; } = ZoomState.World;
@@ -44,6 +55,9 @@ public class MapManager : MonoBehaviour
 
     private Button _returnButton;
     private Image _returnButtonImage;
+
+    private Button _optionsButton;
+    private Image _optionsButtonImage;
 
     private void Awake()
     {
@@ -60,6 +74,17 @@ public class MapManager : MonoBehaviour
 
         _returnButton.onClick.AddListener(ZoomOut);
         _returnButton.interactable = false;
+        
+        _optionsButton = optionsButton.GetComponent<Button>();
+        _optionsButtonImage = optionsButton.GetComponent<Image>();
+
+        _optionsButton.onClick.AddListener(OpenOptions);
+        _optionsButton.interactable = true;
+    }
+
+    private void OpenOptions()
+    {
+        optionsPanel.GetComponent<OptionsUI>().ToggleOptionsPanel();
     }
 
     public void RequestZoomToBiome(BiomeController biome)
@@ -108,7 +133,7 @@ public class MapManager : MonoBehaviour
 
                 StartCoroutine(FadeSprite(level.SpriteRenderer, 1f, fadeDuration));
             }
-            
+
         }
 
         Coroutine regionZoom = StartCoroutine(LerpCamera(
@@ -119,12 +144,16 @@ public class MapManager : MonoBehaviour
         ));
 
         _returnButton.interactable = true;
+        _optionsButton.interactable = false;
         StartCoroutine(FadeImage(_returnButtonImage, 1f, fadeDuration));
+        StartCoroutine(FadeImage(_optionsButtonImage, 0f, fadeDuration));
+        optionsButton.SetActive(false);
         StartCoroutine(FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 0f, fadeDuration));
 
         yield return regionZoom;
 
         CurrentState = ZoomState.Biome;
+        OnBiomeZoomedIn?.Invoke(activeBiome);
     }
 
     private IEnumerator ZoomOutRoutine()
@@ -155,13 +184,17 @@ public class MapManager : MonoBehaviour
         StartCoroutine(FadeSprite(activeBiome.GetRegionSpriteRenderer(), 0f, 0.3f));
 
         _returnButton.interactable = false;
+        _optionsButton.interactable = true;
         StartCoroutine(FadeImage(_returnButtonImage, 0f, fadeDuration));
+        StartCoroutine(FadeImage(_optionsButtonImage, 1f, fadeDuration));
+        optionsButton.SetActive(true);
 
         StartCoroutine(LerpCamera(worldCameraPosition, worldOrthographicSize, zoomDuration));
         yield return StartCoroutine(FadeSprite(activeBiome.GetComponent<SpriteRenderer>(), 1f, fadeDuration));
 
         activeBiome = null;
         CurrentState = ZoomState.World;
+        OnBiomeZoomedOut?.Invoke();
     }
     private IEnumerator LerpCamera(Vector3 targetPosition, float targetSize, float duration)
     {

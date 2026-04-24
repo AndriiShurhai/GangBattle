@@ -85,7 +85,7 @@ public abstract class AbilityBaseSO : ScriptableObject
         Any,
     }
 
-    protected int GetPower(Unit unit)
+    public int GetPower(Unit unit)
     {
         switch (TypeOfScaling)
         {

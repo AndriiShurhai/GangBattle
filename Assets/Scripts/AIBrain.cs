@@ -63,14 +63,14 @@ public class AIBrain : MonoBehaviour
                         StartCoroutine(ExecuteNextAction(onComplete, actionsTaken + 1));
                     else
                     {
-                        StartCoroutine(aiUnit.HighlightUnit(false));
+                        aiUnit.ForceHighlightUnit(false);
                         onComplete?.Invoke(); // Let the turn system clean up normally
                     }
                 });
             }
             catch (Exception e)
             {
-                StartCoroutine(aiUnit.HighlightUnit(false));
+                aiUnit.ForceHighlightUnit(false);
                 onComplete?.Invoke();
             }
         }

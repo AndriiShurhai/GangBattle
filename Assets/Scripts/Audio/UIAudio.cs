@@ -1,4 +1,7 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
+using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// Handles all UI and menu-related sound effects.
@@ -22,10 +25,20 @@ public class UIAudio : MonoBehaviour
     // Track pause state so we can play different sounds for pause vs unpause
     private bool isPaused = false;
 
+    private List<Button> buttons = new();
+
     // ─────────────────────────────────────────────
     //  Lifecycle
     // ─────────────────────────────────────────────
 
+    private void Awake()
+    {
+        buttons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None).ToList();
+        foreach (var button in buttons)
+        {
+            button.onClick.AddListener(HandleInteract);
+        }
+    }
     private void Start()
     {
         // GameInput is a singleton — safe to grab in Start
@@ -46,6 +59,12 @@ public class UIAudio : MonoBehaviour
         {
             GameInput.Instance.OnPauseAction -= HandlePauseToggled;
             GameInput.Instance.OnInteractAction -= HandleInteract;
+        }
+
+        buttons = FindObjectsByType<Button>(FindObjectsSortMode.None).ToList();
+        foreach (var button in buttons)
+        {
+            button.onClick.AddListener(HandleInteract);
         }
 
         LevelNode.OnLevelNodeClick -= HandleLevelNodeClick;
@@ -79,6 +98,11 @@ public class UIAudio : MonoBehaviour
 
     private void HandleSceneLoadStarted(string sceneName)
     {
+        foreach (var button in buttons)
+        {
+            button.onClick.RemoveListener(HandleInteract);
+        }
+        buttons = new();
         if (AudioManager.Instance == null) return;
         AudioManager.Instance.PlaySFX(sfxSceneTransition);
     }
@@ -91,5 +115,11 @@ public class UIAudio : MonoBehaviour
         // Adjust the scene name to match yours
         if (sceneName.Contains("MainMenu") || sceneName.Contains("Menu"))
             AudioManager.Instance.CrossfadeMusic(musicMainMenu);
+
+        buttons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None).ToList();
+        foreach (var button in buttons)
+        {
+            button.onClick.AddListener(HandleInteract);
+        }
     }
 }

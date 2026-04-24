@@ -12,16 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17314aef6270caf4fb7e7492726bee66, type: 3}
   m_Name: BurnAttackAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::BurnAttackAbilitySO
-  abilityName: 
-  abilityIcon: {fileID: 21300000, guid: 85f6db0efa996b342ac40bb7aa6eb2f9, type: 3}
-  abilityDescription: 
-  howMuchCanBeUsed: 1
-  range: 3
-  rangeType: 0
-  targetType: 0
-  rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 6848231062210849456, guid: 705230edaa39f5e439879395ec45a0ae,
+  _abilityName: 
+  _abilityIcon: {fileID: 21300000, guid: 85f6db0efa996b342ac40bb7aa6eb2f9, type: 3}
+  _abilityDescription: 
+  _maxUses: 1
+  _range: 3
+  _hasLineOfSightRequirement: 0
+  _typeOfRange: 0
+  _typeOfTarget: 0
+  _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  _sfxOnCast: sfx_ability_burn_cast
+  _sfxOnUse: 
+  _abilityEffectPrefab: {fileID: 6848231062210849456, guid: 705230edaa39f5e439879395ec45a0ae,
     type: 3}
-  coefficient: 1
-  scalingType: 0
-  duration: 3
+  _coefficient: 1
+  _typeOfScaling: 0
+  _duration: 3

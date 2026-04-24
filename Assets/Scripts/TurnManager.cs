@@ -33,8 +33,8 @@ public struct VictoryScreenData
 
 public class TurnManager : MonoBehaviour, IRewindable
 {
-    public event Action OnLevelCompleted;
-    public event Action OnLevelFailed;
+    public static event Action OnLevelCompleted;
+    public static event Action OnLevelFailed;
     public static event Action OnUnitsInitialized;
     public static TurnManager Instance { get; private set; }
 
@@ -50,6 +50,12 @@ public class TurnManager : MonoBehaviour, IRewindable
     [SerializeField] private float enemyPostTurnDelay = 0.5f;
 
     [SerializeField] private int bestTimeTurns = 10;
+
+    [Header("Unit Entry Animation")]
+    [SerializeField] private float entryOffscreenOffset = 14f;  // world units — increase if units are still visible at scene start
+    [SerializeField] private float entrySpeed = 6f;   // world units per second
+    [SerializeField] private float entryStaggerDelay = 0.15f; // seconds between each unit starting its walk
+    [SerializeField] private float entryPostDelay = 0.4f;  // pause after all units have arrived before turn starts
 
     public string RewindID => id.ID;
 
@@ -99,8 +105,84 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         OnUnitsInitialized?.Invoke();
         Debug.Log("All units initialized and placed on the grid.");
+
+        // Walk every unit in from off-screen before handing control to the player.
+        StartCoroutine(UnitEntrySequence());
+    }
+
+    // ── Entry animation ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Offsets all units off-screen, then walks them to their spawn positions with
+    /// a staggered start. Players enter from the left; enemies from the right.
+    /// Calls StartPlayerTurn() once every unit has arrived.
+    /// </summary>
+    private IEnumerator UnitEntrySequence()
+    {
+        // Record each unit's intended spawn position before we touch transforms.
+        // PlaceUnit() already snapped every unit to the correct world position,
+        // so reading transform.position here is reliable.
+        var entries = new List<(Unit unit, Vector3 spawn, Vector3 offscreen)>(
+            allPlayerUnits.Count + allEnemyUnits.Count);
+
+        foreach (Unit unit in allPlayerUnits)
+        {
+            Vector3 spawn = unit.transform.position;
+            entries.Add((unit, spawn, spawn + Vector3.left * entryOffscreenOffset));
+        }
+        foreach (Unit unit in allEnemyUnits)
+        {
+            Vector3 spawn = unit.transform.position;
+            entries.Add((unit, spawn, spawn + Vector3.right * entryOffscreenOffset));
+        }
+
+        // Teleport all units off-screen and mark as moving.
+        // SetMovingState prevents CanMoveTo / CanUseAbility from returning true
+        // if anything polls unit state during the cinematic.
+        foreach (var (unit, _, offscreen) in entries)
+        {
+            unit.transform.position = offscreen;
+            unit.SetMovingState(true);
+        }
+
+        // Stagger-launch each unit's walk coroutine and track how many are still in flight.
+        int remaining = entries.Count;
+        foreach (var (unit, spawn, _) in entries)
+        {
+            StartCoroutine(EntryMoveUnit(unit, spawn, () => remaining--));
+            yield return new WaitForSeconds(entryStaggerDelay);
+        }
+
+        yield return new WaitUntil(() => remaining <= 0);
+        yield return new WaitForSeconds(entryPostDelay);
+
         StartPlayerTurn();
     }
+
+    /// <summary>
+    /// Moves a single unit to <paramref name="destination"/> at entry speed.
+    /// Fires the standard OnAnyUnitStartMoving / OnAnyUnitFinishedMoving events so
+    /// UnitAnimationController handles the run animation automatically.
+    /// Does NOT consume movement points or alter the grid registry.
+    /// </summary>
+    private IEnumerator EntryMoveUnit(Unit unit, Vector3 destination, Action onArrived)
+    {
+        Unit.InvokeUnitStartMoving(unit, destination);
+
+        while (Vector3.Distance(unit.transform.position, destination) > 0.01f)
+        {
+            unit.transform.position = Vector3.MoveTowards(
+                unit.transform.position, destination, entrySpeed * Time.deltaTime);
+            yield return null;
+        }
+
+        unit.transform.position = destination;
+        unit.SetMovingState(false);
+        Unit.InvokeUnitFinishedMoving(unit);
+        onArrived?.Invoke();
+    }
+
+    // ── Rewind ────────────────────────────────────────────────────────────────
 
     public void RegisterSelf() => RewindManager.Instance.RegisterRewindable(this);
 
@@ -176,6 +258,7 @@ public class TurnManager : MonoBehaviour, IRewindable
         StopAllCoroutines();
         StopAllEnemyCoroutines();
         RewindManager.Instance.RewindTo(targetTurn);
+        AudioManager.Instance?.StopAllSFX();
     }
 
     public void RewindToCurrentTurn()
@@ -185,6 +268,7 @@ public class TurnManager : MonoBehaviour, IRewindable
         StopAllCoroutines();
         StopAllEnemyCoroutines();
         RewindManager.Instance.RewindTo(currentTurn);
+        AudioManager.Instance?.StopAllSFX();
     }
 
     private void StopAllEnemyCoroutines()
@@ -196,6 +280,8 @@ public class TurnManager : MonoBehaviour, IRewindable
             unit.StopAllCoroutines();
         }
     }
+
+    // ── Turn flow ─────────────────────────────────────────────────────────────
 
     public void StartPlayerTurn()
     {
@@ -279,6 +365,8 @@ public class TurnManager : MonoBehaviour, IRewindable
         EndTurn();
     }
 
+    // ── Game over ─────────────────────────────────────────────────────────────
+
     private void EndGame(bool playerWon)
     {
         StopAllCoroutines();
@@ -296,7 +384,7 @@ public class TurnManager : MonoBehaviour, IRewindable
                 TotalEnemies = allEnemyUnits.Count,
                 UnitsAlive = unitsAlive,
                 TotalPlayerUnits = allPlayerUnits.Count,
-                TimeTaken = currentTurn,
+                TimeTaken = currentTurn+1,
                 BestTime = bestTimeTurns,
                 StarEnemies = enemiesDestroyed == allEnemyUnits.Count,
                 StarUnits = unitsAlive == allPlayerUnits.Count,
@@ -313,6 +401,7 @@ public class TurnManager : MonoBehaviour, IRewindable
             Debug.Log("Enemies win the level!");
         }
     }
+
     public int CalculateStarsEarned()
     {
         bool starEnemies = (allEnemyUnits.Count - enemyUnits.Count) == allEnemyUnits.Count;
@@ -327,7 +416,6 @@ public class TurnManager : MonoBehaviour, IRewindable
     }
 
     public int GetBestTimeForLevel() => bestTimeTurns;
-
 
     private void Unit_OnUnitDied(Unit unit)
     {
@@ -352,6 +440,8 @@ public class TurnManager : MonoBehaviour, IRewindable
             }
         }
     }
+
+    // ── Accessors ─────────────────────────────────────────────────────────────
 
     public List<Unit> GetPlayerUnits() => playerUnits;
     public List<Unit> GetEnemyUnits() => enemyUnits;

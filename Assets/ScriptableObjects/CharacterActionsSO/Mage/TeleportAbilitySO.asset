@@ -12,14 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3c9416a75000e844b20728e84568c37, type: 3}
   m_Name: TeleportAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::TeleportAbilitySO
-  abilityName: 
-  abilityIcon: {fileID: 21300000, guid: 0bff7be837e8d024e8b90a84cc395a46, type: 3}
-  abilityDescription: 
-  howMuchCanBeUsed: 1
-  range: 7
-  rangeType: 0
-  targetType: 3
-  rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  abilityEffectPrefab: {fileID: 0}
-  coefficient: 1
-  scalingType: 1
+  _abilityName: 
+  _abilityIcon: {fileID: 21300000, guid: 0bff7be837e8d024e8b90a84cc395a46, type: 3}
+  _abilityDescription: 
+  _maxUses: 1
+  _range: 7
+  _hasLineOfSightRequirement: 0
+  _typeOfRange: 0
+  _typeOfTarget: 3
+  _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
+  _sfxOnCast: sfx_ability_teleport_cast
+  _sfxOnUse: 
+  _abilityEffectPrefab: {fileID: 0}
+  _coefficient: 1
+  _typeOfScaling: 1
+  _teleportingDuration: 0.4

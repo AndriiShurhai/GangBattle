@@ -185,7 +185,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
 
     public IEnumerator HighlightUnit(bool show)
     {
-        float fadeDuration = 0.3f;  
+        float fadeDuration = 0.3f;
         if (show)
         {
             highlightLight.gameObject.SetActive(true);
@@ -196,7 +196,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             while (t < fadeDuration)
             {
                 t += Time.deltaTime;
-                targetColor.a = Mathf.Lerp(targetColor.a, 1f, t/fadeDuration);
+                targetColor.a = Mathf.Lerp(targetColor.a, 1f, t / fadeDuration);
                 highlightLight.color = targetColor;
                 yield return null;
             }
@@ -209,7 +209,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
             while (t < fadeDuration)
             {
                 t += Time.deltaTime;
-                targetColor.a = Mathf.Lerp(targetColor.a, 0f, t/fadeDuration);
+                targetColor.a = Mathf.Lerp(targetColor.a, 0f, t / fadeDuration);
                 highlightLight.color = targetColor;
                 yield return null;
             }
@@ -217,7 +217,17 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         }
     }
 
-    // ── Rewind ───────────────────────────────────────────────────────────────
+    public void ForceHighlightUnit(bool show)
+    {
+        if (show){
+            highlightLight.gameObject.SetActive(true);
+        }
+        else
+        {
+            highlightLight.gameObject.SetActive(false);
+        }
+    }
+
     public void RegisterSelf() => RewindManager.Instance.RegisterRewindable(this);
 
     public object CaptureState()
@@ -240,6 +250,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     // ── Stats / Buffs ─────────────────────────────────────────────────────────
     public void BoostUnit(int strengthBonus = 0, int intelligenceBonus = 0, int agilityBonus = 0)
     {
+        if (HasStatus(EffectStatusType.Boosted)) { return; }
         Strength += strengthBonus;
         Intelligence += intelligenceBonus;
         Agility += agilityBonus;
@@ -430,6 +441,21 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     // ── Helpers / Pass-throughs ───────────────────────────────────────────────
     public static void InvokeUnitEnteredTile(Unit unit, Vector3Int tilePosition)
         => OnUnitEnteredTile?.Invoke(unit, tilePosition);
+
+    /// <summary>
+    /// Fires OnAnyUnitStartMoving without going through the gameplay movement path.
+    /// Used by cinematic systems (e.g. entry animation) that move units visually
+    /// without consuming movement points or touching the grid registry.
+    /// </summary>
+    public static void InvokeUnitStartMoving(Unit unit, Vector3 destination)
+        => OnAnyUnitStartMoving?.Invoke(unit, destination);
+
+    /// <summary>
+    /// Fires OnAnyUnitFinishedMoving without going through the gameplay movement path.
+    /// Pair with InvokeUnitStartMoving for cinematic unit movement.
+    /// </summary>
+    public static void InvokeUnitFinishedMoving(Unit unit)
+        => OnAnyUnitFinishedMoving?.Invoke(unit);
 
     public Transform GetHealthBarAttachPoint() => healthBarAttachPoint;
     public SpriteRenderer GetSpriteRenderer() => spriteRenderer;

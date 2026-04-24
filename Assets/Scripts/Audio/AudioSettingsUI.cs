@@ -8,6 +8,7 @@ using TMPro;
 /// </summary>
 public class AudioSettingsUI : MonoBehaviour
 {
+    public static AudioSettingsUI Instance { get; private set; }
     [Header("Volume Sliders")]
     [SerializeField] private Slider masterSlider;
     [SerializeField] private Slider musicSlider;
@@ -35,12 +36,27 @@ public class AudioSettingsUI : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
         // Slider ranges
         SetSliderRange(masterSlider);
         SetSliderRange(musicSlider);
         SetSliderRange(sfxSlider);
+
+        DontDestroyOnLoad(gameObject);
     }
 
+    private void Start()
+    {
+        gameObject.SetActive(false);
+    }
     private void OnEnable()
     {
         // Subscribe to AudioManager events so external changes reflect in the UI
@@ -116,13 +132,14 @@ public class AudioSettingsUI : MonoBehaviour
     private void OnMusicMuteToggled(bool isOn)
     {
         if (isSyncing || AudioManager.Instance == null) return;
-        AudioManager.Instance.SetMusicMuted(isOn);
+        bool isMuted = !isOn;
+        AudioManager.Instance.SetMusicMuted(isMuted);
     }
 
     private void OnSfxMuteToggled(bool isOn)
     {
         if (isSyncing || AudioManager.Instance == null) return;
-        AudioManager.Instance.SetSfxMuted(isOn);
+        AudioManager.Instance.SetSfxMuted(!isOn);
     }
 
     private void OnResetClicked()
@@ -155,12 +172,12 @@ public class AudioSettingsUI : MonoBehaviour
 
     private void HandleMusicMuteChanged(bool muted)
     {
-        SetToggleSilently(musicMuteToggle, muted);
+        SetToggleSilently(musicMuteToggle, !muted);
     }
 
     private void HandleSfxMuteChanged(bool muted)
     {
-        SetToggleSilently(sfxMuteToggle, muted);
+        SetToggleSilently(sfxMuteToggle, !muted);
     }
 
     // ─────────────────────────────────────────────
@@ -177,8 +194,8 @@ public class AudioSettingsUI : MonoBehaviour
         SetSliderSilently(musicSlider, AudioManager.Instance.MusicVolume);
         SetSliderSilently(sfxSlider, AudioManager.Instance.SfxVolume);
 
-        SetToggleSilently(musicMuteToggle, AudioManager.Instance.IsMusicMuted);
-        SetToggleSilently(sfxMuteToggle, AudioManager.Instance.IsSfxMuted);
+        SetToggleSilently(musicMuteToggle, !AudioManager.Instance.IsMusicMuted);
+        SetToggleSilently(sfxMuteToggle, !AudioManager.Instance.IsSfxMuted);
 
         UpdateLabel(masterLabel, AudioManager.Instance.MasterVolume);
         UpdateLabel(musicLabel, AudioManager.Instance.MusicVolume);

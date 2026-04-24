@@ -10,7 +10,7 @@ public class PlayerCharacterInfoManager : MonoBehaviour
     [SerializeField] private List<GameObject> unitIconsPlaceHolders;
 
     [Header("Animation Settings")]
-    [SerializeField] private float animationDuration = 0.3f;
+    [SerializeField] private float animationDuration = 0.6f;
     [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     private CanvasGroup panelCanvasGroup;
@@ -95,7 +95,7 @@ public class PlayerCharacterInfoManager : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / animationDuration);
 
             panelCanvasGroup.alpha = scaleCurve.Evaluate(t);
-            unitIconsPanel.transform.localScale = Vector3.LerpUnclamped(panelOriginalScale * 0.85f, panelOriginalScale, BounceOut(t));
+            unitIconsPanel.transform.localScale = Vector3.LerpUnclamped(panelOriginalScale * 0.6f, panelOriginalScale, BounceOut(t));
 
             yield return null;
         }

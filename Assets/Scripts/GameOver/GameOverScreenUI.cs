@@ -50,6 +50,10 @@ public class GameOverScreenUI : MonoBehaviour
     [SerializeField] private int _shakeCount = 8;
     [SerializeField] private float _shakeMagnitude = 18f;
 
+    [Header("Audio")]
+    [SerializeField] private string _sfxStarEarned = "sfx_star_earned";
+    [SerializeField] private string _sfxCountUp = "sfx_count";
+
     private Vector2 _knightOriginalPos;
 
     private static readonly AnimationCurve _easeOutBack = new AnimationCurve(
@@ -173,16 +177,29 @@ public class GameOverScreenUI : MonoBehaviour
         bool earned)
     {
         float elapsed = 0f;
+        int first = 0;
         while (elapsed < _countUpDuration)
         {
             elapsed += Time.deltaTime;
-            int display = Mathf.RoundToInt(Mathf.Lerp(0, current, elapsed / _countUpDuration));
+            float t = elapsed / _countUpDuration;
+            int display = Mathf.RoundToInt(Mathf.Lerp(0, current, t));
             label.text = $"{statName}\n{display} / {target}";
+            if (display != first)
+            {
+                AudioManager.Instance?.PlaySFX(_sfxCountUp);
+                first = display;
+            }
             yield return null;
         }
         label.text = $"{statName}\n{current} / {target}";
 
         starImage.color = earned ? _gainedStarColor : _lockedStarColor;
+       
+        if (earned)
+        {
+            AudioManager.Instance?.PlaySFX(_sfxStarEarned);
+        }
+
         yield return StartCoroutine(PopScale(starRect, _starPopDuration));
     }
 

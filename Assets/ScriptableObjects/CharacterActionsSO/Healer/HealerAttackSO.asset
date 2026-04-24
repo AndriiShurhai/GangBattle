@@ -22,7 +22,7 @@ MonoBehaviour:
   _typeOfTarget: 0
   _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   _sfxOnCast: sfx_ability_healAttack_cast
-  _sfxOnUse: 
+  _sfxOnUse: sfx_ability_healAttack_cast
   _abilityEffectPrefab: {fileID: 0}
   _coefficient: 1
   _typeOfScaling: 0

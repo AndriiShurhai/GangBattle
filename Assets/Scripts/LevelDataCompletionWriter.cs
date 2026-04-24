@@ -19,13 +19,12 @@ public class LevelDataCompletionWriter : MonoBehaviour
 {
     private void Start()
     {
-        TurnManager.Instance.OnLevelCompleted += OnLevelCompleted;
+        TurnManager.OnLevelCompleted += OnLevelCompleted;
     }
 
     private void OnDestroy()
     {
-        if (TurnManager.Instance != null)
-            TurnManager.Instance.OnLevelCompleted -= OnLevelCompleted;
+        TurnManager.OnLevelCompleted -= OnLevelCompleted;
     }
 
     private void OnLevelCompleted()

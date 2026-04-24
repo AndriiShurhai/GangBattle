@@ -16,10 +16,10 @@ public class TeleportAbilitySO : AbilityBaseSO
 
         Sequence attackSequence = DOTween.Sequence();
 
+        onAbilityInvoke?.Invoke();
         attackSequence.Append(caster.transform.DOScale(0, TeleportingDuration));
         attackSequence.AppendCallback(() =>
         {
-            onAbilityInvoke?.Invoke();
             caster.transform.position = targetWorldPosition;
             GridObjectRegistry.Instance.MoveObject(caster, caster.GridPosition, targetPosition);
             // Spawn effect if available

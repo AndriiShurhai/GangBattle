@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class UnitAnimationController : MonoBehaviour
 {
-    private void Start()
+    private void Awake()
     {
         Unit.OnAnyUnitDied += OnUnitDied;
         Unit.OnAnyUnitTookDamage += OnUnitTookDamage;
