@@ -2,7 +2,7 @@ using DG.Tweening;
 using System;
 using UnityEngine;
 
-[CreateAssetMenu(menuName ="Abilities/Range Attack")]
+[CreateAssetMenu(menuName = "Abilities/Range Attack")]
 public class RangeAttackAbilitySO : AbilityBaseSO
 {
     [Header("Attack Settings")]
@@ -22,38 +22,64 @@ public class RangeAttackAbilitySO : AbilityBaseSO
     [SerializeField] private float _projectileJumpDuration = 0.3f;
     public float ProjectileJumpDuration => _projectileJumpDuration;
 
-    private void Awake()
-    {
-    }
+    [Header("Projectile Flight")]
+    [SerializeField] private Ease _flightEase = Ease.OutQuad;
+    [SerializeField] private float _impactSquashDuration = 0.08f;
+
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
         IGridObject targetObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
 
         if (targetObject is Unit targetUnit)
         {
-            // TODO: Play attack animation
-            // TODO: Show damage numbers
-            // TODO: Play sound effect
-
+            Vector3 spawnPos = caster.transform.position;
             Vector3 targetWorldPosition = GridManager.Instance.GridToWorld(targetPosition);
             int damage = GetPower(caster);
 
+            GameObject projectileGameObject = Instantiate(Projectile, spawnPos, Quaternion.identity);
+
+            // --- Rotate to face target on spawn ---
+            Vector3 toTarget = targetWorldPosition - spawnPos;
+            float initialAngle = Mathf.Atan2(toTarget.y, toTarget.x) * Mathf.Rad2Deg;
+            projectileGameObject.transform.rotation = Quaternion.Euler(0f, 0f, initialAngle);
+
+            // --- Punch scale on spawn ---
+            projectileGameObject.transform.localScale = Vector3.zero;
+            projectileGameObject.transform.DOScale(Vector3.one, 0.08f).SetEase(Ease.OutBack);
+
             Sequence attackSequence = DOTween.Sequence();
 
-            GameObject projectileGameObject = Instantiate(Projectile, caster.transform.position, Quaternion.identity);
+            // --- Flight arc with per-frame nose tracking ---
+            Vector3 previousPos = spawnPos;
 
-            Vector3 direction = caster.transform.position - targetWorldPosition;
+            attackSequence.Append(
+                projectileGameObject.transform
+                    .DOJump(targetWorldPosition, ProjectileJumpHeight, 1, ProjectileJumpDuration)
+                    .SetEase(_flightEase)
+                    .OnUpdate(() =>
+                    {
+                        if (projectileGameObject == null) return;
 
-            if (direction.x > 0)
-            {
-                projectileGameObject.transform.localScale = new Vector3(-1, 1, 1);
-            }
-            else if (direction.x < 0)
-            {
-                projectileGameObject.transform.localScale = new Vector3(1, 1, 1);
-            }
+                        Vector3 currentPos = projectileGameObject.transform.position;
+                        Vector3 delta = currentPos - previousPos;
 
-            attackSequence.Append(projectileGameObject.transform.DOJump(targetWorldPosition, ProjectileJumpHeight, 1, ProjectileJumpDuration));
+                        if (delta.sqrMagnitude > 0.0001f)
+                        {
+                            float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
+                            projectileGameObject.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+                        }
+
+                        previousPos = currentPos;
+                    })
+            );
+
+            // --- Impact: squash then destroy ---
+            attackSequence.Append(
+                projectileGameObject.transform
+                    .DOScale(new Vector3(1.4f, 0.6f, 1f), _impactSquashDuration)
+                    .SetEase(Ease.OutQuad)
+            );
+
             attackSequence.AppendCallback(() =>
             {
                 onAbilityInvoke?.Invoke();
@@ -61,7 +87,6 @@ public class RangeAttackAbilitySO : AbilityBaseSO
                 Destroy(projectileGameObject);
                 Debug.Log($"{caster.name} attacked {targetUnit.name} for {damage} damage!");
 
-                // Spawn effect if available
                 if (AbilityEffectPrefab != null)
                 {
                     Vector3 worldPos = GridManager.Instance.GridToWorld(targetPosition);
@@ -92,7 +117,6 @@ public class RangeAttackAbilitySO : AbilityBaseSO
             int dx = Mathf.Abs(targetPosition.x - casterPosition.x);
             int dy = Mathf.Abs(targetPosition.y - casterPosition.y);
 
-            // Must be orthogonal (either dx or dy should be 0)
             if (dx > 0 && dy > 0)
                 return false;
         }

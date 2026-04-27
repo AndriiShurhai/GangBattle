@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 public class UnitStatsUI : MonoBehaviour
@@ -28,6 +27,7 @@ public class UnitStatsUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI intelligenceTextStat;
     [SerializeField] private TextMeshProUGUI strengthTextStat;
     [SerializeField] private TextMeshProUGUI agilityTextStat;
+    [SerializeField] private TextMeshProUGUI movesAvailableTextStat;
     [SerializeField] private TextMeshProUGUI behaviourTypeTextStat;
 
     [Header("Stat Values")]
@@ -36,6 +36,7 @@ public class UnitStatsUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI intelligenceAmountText;
     [SerializeField] private TextMeshProUGUI strengthAmountText;
     [SerializeField] private TextMeshProUGUI agilityAmountText;
+    [SerializeField] private TextMeshProUGUI movesAvailableAmountText;
     [SerializeField] private TextMeshProUGUI behaviourTypeText;
 
     [Header("Abilities")]
@@ -57,6 +58,7 @@ public class UnitStatsUI : MonoBehaviour
     private int intelligence;
     private int strength;
     private int agility;
+    private int movesAvailable;
     private string behaviourType;
     private List<AbilityBaseSO> abilities;
     private GameObject currentUnitIcon;
@@ -152,6 +154,7 @@ public class UnitStatsUI : MonoBehaviour
         agility = unit.Agility;
         abilities = unit.Abilities;
         unitIconPrefab = unit.ClassIcon;
+        movesAvailable = unit.MoveAllowedPerTurn;
         Debug.Log("UnitStatsUI: Initialized unit icon prefab from unit class icon.");
         Debug.Log($"UnitStatsUI: Unit has {abilities.Count} abilities.");
         Debug.Log($"UnitStastUIl Unit currentHealth is {unit.CurrentHealth}");
@@ -159,6 +162,7 @@ public class UnitStatsUI : MonoBehaviour
         Debug.Log($"UnitStatsUI: Unit intelligence is {unit.Intelligence}");
         Debug.Log($"UnitStatsUI: Unit strength is {unit.Strength}");
         Debug.Log($"UnitStatsUI: Unit agility is {unit.Agility}");
+        Debug.Log($"UnitStatsUI: Unit available moves is {unit.MoveAllowedPerTurn}");
 
 
         var brain = unitObject.GetComponent<AIBrain>();
@@ -185,6 +189,7 @@ public class UnitStatsUI : MonoBehaviour
         SetStatText(intelligenceAmountText, intelligence);
         SetStatText(strengthAmountText, strength);
         SetStatText(agilityAmountText, agility);
+        SetStatText(movesAvailableAmountText, movesAvailable);
         if (behaviourTypeText != null)
             behaviourTypeText.text = behaviourType;
 
@@ -238,7 +243,7 @@ public class UnitStatsUI : MonoBehaviour
             if (clickHandler == null)
                 clickHandler = abilityIcons[i].AddComponent<AbilityIconUI>();
 
-            clickHandler.Initialize(abilities[i], abilityInfoDisplay);
+            clickHandler.Initialize(abilities[i], abilityInfoDisplay, unit);
         }
     }
     private void SubscribeToUnitEvents()

@@ -8,10 +8,13 @@ public class AbilityIconUI : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     [SerializeField] private AbilityBaseSO ability;
     [SerializeField] private AbilityInfoUI infoDisplay;
     [SerializeField] private CanvasGroup infoCanvasGroup;
-    public void Initialize(AbilityBaseSO ability, AbilityInfoUI infoDisplay)
+
+    private Unit currentUnit;
+    public void Initialize(AbilityBaseSO ability, AbilityInfoUI infoDisplay, Unit currentUnit)
     {
         this.ability = ability;
         this.infoDisplay = infoDisplay;
+        this.currentUnit = currentUnit;
 
         Debug.Log($"AbilityIconUI: Initialized for ability '{ability.AbilityName}'");
     }
@@ -21,7 +24,7 @@ public class AbilityIconUI : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         if (ability == null || infoDisplay == null) return;
 
         Debug.Log($"AbilityIconUI: Clicked on ability '{ability.AbilityName}'");
-        infoDisplay.ShowForAbility(ability);
+        infoDisplay.ShowForAbility(ability, currentUnit);
     }
 
     public void OnPointerEnter(PointerEventData eventData)

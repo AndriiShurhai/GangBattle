@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86d37e4dafda5804e940ba04df1d9ca8, type: 3}
   m_Name: EvilSkeletonWithSword
   m_EditorClassIdentifier: Assembly-CSharp::CharacterClassSO
-  className: Dark Knight
+  className: Skeletorn Warrior
   description: 
   classIconPrefab: {fileID: 8589827967827661866, guid: 365fbb0cc5363ce43b77ebce149b3c61,
     type: 3}
-  maxHealth: 1
+  maxHealth: 110
   movementRange: 1
   movementAmountPerTurn: 2
   strength: 18

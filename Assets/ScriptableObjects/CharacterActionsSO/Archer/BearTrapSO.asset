@@ -12,20 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 902bdeb5673366b4399ee69f01a0f757, type: 3}
   m_Name: BearTrapSO
   m_EditorClassIdentifier: 
-  abilityName: Trap ability
-  abilityIcon: {fileID: 2435301500484193355, guid: a54360cef78f9154ba084ef810a13c54,
+  _abilityName: Trap
+  _abilityIcon: {fileID: 2435301500484193355, guid: a54360cef78f9154ba084ef810a13c54,
     type: 3}
-  abilityDescription: Trap works with some duration and gives damage to unit that
+  _abilityDescription: Trap works with some duration and gives damage to unit that
     steps on it.
-  howMuchCanBeUsed: 200
-  range: 3
-  rangeType: 0
-  targetType: 3
-  rangePreviewColor: {r: 1, g: 0, b: 0, a: 1}
-  abilityEffectPrefab: {fileID: 0}
-  coefficient: 1
-  scalingType: 0
-  trapPrefab: {fileID: 3806955268432990606, guid: f8895feb428142a42befcc79f43e3862,
+  _maxUses: 200
+  _range: 3
+  _hasLineOfSightRequirement: 0
+  _typeOfRange: 0
+  _typeOfTarget: 3
+  _rangePreviewColor: {r: 1, g: 0, b: 0, a: 1}
+  _sfxOnCast: 
+  _sfxOnUse: 
+  _abilityEffectPrefab: {fileID: 0}
+  _coefficient: 1
+  _typeOfScaling: 0
+  _trapPrefab: {fileID: 3806955268432990606, guid: f8895feb428142a42befcc79f43e3862,
     type: 3}
-  trapDamage: 15
-  duration: 3
+  _trapDamage: 15
+  _duration: 3

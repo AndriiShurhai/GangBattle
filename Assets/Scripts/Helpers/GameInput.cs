@@ -105,7 +105,15 @@ public class GameInput : MonoBehaviour
 
     private void Click_performed(InputAction.CallbackContext obj)
     {
-        OnClickAction?.Invoke(GetPointerPosition());
+        Vector2 pos;
+
+        var touch = Touchscreen.current;
+        if (touch != null)
+            pos = touch.primaryTouch.position.ReadValue();
+        else
+            pos = Mouse.current.position.ReadValue();
+
+        OnClickAction?.Invoke(pos);
     }
 
     private Vector2 GetPointerPosition()

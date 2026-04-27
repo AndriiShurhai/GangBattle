@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68dda311629e59b49a8147e639b6b9db, type: 3}
   m_Name: HealerAttackSO
   m_EditorClassIdentifier: Assembly-CSharp::RangeAttackAbilitySO
-  _abilityName: 
+  _abilityName: Heal Attack
   _abilityIcon: {fileID: 21300000, guid: 7e55dad170b82e54d9ef2f91f42835ef, type: 3}
   _abilityDescription: 
   _maxUses: 1

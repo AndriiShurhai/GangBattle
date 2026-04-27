@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86d37e4dafda5804e940ba04df1d9ca8, type: 3}
   m_Name: MageCharacterClass
   m_EditorClassIdentifier: 
-  className: 
+  className: Mage
   description: 
   classIconPrefab: {fileID: 530997809350175163, guid: 3733b76a82f47af4f818f4c9c27aac38,
     type: 3}

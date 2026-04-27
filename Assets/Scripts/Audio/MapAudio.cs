@@ -55,16 +55,16 @@ public class MapAudio : MonoBehaviour
     {
         SceneLoader.OnSceneLoadCompleted += HandleSceneLoadCompleted;
         SceneLoader.OnSceneLoadStarted += HandleSceneLoadStarted;
-        MapManager.OnBiomeZoomedIn += HandleBiomeZoomedIn;
-        MapManager.OnBiomeZoomedOut += HandleBiomeZoomedOut;
+        MapManager.OnBiomeZoomingIn += HandleBiomeZoomedIn;
+        MapManager.OnBiomeZoomingOut += HandleBiomeZoomedOut;
     }
 
     private void OnDisable()
     {
         SceneLoader.OnSceneLoadCompleted -= HandleSceneLoadCompleted;
         SceneLoader.OnSceneLoadStarted -= HandleSceneLoadStarted;
-        MapManager.OnBiomeZoomedIn -= HandleBiomeZoomedIn;
-        MapManager.OnBiomeZoomedOut -= HandleBiomeZoomedOut;
+        MapManager.OnBiomeZoomingIn -= HandleBiomeZoomedIn;
+        MapManager.OnBiomeZoomingOut -= HandleBiomeZoomedOut;
     }
 
     // ─────────────────────────────────────────────

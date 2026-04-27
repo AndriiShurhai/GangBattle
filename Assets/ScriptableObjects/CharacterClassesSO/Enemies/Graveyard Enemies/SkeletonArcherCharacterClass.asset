@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86d37e4dafda5804e940ba04df1d9ca8, type: 3}
   m_Name: SkeletonArcherCharacterClass
   m_EditorClassIdentifier: 
-  className: Archer
+  className: Skeleton Archer
   description: 
   classIconPrefab: {fileID: 8589827967827661866, guid: 501f37dad06fea54b8a3a63317feffa5,
     type: 3}

@@ -420,7 +420,7 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
         abilitySO.Execute(this, targetPosition, () => OnAnyUnitUsedAbility?.Invoke(this, abilitySO));
         usedAbilitiesAmountPerTurn[abilitySO]++;
         OnUnitMadeAction?.Invoke();
-        CharacterSelectionController.Instance.ClearSelection();
+        CharacterSelectionController.Instance.ChangeState(CharacterSelectionController.Instance.noSelectionState);
     }
 
     public void ResetUsedAbilities()

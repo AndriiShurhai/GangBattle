@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71ba88295095400418bba0fef5826792, type: 3}
   m_Name: BoostUnitAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::BoostUnitAbilitySO
-  _abilityName: 
+  _abilityName: Boost
   _abilityIcon: {fileID: 21300000, guid: 3488b33dd528c2c44953de75a09d3ee4, type: 3}
   _abilityDescription: 
   _maxUses: 1
@@ -21,7 +21,7 @@ MonoBehaviour:
   _typeOfRange: 0
   _typeOfTarget: 1
   _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
-  _sfxOnCast: sfx_ability_boost_cast
+  _sfxOnCast: 
   _sfxOnUse: sfx_ability_boost_cast
   _abilityEffectPrefab: {fileID: 92377299893284421, guid: 5898c51c0a2fb8f4e8d2b5dcbe8145fb,
     type: 3}

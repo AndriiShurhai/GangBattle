@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86d37e4dafda5804e940ba04df1d9ca8, type: 3}
   m_Name: DarkMageCharacterClass
   m_EditorClassIdentifier: Assembly-CSharp::CharacterClassSO
-  className: 
+  className: Dark Mage
   description: 
   classIconPrefab: {fileID: 2995677570751117942, guid: 68a0533aad4289d4793cc9fc92989497,
     type: 3}

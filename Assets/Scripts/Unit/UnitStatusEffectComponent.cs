@@ -66,10 +66,15 @@ public class UnitStatusEffectComponent : MonoBehaviour
     public void RestoreEffects(List<StatusEffect> effects)
     {
         Debug.Log("Restoring effects");
+        if (owner.HasStatus(EffectStatusType.Boosted))
+        {
+            owner.UnboostUnit();
+        }
         foreach (var effect in activeEffects)
             effect.RemoveVisualEffect(owner);
 
         activeEffects.Clear();
+
 
         if (effects != null)
         {
@@ -78,7 +83,12 @@ public class UnitStatusEffectComponent : MonoBehaviour
             {
                 Debug.Log($"Effect has been restored: {effect}");
                 activeEffects.Add(effect);
-                effect.InstantiateVisualEffect(owner);                
+                effect.InstantiateVisualEffect(owner);         
+                if (effect.type == EffectStatusType.Boosted) 
+                {
+                    owner.BoostUnit();
+                }
+                
             }
         }
 

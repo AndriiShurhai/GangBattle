@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ffe6cdb3bf9740a4dab71e552edd25fd, type: 3}
   m_Name: ShieldBashAbility
   m_EditorClassIdentifier: Assembly-CSharp::ShieldBashSO
-  _abilityName: 
+  _abilityName: Shield Bash
   _abilityIcon: {fileID: 21300000, guid: 0038c07c43785c04faa15ecb8093fe89, type: 3}
   _abilityDescription: 
   _maxUses: 1

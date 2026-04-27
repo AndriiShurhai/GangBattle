@@ -38,6 +38,7 @@ public class AbilityInfoUI : MonoBehaviour
     private Coroutine swapCoroutine;
     private AbilityBaseSO currentAbility;
     private bool isVisible;
+    private Unit currentUnit;
 
     private void Awake()
     {
@@ -54,7 +55,7 @@ public class AbilityInfoUI : MonoBehaviour
         mainPanel.SetActive(false);
         isVisible = false;
     }
-    public void ShowForAbility(AbilityBaseSO ability)
+    public void ShowForAbility(AbilityBaseSO ability, Unit currentUnit)
     {
         if (isVisible && currentAbility == ability)
         {
@@ -71,6 +72,7 @@ public class AbilityInfoUI : MonoBehaviour
         }
 
         currentAbility = ability;
+        this.currentUnit = currentUnit;
         RefreshUI();
         Show();
     }
@@ -121,6 +123,7 @@ public class AbilityInfoUI : MonoBehaviour
         SetText(rangeTypeText, FormatEnum(currentAbility.TypeOfRange.ToString()));
         SetText(targetTypeText, FormatEnum(currentAbility.TypeOfTarget.ToString()));
         SetText(maxUsesText, currentAbility.MaxUses.ToString());
+        SetText(powerText, currentAbility.GetPower(currentUnit).ToString());
 
         bool hasScaling = currentAbility.TypeOfScaling != StatType.None;
         SetText(scalingStatText, hasScaling ? FormatEnum(currentAbility.TypeOfScaling.ToString()) : "—");

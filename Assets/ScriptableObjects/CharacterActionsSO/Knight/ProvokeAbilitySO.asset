@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 161d8dd266a3848468e54ca1a3381d7b, type: 3}
   m_Name: ProvokeAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::ProvokeAbilitySO
-  _abilityName: 
+  _abilityName: Provoke
   _abilityIcon: {fileID: 21300000, guid: 45483fed0e4221d4c8f7bd6b92baf04e, type: 3}
   _abilityDescription: 
   _maxUses: 1
@@ -22,7 +22,7 @@ MonoBehaviour:
   _typeOfTarget: 2
   _rangePreviewColor: {r: 1, g: 0, b: 0, a: 0.3}
   _sfxOnCast: sfx_unit_provoke_cast
-  _sfxOnUse: sfx_unit_provoke_cast
+  _sfxOnUse: 
   _abilityEffectPrefab: {fileID: 3288473931565564141, guid: cf1bf399daff1384eb94326ccd182117,
     type: 3}
   _coefficient: 1

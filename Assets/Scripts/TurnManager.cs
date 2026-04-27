@@ -82,6 +82,11 @@ public class TurnManager : MonoBehaviour, IRewindable
     {
         RegisterSelf();
 
+        if (characterSelectionController != null)
+            characterSelectionController.gameObject.SetActive(false);
+
+        endPlayerTurnButton.gameObject.SetActive(false);
+
         for (int i = 0; i < enemyUnits.Count; i++)
         {
             Unit enemyScript = Instantiate(enemyUnits[i].gameObject).GetComponent<Unit>();
@@ -105,6 +110,7 @@ public class TurnManager : MonoBehaviour, IRewindable
 
         OnUnitsInitialized?.Invoke();
         Debug.Log("All units initialized and placed on the grid.");
+
 
         // Walk every unit in from off-screen before handing control to the player.
         StartCoroutine(UnitEntrySequence());
@@ -157,6 +163,7 @@ public class TurnManager : MonoBehaviour, IRewindable
         yield return new WaitForSeconds(entryPostDelay);
 
         StartPlayerTurn();
+        endPlayerTurnButton.gameObject.SetActive(true);
     }
 
     /// <summary>

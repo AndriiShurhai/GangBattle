@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3c9416a75000e844b20728e84568c37, type: 3}
   m_Name: TeleportAbilitySO
   m_EditorClassIdentifier: Assembly-CSharp::TeleportAbilitySO
-  _abilityName: 
+  _abilityName: Teleport
   _abilityIcon: {fileID: 21300000, guid: 0bff7be837e8d024e8b90a84cc395a46, type: 3}
   _abilityDescription: 
   _maxUses: 1

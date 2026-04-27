@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86d37e4dafda5804e940ba04df1d9ca8, type: 3}
   m_Name: VampireKnightCharacterClass
   m_EditorClassIdentifier: Assembly-CSharp::CharacterClassSO
-  className: Dark Knight
+  className: Vampire Knight
   description: 
   classIconPrefab: {fileID: 530997809350175163, guid: 8cdc042618b63fd4abb0c37a1d8c9a2e,
     type: 3}

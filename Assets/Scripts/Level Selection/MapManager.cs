@@ -9,9 +9,11 @@ public class MapManager : MonoBehaviour
 
     /// <summary>Fired when the camera finishes zooming into a biome.</summary>
     public static event Action<BiomeController> OnBiomeZoomedIn;
+    public static event Action<BiomeController> OnBiomeZoomingIn; 
 
     /// <summary>Fired when the camera finishes zooming back out to world view.</summary>
     public static event Action OnBiomeZoomedOut;
+    public static event Action OnBiomeZoomingOut;
 
     [Header("Camera")]
     [Tooltip("Main 2D orthographic camera")]
@@ -66,9 +68,6 @@ public class MapManager : MonoBehaviour
 
         if (mainCamera == null) mainCamera = Camera.main;
 
-        worldCameraPosition = mainCamera.transform.position;
-        worldOrthographicSize = mainCamera.orthographicSize;
-
         _returnButton = returnFromRegionButton.GetComponent<Button>();
         _returnButtonImage = returnFromRegionButton.GetComponent<Image>();
 
@@ -82,6 +81,11 @@ public class MapManager : MonoBehaviour
         _optionsButton.interactable = true;
     }
 
+    private void Start()
+    {
+        worldCameraPosition = mainCamera.transform.position;
+        worldOrthographicSize = mainCamera.orthographicSize;
+    }
     private void OpenOptions()
     {
         optionsPanel.GetComponent<OptionsUI>().ToggleOptionsPanel();
@@ -106,6 +110,7 @@ public class MapManager : MonoBehaviour
     private IEnumerator ZoomToBiomeRoutine()
     {
         CurrentState = ZoomState.Transitioning;
+        OnBiomeZoomingIn?.Invoke(activeBiome);
 
         yield return StartCoroutine(LerpCamera(
             new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y,
@@ -174,6 +179,7 @@ public class MapManager : MonoBehaviour
             yield return StartCoroutine(FadeSprite(level.SpriteRenderer, 0f, 0.2f));
         }
 
+        OnBiomeZoomingOut?.Invoke();
         yield return StartCoroutine(LerpCamera(
             new Vector3(activeBiome.worldBounds.center.x, activeBiome.worldBounds.center.y,
                         mainCamera.transform.position.z),
@@ -194,6 +200,7 @@ public class MapManager : MonoBehaviour
 
         activeBiome = null;
         CurrentState = ZoomState.World;
+        //worldOrthographicSize = mainCamera.orthographicSize; // re-sync after return
         OnBiomeZoomedOut?.Invoke();
     }
     private IEnumerator LerpCamera(Vector3 targetPosition, float targetSize, float duration)

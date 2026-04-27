@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55f13208ce988d24096057f5c4d65033, type: 3}
   m_Name: TeamHealSO
   m_EditorClassIdentifier: 
-  _abilityName: Dummy heal
+  _abilityName: Heal
   _abilityIcon: {fileID: 21300000, guid: 02f8aa0bb2ec18f4eac367806275fb25, type: 3}
   _abilityDescription: Heals user by 20 hp.
   _maxUses: 1
