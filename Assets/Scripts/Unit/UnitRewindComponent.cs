@@ -23,6 +23,9 @@ public class UnitRewindComponent
             movedPerTurn = rewindableUnit.MovedPerTurn,
             currentHealth = rewindableUnit.CurrentHealth,
             maxHealth = rewindableUnit.MaxHealth,
+            strength = rewindableUnit.Strength,
+            intelligence = rewindableUnit.Intelligence,
+            agility = rewindableUnit.Agility,
             isMoving = rewindableUnit.IsMoving,
             abilities = rewindableUnit.Abilities,
             isAlive = rewindableUnit.IsAlive,
@@ -40,6 +43,9 @@ public class UnitRewindComponent
             movedPerTurn = rewindableUnit.MovedPerTurn,
             currentHealth = 0,
             maxHealth = 0,
+            strength = rewindableUnit.Strength,
+            intelligence = rewindableUnit.Intelligence,
+            agility = rewindableUnit.Agility,
             isMoving = false,
             abilities = rewindableUnit.Abilities,
             isAlive = false
@@ -85,6 +91,7 @@ public class UnitRewindComponent
         rewindableUnit.SetMovingState(s.isMoving);
         rewindableUnit.CopyUsedAbilities(s.usedAbilitiesAmountPerTurn);
         rewindableUnit.MovedPerTurn = s.movedPerTurn;
+        rewindableUnit.SetStats(s.strength, s.intelligence, s.agility);
         rewindableUnit.StatusEffects.RestoreEffects(s.activeEffects);
     }
 

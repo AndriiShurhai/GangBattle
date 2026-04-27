@@ -19,9 +19,9 @@ public class TrapAbilitySO : AbilityBaseSO
 
     public override void Execute(Unit caster, Vector3Int targetPosition, Action onAbilityInvoke)
     {
-        IGridObject gridObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);   
+        IGridObject gridObject = GridObjectRegistry.Instance.GetObjectAt(targetPosition);
 
-        if (gridObject != null)
+        if (gridObject != null || TrapRegistry.Instance.GetTraps().Exists(t => t.GridPosition == targetPosition))
         {
             Debug.LogWarning("Cannot place trap because tile is occupied");
             return;
@@ -47,10 +47,20 @@ public class TrapAbilitySO : AbilityBaseSO
             Debug.LogError("Trap prefab is not assigned in the TrapAbilitySO!");
             return;
         }
+
         Vector3 worldPosition = GridManager.Instance.GridToWorld(position);
         GameObject trapObject = Instantiate(TrapPrefab, worldPosition, Quaternion.identity);
 
         Trap trap = trapObject.GetComponent<Trap>();
         if (trap != null) trap.Initialize(position, TrapDamage, Duration);
+    }
+
+    public override bool IsValidTarget(Vector3Int casterPosition, Vector3Int targetPosition, Unit caster)
+    {
+        if (!base.IsValidTarget(casterPosition, targetPosition, caster)) return false;
+
+        if (TrapRegistry.Instance.GetTraps().Exists(t => t.GridPosition == targetPosition)) return false;
+
+        return true;
     }
 }

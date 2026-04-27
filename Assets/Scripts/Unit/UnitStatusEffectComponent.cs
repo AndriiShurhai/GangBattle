@@ -66,10 +66,6 @@ public class UnitStatusEffectComponent : MonoBehaviour
     public void RestoreEffects(List<StatusEffect> effects)
     {
         Debug.Log("Restoring effects");
-        if (owner.HasStatus(EffectStatusType.Boosted))
-        {
-            owner.UnboostUnit();
-        }
         foreach (var effect in activeEffects)
             effect.RemoveVisualEffect(owner);
 

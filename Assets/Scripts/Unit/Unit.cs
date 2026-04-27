@@ -15,6 +15,10 @@ public class UnitSnapshotState
     public int currentHealth;
     public int maxHealth;
 
+    public int strength;
+    public int intelligence;
+    public int agility;
+
     public bool isMoving;
     public bool hasTakenActionThisTurn;
     public Dictionary<AbilityBaseSO, int> usedAbilitiesAmountPerTurn;
@@ -248,6 +252,12 @@ public class Unit : MonoBehaviour, IMoveable, IRewindable
     }
 
     // ── Stats / Buffs ─────────────────────────────────────────────────────────
+    public void SetStats(int strength, int intelligence, int agility)
+    {
+        Strength = strength;
+        Intelligence = intelligence;
+        Agility = agility;
+    }
     public void BoostUnit(int strengthBonus = 0, int intelligenceBonus = 0, int agilityBonus = 0)
     {
         if (HasStatus(EffectStatusType.Boosted)) { return; }
