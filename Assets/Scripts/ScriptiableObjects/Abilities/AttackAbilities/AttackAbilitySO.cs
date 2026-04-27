@@ -1,8 +1,9 @@
-using System.Collections;
-using UnityEngine;
 using DG;
 using DG.Tweening;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Attack Ability")]
 public class AttackAbilitySO : AbilityBaseSO
@@ -83,5 +84,13 @@ public class AttackAbilitySO : AbilityBaseSO
         }
 
         return true;
+    }
+
+    public override List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        return new List<AbilityUIStat>
+        {
+            new AbilityUIStat { Label = "Damage", Value = GetPower(caster).ToString() }
+        };
     }
 }

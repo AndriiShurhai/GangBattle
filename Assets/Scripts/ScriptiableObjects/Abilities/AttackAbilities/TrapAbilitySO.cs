@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Trap Ability")]
@@ -62,5 +63,14 @@ public class TrapAbilitySO : AbilityBaseSO
         if (TrapRegistry.Instance.GetTraps().Exists(t => t.GridPosition == targetPosition)) return false;
 
         return true;
+    }
+
+    public override List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        return new List<AbilityUIStat>
+        {
+            new AbilityUIStat { Label = "Trap Damage", Value = TrapDamage.ToString() },
+            new AbilityUIStat { Label = "Duration", Value = $"{Duration} Turns" }
+        };
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Heal Ability")]
@@ -77,5 +78,14 @@ public class HealAbilitySO : AbilityBaseSO
         }
 
         return true;
+    }
+
+    public override List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        return new List<AbilityUIStat>
+        {
+            new AbilityUIStat { Label = "Heal Amount", Value = GetPower(caster).ToString() },
+            new AbilityUIStat { Label = "Team Heal", Value = (GetPower(caster) / 2).ToString() }
+        };
     }
 }

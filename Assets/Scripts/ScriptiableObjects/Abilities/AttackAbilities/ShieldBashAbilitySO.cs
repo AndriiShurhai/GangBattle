@@ -1,5 +1,6 @@
 using DG.Tweening;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Shield Bash Ability")]
@@ -49,5 +50,15 @@ public class ShieldBashSO : AbilityBaseSO
         float chance = UnityEngine.Random.value;
 
         return chance < StunChance;
+    }
+
+    public override List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        return new List<AbilityUIStat>
+        {
+            new AbilityUIStat { Label = "Damage", Value = GetPower(caster).ToString() },
+            new AbilityUIStat { Label = "Stun Chance", Value = $"{Mathf.RoundToInt(StunChance * 100)}%" },
+            new AbilityUIStat { Label = "Stun Duration", Value = $"{StunDuration} Turns" }
+        };
     }
 }

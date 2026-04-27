@@ -10,6 +10,13 @@ public enum StatType
     Agility,
     None
 }
+
+[Serializable]
+public struct AbilityUIStat
+{
+    public string Label;
+    public string Value;
+}
 public abstract class AbilityBaseSO : ScriptableObject
 {
     [Header("Basic Information")]
@@ -177,6 +184,20 @@ public abstract class AbilityBaseSO : ScriptableObject
     public virtual List<Vector3Int> GetAbilityRadiusTiles(Vector3Int targetPosition)
     {
         return new List<Vector3Int>() { targetPosition };
+    }
+
+    public virtual List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        var stats = new List<AbilityUIStat>();
+
+        // As a fallback, if an ability has scaling but no specific override, 
+        // we at least show its raw Power.
+        if (TypeOfScaling != StatType.None)
+        {
+            stats.Add(new AbilityUIStat { Label = "Power", Value = GetPower(caster).ToString() });
+        }
+
+        return stats;
     }
 
 }

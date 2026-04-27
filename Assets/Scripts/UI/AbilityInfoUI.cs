@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,6 +25,15 @@ public class AbilityInfoUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI coefficientText;
     [SerializeField] private TextMeshProUGUI powerText;
 
+    [Header("Dynamic Stats (Grid Integration)")]
+    [SerializeField] private Transform statsGridContainer;
+    [Tooltip("Drag one of your existing static left-column texts here to copy its style")]
+    [SerializeField] private TextMeshProUGUI labelStyleReference;
+    [Tooltip("Drag one of your existing static right-column texts here to copy its style")]
+    [SerializeField] private TextMeshProUGUI valueStyleReference;
+    [SerializeField] private StretchGridLayout stretchGridHelper;
+
+
     [Header("Animation Settings")]
     [SerializeField] private float showDuration = 0.25f;
     [SerializeField] private float hideDuration = 0.18f;
@@ -39,6 +49,8 @@ public class AbilityInfoUI : MonoBehaviour
     private AbilityBaseSO currentAbility;
     private bool isVisible;
     private Unit currentUnit;
+
+    private List<GameObject> spawnedDynamicStats = new List<GameObject>();
 
     private void Awake()
     {
@@ -73,8 +85,8 @@ public class AbilityInfoUI : MonoBehaviour
 
         currentAbility = ability;
         this.currentUnit = currentUnit;
-        RefreshUI();
         Show();
+        RefreshUI();
     }
 
     public void Show()
@@ -113,22 +125,85 @@ public class AbilityInfoUI : MonoBehaviour
     {
         if (currentAbility == null) return;
 
+        // 1. Set Identity Info
         if (abilityIconImage != null && currentAbility.AbilityIcon != null)
             abilityIconImage.sprite = currentAbility.AbilityIcon;
 
         SetText(abilityNameText, currentAbility.AbilityName);
         SetText(abilityDescriptionText, currentAbility.AbilityDescription);
 
+        // 2. Set Static Base Stats
         SetText(rangeAmountText, currentAbility.Range.ToString());
         SetText(rangeTypeText, FormatEnum(currentAbility.TypeOfRange.ToString()));
         SetText(targetTypeText, FormatEnum(currentAbility.TypeOfTarget.ToString()));
         SetText(maxUsesText, currentAbility.MaxUses.ToString());
-        SetText(powerText, currentAbility.GetPower(currentUnit).ToString());
 
-        bool hasScaling = currentAbility.TypeOfScaling != StatType.None;
-        SetText(scalingStatText, hasScaling ? FormatEnum(currentAbility.TypeOfScaling.ToString()) : "—");
-        SetText(coefficientText, hasScaling ? $"×{currentAbility.Coefficient:0.##}" : "—");
+        // 3. Clean up previously spawned dynamic stats ONLY
+        foreach (var obj in spawnedDynamicStats)
+        {
+            if (obj != null)
+            {
+                // Turn it off and unparent it IMMEDIATELY so the Layout math ignores it
+                obj.SetActive(false);
+                obj.transform.SetParent(null);
+                Destroy(obj); // Now it's safe to let Unity destroy it at the end of the frame
+            }
+        }
+        spawnedDynamicStats.Clear();
 
+        // 4. Spawn new dynamic stats by cloning the references
+        if (currentUnit != null)
+        {
+            var detailedStats = currentAbility.GetDetailedStats(currentUnit);
+            foreach (var stat in detailedStats)
+            {
+                // Clone the left column (Label)
+                if (labelStyleReference != null)
+                {
+                    GameObject labelObj = Instantiate(labelStyleReference.gameObject, statsGridContainer);
+                    labelObj.SetActive(true);
+
+                    TextMeshProUGUI tmp = labelObj.GetComponent<TextMeshProUGUI>();
+                    tmp.text = stat.Label;
+
+                    spawnedDynamicStats.Add(labelObj);
+                }
+
+                // Clone the right column (Value)
+                if (valueStyleReference != null)
+                {
+                    GameObject valueObj = Instantiate(valueStyleReference.gameObject, statsGridContainer);
+                    valueObj.SetActive(true);
+
+                    TextMeshProUGUI tmp = valueObj.GetComponent<TextMeshProUGUI>();
+                    tmp.text = stat.Value;
+
+                    spawnedDynamicStats.Add(valueObj);
+                }
+            }
+        }
+
+        Canvas.ForceUpdateCanvases();
+
+        // Force the Grid Container to recalculate
+        RectTransform gridRect = statsGridContainer.GetComponent<RectTransform>();
+        if (gridRect != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(gridRect);
+        }
+
+        // If your parent panel (Details Panel) has a Content Size Fitter or Vertical Layout Group, force that too!
+        RectTransform detailsRect = detailsPanel.GetComponent<RectTransform>();
+        if (detailsRect != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(detailsRect);
+        }
+
+        if (stretchGridHelper != null)
+        {
+            Canvas.ForceUpdateCanvases(); // Ensure Unity UI knows the new sizes
+            stretchGridHelper.RecalculateStretch();
+        }
     }
     private IEnumerator AnimateShow()
     {

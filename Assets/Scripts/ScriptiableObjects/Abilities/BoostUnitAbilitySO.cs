@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(menuName ="Abilities/Boost Unit Ability")]
@@ -28,5 +29,14 @@ public class BoostUnitAbilitySO : AbilityBaseSO
             }
             onAbilityInvoke?.Invoke();
         }
+    }
+
+    public override List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        return new List<AbilityUIStat>
+        {
+            new AbilityUIStat { Label = "Stat Boost", Value = $"+{GetPower(caster)}" },
+            new AbilityUIStat { Label = "Duration", Value = $"{Duration} Turns" }
+        };
     }
 }

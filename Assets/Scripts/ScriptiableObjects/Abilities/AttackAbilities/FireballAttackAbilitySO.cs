@@ -72,5 +72,14 @@ public class FireballAttackAbilitySO : AbilityBaseSO
     {
         return RangeFinder.GetSquareRange(targetPosition, ExplosionRadius);
     }
-  
+
+    public override List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        return new List<AbilityUIStat>
+        {
+            new AbilityUIStat { Label = "AoE Damage", Value = GetPower(caster).ToString() },
+            new AbilityUIStat { Label = "Explosion Radius", Value = ExplosionRadius.ToString() }
+        };
+    }
+
 }

@@ -1,6 +1,7 @@
 using DG.Tweening;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -34,6 +35,16 @@ public class BurnAttackAbilitySO : AbilityBaseSO
             onAbilityInvoke?.Invoke();
             fireVisual.GetComponent<FireBurnVisualEffect>().ExtinctFire();
         }
+    }
+
+    public override List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        return new List<AbilityUIStat>
+        {
+            new AbilityUIStat { Label = "Initial Damage", Value = GetPower(caster).ToString() },
+            new AbilityUIStat { Label = "Burn Damage", Value = $"{GetPower(caster) / 2} / Turn" },
+            new AbilityUIStat { Label = "Burn Duration", Value = $"{Duration} Turns" }
+        };
     }
 }
 

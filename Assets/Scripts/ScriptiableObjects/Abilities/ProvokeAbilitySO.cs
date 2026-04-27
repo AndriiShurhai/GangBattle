@@ -31,5 +31,13 @@ public class ProvokeAbilitySO : AbilityBaseSO
         }
         onAbilityInvoke?.Invoke();
     }
+
+    public override List<AbilityUIStat> GetDetailedStats(Unit caster)
+    {
+        return new List<AbilityUIStat>
+        {
+            new AbilityUIStat { Label = "Duration", Value = $"{ProvokeDuration} Turns" }
+        };
+    }
 }
 
