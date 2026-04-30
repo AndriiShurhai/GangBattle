@@ -17,7 +17,7 @@ MonoBehaviour:
     type: 3}
   _abilityDescription: Trap works with some duration and gives damage to unit that
     steps on it.
-  _maxUses: 200
+  _maxUses: 2
   _range: 3
   _hasLineOfSightRequirement: 0
   _typeOfRange: 0

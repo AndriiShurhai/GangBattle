@@ -62,6 +62,12 @@ public class BiomeController : MonoBehaviour,
         originalColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
     }
 
+    private void Start()
+    {
+        foreach (LevelNode level in regionController.GetLevelsInRegion())
+            level.GetComponent<BoxCollider2D>().enabled = false;
+    }
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (MapManager.Instance.CurrentState != MapManager.ZoomState.World) return;

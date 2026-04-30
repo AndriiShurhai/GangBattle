@@ -12,6 +12,7 @@ public class GameInput : MonoBehaviour
     public event Action OnPauseAction;
     public event Action OnBindingRebinding;
     public event Action<Vector2> OnClickAction;
+    public event Action OnDataWipeAction;
 
     public enum Binding
     {
@@ -42,6 +43,7 @@ public class GameInput : MonoBehaviour
         inputAction.Player.Interact.performed += Interact_performed;
         inputAction.Player.Pause.performed += Pause_performed;
         inputAction.Player.Click.performed += Click_performed;
+        inputAction.Player.WipeData.performed += WipeData_performed;
         DontDestroyOnLoad(gameObject);
     }
 
@@ -51,6 +53,7 @@ public class GameInput : MonoBehaviour
         inputAction.Player.Interact.performed -= Interact_performed;
         inputAction.Player.Pause.performed -= Pause_performed;
         inputAction.Player.Click.performed -= Click_performed;
+        inputAction.Player.WipeData.performed -= WipeData_performed;
         inputAction.Player.Disable();
         inputAction.Dispose();
     }
@@ -124,6 +127,11 @@ public class GameInput : MonoBehaviour
     private void Pause_performed(InputAction.CallbackContext obj)
     {
         OnPauseAction?.Invoke();
+    }
+
+    private void WipeData_performed(InputAction.CallbackContext obj)
+    {
+        OnDataWipeAction?.Invoke();
     }
 
     private void Interact_performed(InputAction.CallbackContext obj)

@@ -591,9 +591,9 @@ public class AudioManager : MonoBehaviour
 
     private void LoadVolumeSettings()
     {
-        masterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
-        musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
-        sfxVolume = PlayerPrefs.GetFloat("SfxVolume", 1f);
+        masterVolume = PlayerPrefs.GetFloat("MasterVolume", 0.3f);
+        musicVolume = PlayerPrefs.GetFloat("MusicVolume", 0.3f);
+        sfxVolume = PlayerPrefs.GetFloat("SfxVolume", 0.4f);
         isMusicMuted = PlayerPrefs.GetInt("MusicMuted", 0) == 1;
         isSfxMuted = PlayerPrefs.GetInt("SfxMuted", 0) == 1;
 

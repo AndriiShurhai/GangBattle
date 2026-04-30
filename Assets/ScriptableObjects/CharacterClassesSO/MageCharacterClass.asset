@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   className: Mage
   description: 
-  classIconPrefab: {fileID: 530997809350175163, guid: 3733b76a82f47af4f818f4c9c27aac38,
+  classIconPrefab: {fileID: 530997809350175163, guid: 7638db4fadaa5e047b440afc11efc0b4,
     type: 3}
   maxHealth: 60
   movementRange: 2

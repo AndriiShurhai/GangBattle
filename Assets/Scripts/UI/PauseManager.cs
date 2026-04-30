@@ -153,6 +153,7 @@ public class PauseManager : MonoBehaviour
     public void QuitGame()
     {
         CloseSettings();
+        AudioManager.Instance.StopAllSFX();
         pauseMenuUI.SetActive(false);
         Time.timeScale = 1f;
         SceneLoader.Instance?.LoadScene("LevelSelection");

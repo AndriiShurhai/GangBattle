@@ -127,6 +127,7 @@ public class MapManager : MonoBehaviour
         {
             if (!level.IsLocked)
             {
+                level.GetComponent<BoxCollider2D>().enabled = true;
                 if (level.GetCurrentStarsContainer() == null)
                 {
                     Debug.LogWarning($"Level {level.LevelName} has no stars container assigned. Skipping fade-in for stars.");
@@ -137,6 +138,10 @@ public class MapManager : MonoBehaviour
                     StartCoroutine(FadeSprite(star, 1f, fadeDuration));
 
                 StartCoroutine(FadeSprite(level.SpriteRenderer, 1f, fadeDuration));
+            }
+            else
+            {
+                level.GetComponent<BoxCollider2D>().enabled = false;
             }
 
         }
@@ -167,6 +172,7 @@ public class MapManager : MonoBehaviour
 
         foreach (LevelNode level in activeBiome.regionController.GetLevelsInRegion())
         {
+            level.GetComponent<BoxCollider2D>().enabled = false;
             if (level.GetCurrentStarsContainer() == null)
             {
                 yield return StartCoroutine(FadeSprite(level.SpriteRenderer, 0f, 0.2f));

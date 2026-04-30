@@ -52,6 +52,8 @@ public class RewindManager : MonoBehaviour
 
         rewindables.RemoveAll(r => r == null);
 
+        AudioManager.Instance.StopAllSFX();
+
         foreach (var r in new List<IRewindable>(rewindables))
         {
             if (snapshot.objectStates.TryGetValue(r.RewindID, out var state))
