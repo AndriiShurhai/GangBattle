@@ -1,61 +1,63 @@
-# GangBattle (Prototype)
+# ⚔️ Clash Of Worlds
 
-GangBattle is a **2D grid-based, turn-based tactical RPG prototype** built in Unity.
-The project focuses on tactical positioning, unit abilities, traps, and full turn rewind mechanics.
+**Clash of Worlds** is a **2D grid-based turn-based strategy game** built in Unity, set in a dark fantasy world where tactical decisions determine victory.
 
-This repository currently represents a **playable prototype**, not a finished game.
+Command a squad of unique units, outmaneuver enemies, and dominate the battlefield through positioning, abilities, and strategy.
+
+> This repository currently contains an active prototype.
 
 ---
 
-## 🎮 Core Idea
+## 🎮 Gameplay Overview
 
-- Turn-based tactical combat on a grid
-- Player controls a small squad of units
-- Each unit can move and perform some amount of actions per turn
-- The battlefield contains interactive objects (traps, effects, etc.)
+Clash of Worlds focuses on thoughtful, turn-based tactical combat where every move matters.
 
-Inspirations:
-- Into the Breach
-- Fire Emblem
-- Advance Wars
+### Core Gameplay Elements
+
+- Grid-based movement and positioning  
+- Turn-based combat system  
+- Unique units with different roles and abilities  
+- Enemy AI encounters  
+- Tactical decision-making over random chance  
 
 ---
 
 ## 🧠 Current Features
 
-- Grid-based movement
-- Turn-based system
-- Units with actions and abilities
-- Traps with duration and logic
-- Basic AI (WIP)
+- Functional turn system  
+- Grid movement system  
+- Unit actions and abilities  
+- Trap mechanics with timers / logic  
+- Prototype enemy AI  
+- Main menu and level selection systems  
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Built With
 
-- Engine: Unity
-- Language: C#
-- IDE: Visual Studio
-- Version Control: Git + GitHub
-
----
-
-## ▶️ How to Run
-
-1. Open the project in **Unity Hub**
-2. Use the Unity version specified in `ProjectSettings`
-3. Open the Main Menu Scene
-4. Press Play
+- **Engine:** Unity  
+- **Language:** C#  
+- **IDE:** Visual Studio  
+- **Version Control:** Git + GitHub  
 
 ---
 
-## 📌 Project Status
+## ▶️ How To Run
 
-This is an **experimental prototype**.
-Features may be incomplete, unstable, or subject to change.
+1. Clone or download the repository  
+2. Open the project using **Unity Hub**  
+3. Use the Unity version listed in `ProjectSettings`  
+4. Open the main menu scene  
+5. Press **Play**
+
+---
+
+## 👤 Developer Note
+
+This is a solo indie project created to explore game development, strategy systems, and Unity programming.
 
 ---
 
 ## 📄 License
 
-TBD
+Code: MIT
