@@ -312,7 +312,7 @@ GameObject:
   m_Layer: 0
   m_Name: position1 (3)
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -325,7 +325,7 @@ Transform:
   m_GameObject: {fileID: 130336389}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.48, y: 1.99, z: 0}
+  m_LocalPosition: {x: 8.48, y: 1.67, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -527,7 +527,7 @@ GameObject:
   m_Layer: 0
   m_Name: position1 (1)
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -540,7 +540,7 @@ Transform:
   m_GameObject: {fileID: 162516947}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.07, y: 2.17, z: 0}
+  m_LocalPosition: {x: 8.74, y: 3.75, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -558,7 +558,7 @@ GameObject:
   m_Layer: 0
   m_Name: position1 (4)
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -571,7 +571,7 @@ Transform:
   m_GameObject: {fileID: 165205795}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.86, y: 4.75, z: 0}
+  m_LocalPosition: {x: 8.86, y: 5.86, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1174,7 +1174,7 @@ GameObject:
   m_Layer: 0
   m_Name: position1 (2)
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -1187,7 +1187,7 @@ Transform:
   m_GameObject: {fileID: 332259513}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.33, y: 1.95, z: 0}
+  m_LocalPosition: {x: -8.33, y: 1.72, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4954,7 +4954,7 @@ GameObject:
   m_Layer: 0
   m_Name: position1
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -4967,7 +4967,7 @@ Transform:
   m_GameObject: {fileID: 872184353}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.21, y: 3.68, z: 0}
+  m_LocalPosition: {x: -8.21, y: 6.06, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5144,7 +5144,7 @@ GameObject:
   m_Layer: 0
   m_Name: position1 (5)
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -5157,7 +5157,7 @@ Transform:
   m_GameObject: {fileID: 1227192004}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.98, y: 4.17, z: 0}
+  m_LocalPosition: {x: -7.73, y: 3.75, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5478,13 +5478,17 @@ MonoBehaviour:
   - {fileID: 162516948}
   - {fileID: 332259514}
   enemiesPositions:
+  - {fileID: 1227192005}
+  - {fileID: 165205796}
   - {fileID: 130336390}
   playerUnits:
   - {fileID: 4776648060455906326, guid: 60f3b7a29bf57b34e8434dd042f9ebf7, type: 3}
-  - {fileID: 5973092872303197908, guid: c55b7949263819d4185b14e7483de79f, type: 3}
   - {fileID: 9190046012850446207, guid: b9e0a82a819e9214680dec443bc05fe1, type: 3}
+  - {fileID: 4776648060455906326, guid: 60f3b7a29bf57b34e8434dd042f9ebf7, type: 3}
   enemyUnits:
   - {fileID: 5316020959198715949, guid: 119866e4cc6cfe143bbee4ffb49ad3cd, type: 3}
+  - {fileID: 8841607834726875372, guid: efb97f6dcaf926b49aaf7534ee5669bf, type: 3}
+  - {fileID: 8841607834726875372, guid: efb97f6dcaf926b49aaf7534ee5669bf, type: 3}
   characterSelectionController: {fileID: 1655297848}
   endPlayerTurnButton: {fileID: 214039301}
   enemyPreTurnDelay: 0.3

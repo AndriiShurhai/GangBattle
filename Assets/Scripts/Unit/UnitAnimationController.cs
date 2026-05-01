@@ -44,7 +44,7 @@ public class UnitAnimationController : MonoBehaviour
 
     private void OnUnitGainedStatusEffect(Unit unit, EffectStatusType effectType)
     {
-        if (effectType == EffectStatusType.Stunned || effectType == EffectStatusType.Rooted)
+        if (effectType == EffectStatusType.Stunned)
             unit.GetUnitVisualBridge().StartDebuffAnimation();
     }
 
