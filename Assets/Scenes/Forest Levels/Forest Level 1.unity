@@ -4894,37 +4894,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 601adc27c63ad164e8ccec89e4244e93, type: 3}
---- !u!1 &1227192004
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1227192005}
-  m_Layer: 0
-  m_Name: position1 (5)
-  m_TagString: Untagged
-  m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1227192005
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1227192004}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 17.41, y: 2.48, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2138925814}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1284050093
 GameObject:
   m_ObjectHideFlags: 0
@@ -5382,15 +5351,14 @@ MonoBehaviour:
   - {fileID: 162516948}
   - {fileID: 332259514}
   enemiesPositions:
-  - {fileID: 1227192005}
   - {fileID: 165205796}
   - {fileID: 979884945}
+  - {fileID: 1446685072}
   playerUnits:
   - {fileID: 4776648060455906326, guid: 60f3b7a29bf57b34e8434dd042f9ebf7, type: 3}
   - {fileID: 4776648060455906326, guid: 60f3b7a29bf57b34e8434dd042f9ebf7, type: 3}
   - {fileID: 9190046012850446207, guid: b9e0a82a819e9214680dec443bc05fe1, type: 3}
   enemyUnits:
-  - {fileID: 8841607834726875372, guid: ad20710b696f12f43ad524c607f30423, type: 3}
   - {fileID: 5442779907496803850, guid: 595bd277b31af2b429c5aa472dee33ef, type: 3}
   - {fileID: 5441045531714891454, guid: 227c4a8d6f5faed4183c4a8bcc213f66, type: 3}
   - {fileID: 5441045531714891454, guid: 227c4a8d6f5faed4183c4a8bcc213f66, type: 3}
@@ -8258,7 +8226,6 @@ Transform:
   - {fileID: 162516948}
   - {fileID: 332259514}
   - {fileID: 165205796}
-  - {fileID: 1227192005}
   - {fileID: 979884945}
   - {fileID: 1446685072}
   m_Father: {fileID: 0}
